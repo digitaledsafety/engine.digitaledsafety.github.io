@@ -107,6 +107,25 @@
             <button id="runButton" class="btn btn-run">Run</button>
             <button id="saveButton" class="btn">Save</button>
             <button id="loadButton" class="btn">Load</button>
+
+            <hr style="margin: 20px 0;">
+
+            <div id="objectScriptingSection">
+                <h3>Object Scripting</h3>
+                <div>
+                    <label for="scriptingObjectSelector">Select Object:</label>
+                    <select id="scriptingObjectSelector" class="btn" style="width: 100%; margin-bottom: 10px;"></select>
+                </div>
+                <div>
+                    <p>Current Script Type: <span id="currentScriptTypeIndicator">None</span></p>
+                </div>
+                <div>
+                    <label for="rawJsTextarea">JavaScript Code (for selected object):</label>
+                    <textarea id="rawJsTextarea" style="width: 100%; height: 150px; margin-bottom: 10px; font-family: monospace;"></textarea>
+                </div>
+                <button id="saveJsScriptButton" class="btn">Save JavaScript to Object</button>
+                <button id="clearObjectScriptButton" class="btn">Clear Object's Script</button>
+            </div>
         </div>
     </div>
 
