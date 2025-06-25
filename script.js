@@ -77,10 +77,10 @@ var toolbox = {
                             kind: 'block',
                             type: 'select_object',
                         },
-                        {
-                            kind: 'block',
-                            type: 'attach_script_to_object', // This might become less central or change
-                        },
+                        // { // attach_script_to_object - REMOVED
+                        //     kind: 'block',
+                        //     type: 'attach_script_to_object',
+                        // },
                         {
                             kind: 'block',
                             type: 'event_on_click',
@@ -1014,7 +1014,7 @@ var toolbox = {
                 tooltip: 'Imports a 3D model and saves it as a variable for later use, with dynamic position.',
                 helpUrl: '',
                 extensions: [
-                    'set_max_display_length',  // This line added!!
+                    'set_max_display_length',
                 ],
             },
             {
@@ -1079,7 +1079,7 @@ var toolbox = {
                 tooltip: 'Imports a 3D file from a URL and executes actions on success.',
                 helpUrl: '',
                 extensions: [
-                    'set_max_display_length',  // This line added!!
+                    'set_max_display_length',
                 ],
             },
 
@@ -1345,6 +1345,45 @@ var toolbox = {
                 colour: 180,
                 tooltip: 'Enables physics on the ground object with the selected impostor',
             },
+            // Scripting Blocks
+            {
+                "type": "select_object",
+                "message0": "object named %1",
+                "args0": [
+                    {
+                        "type": "field_input",
+                        "name": "OBJECT_NAME",
+                        "text": "myObject" // Default text
+                    }
+                ],
+                "output": "String", // Outputs the object name/ID as a string
+                "colour": "%{BKY_LOGIC_HUE}", // Using logic hue for now
+                "tooltip": "Selects an object from the scene by its name.",
+                "helpUrl": ""
+            },
+            // { // attach_script_to_object JSON Definition - REMOVED
+            //     "type": "attach_script_to_object",
+            //     "message0": "attach script to %1 %2 do %3",
+            //     "args0": [
+            //         {
+            //             "type": "input_value",
+            //             "name": "OBJECT_SELECTOR",
+            //             "check": "String"
+            //         },
+            //         {
+            //             "type": "input_dummy"
+            //         },
+            //         {
+            //             "type": "input_statement",
+            //             "name": "SCRIPT_CODE"
+            //         }
+            //     ],
+            //     "previousStatement": null,
+            //     "nextStatement": null,
+            //     "colour": "%{BKY_LOGIC_HUE}",
+            //     "tooltip": "Attaches a script to the specified object.",
+            //     "helpUrl": ""
+            // },
             // Phase 2 Blockly Blocks
             {
                 "type": "event_on_click",
@@ -1428,10 +1467,9 @@ var toolbox = {
             javascript.javascriptGenerator.forBlock['event_on_click'] = function(block, generator) {
                 const objectNameValue = generator.valueToCode(block, 'OBJECT_SELECTOR', generator.ORDER_ATOMIC) || 'null';
                 const doCode = generator.statementToCode(block, 'DO_CODE');
-                // Important: The generated code from 'DO_CODE' needs to be executable in the context of the action.
-                // We might need to wrap it or ensure it uses 'thisMesh' correctly.
-                // For simplicity, we'll assume 'doCode' can reference 'thisMesh'.
 
+                // For the new unified script model, this generated code will be part of the single script
+                // executed by doRun(). It sets up the event listener.
                 let code = `
 let onClickTargetName = ${objectNameValue};
 let onClickTargetMesh = objects[onClickTargetName] || scene.getMeshByName(onClickTargetName) || scene.getMeshById(onClickTargetName);
@@ -1443,8 +1481,8 @@ if (onClickTargetMesh) {
     onClickTargetMesh.actionManager.registerAction(
         new BABYLON.ExecuteCodeAction(
             BABYLON.ActionManager.OnPickTrigger,
-            function(evt) { // evt contains pointerX, pointerY, meshUnderPointer, etc.
-                const thisMesh = onClickTargetMesh; // Make 'thisMesh' available to the executed code
+            function(evt) {
+                const thisMesh = onClickTargetMesh;
                 console.log('Clicked on ' + thisMesh.name);
                 try {
                     ${doCode}
@@ -1454,16 +1492,13 @@ if (onClickTargetMesh) {
             }
         )
     );
-    // Also mark this object as having a blockly script, even if it's just an event
-    if (!onClickTargetMesh.metadata) onClickTargetMesh.metadata = {};
-    onClickTargetMesh.metadata.scriptType = 'blockly';
-    onClickTargetMesh.metadata.scriptAttached = true;
-    console.log('On-click event attached to: ' + onClickTargetName);
+    // Metadata assignment removed - this block now just sets up the listener.
+    console.log('On-click event action registered for: ' + onClickTargetName);
 } else {
     console.warn('On-click event: Could not find object: ' + onClickTargetName);
 }
 `;
-                return code; // This code sets up the event listener when the main Blockly script runs.
+                return code;
             };
 
             javascript.javascriptGenerator.forBlock['event_every_frame'] = function(block, generator) {
@@ -1475,37 +1510,44 @@ let frameLoopTargetName = ${objectNameValue};
 let frameLoopTargetMesh = objects[frameLoopTargetName] || scene.getMeshByName(frameLoopTargetName) || scene.getMeshById(frameLoopTargetName);
 
 if (frameLoopTargetMesh) {
-    if (!frameLoopTargetMesh.metadata) {
-        frameLoopTargetMesh.metadata = {};
-    }
-    frameLoopTargetMesh.metadata.scriptType = 'blockly';
-    // Store the specific code for the frame loop
-    frameLoopTargetMesh.metadata.blocklyFrameLoop = ${JSON.stringify(doCode)};
-    frameLoopTargetMesh.metadata.scriptAttached = true; // Mark as having a script
-    console.log('Every-frame script metadata set for: ' + frameLoopTargetName);
+    // Ensure the global array for per-frame functions exists
+    window.sceneSpecificPerFrameFunctions = window.sceneSpecificPerFrameFunctions || [];
+
+    // Define the function to be called each frame for this specific mesh
+    const frameFunctionName = \`frameLoop_\${frameLoopTargetMesh.id || frameLoopTargetMesh.name}_\${BABYLON.Tools.RandomId()}\`;
+    let perFrameFunction = function(thisMesh, deltaTime) {
+        // Note: 'thisMesh' and 'deltaTime' will be provided by the central loop
+        ${doCode}
+    };
+
+    // Store the function code and target, or directly the function if preferred
+    window.sceneSpecificPerFrameFunctions.push({
+        targetMesh: frameLoopTargetMesh,
+        func: perFrameFunction,
+        name: frameFunctionName // For debugging or potential removal later
+    });
+    console.log('Every-frame function registered for: ' + frameLoopTargetName);
+
 } else {
     console.warn('Every-frame event: Could not find object: ' + frameLoopTargetName);
 }
 `;
-                return code;
+                // This block now just registers a function; it doesn't return executable code directly into the main script flow.
+                // The actual execution is handled by the central render loop.
+                // However, Blockly expects a string to be returned. We can return a comment or an empty string.
+                return '// Registered per-frame function for ' + frameLoopTargetName + '\\n';
             };
 
             javascript.javascriptGenerator.forBlock['action_rotate_continuously'] = function(block, generator) {
-                // This block assumes 'thisMesh' and 'deltaTime' are in scope,
-                // as it's intended to be used inside 'event_every_frame'.
                 const rotateXSpeed = generator.valueToCode(block, 'ROTATE_X_SPEED', generator.ORDER_ATOMIC) || 0;
                 const rotateYSpeed = generator.valueToCode(block, 'ROTATE_Y_SPEED', generator.ORDER_ATOMIC) || 0;
                 const rotateZSpeed = generator.valueToCode(block, 'ROTATE_Z_SPEED', generator.ORDER_ATOMIC) || 0;
 
-                // Convert degrees per second to radians per frame.
-                // deltaTime is in milliseconds.
                 let code = `
-if (thisMesh) { // thisMesh should be defined by the calling event_every_frame context
+if (thisMesh) {
     thisMesh.rotation.x += (${rotateXSpeed} * (Math.PI / 180)) * (deltaTime / 1000);
     thisMesh.rotation.y += (${rotateYSpeed} * (Math.PI / 180)) * (deltaTime / 1000);
     thisMesh.rotation.z += (${rotateZSpeed} * (Math.PI / 180)) * (deltaTime / 1000);
-} else {
-    // console.warn('action_rotate_continuously: thisMesh is not defined in this context.');
 }
 `;
                 return code;
@@ -1513,37 +1555,12 @@ if (thisMesh) { // thisMesh should be defined by the calling event_every_frame c
 
             javascript.javascriptGenerator.forBlock['select_object'] = function(block, generator) {
                 const objectName = block.getFieldValue('OBJECT_NAME');
-                // This will return the object's name (or unique ID in the future).
-                // The actual object retrieval will happen in the 'attach_script_to_object' or execution phase.
                 return [objectName, generator.ORDER_ATOMIC];
             };
 
-            javascript.javascriptGenerator.forBlock['attach_script_to_object'] = function(block, generator) {
-                const objectNameValue = generator.valueToCode(block, 'OBJECT_SELECTOR', generator.ORDER_ATOMIC) || 'null';
-                const bLocklyScriptContent = generator.statementToCode(block, 'SCRIPT_CODE');
-
-                // This code will be executed when the main "Run" button is pressed,
-                // effectively setting up the script metadata on the object.
-                let code = `
-let scriptingTargetObjName = ${objectNameValue};
-let scriptingTargetObj = objects[scriptingTargetObjName] || scene.getMeshByName(scriptingTargetObjName) || scene.getMeshById(scriptingTargetObjName);
-
-if (scriptingTargetObj) {
-    if (!scriptingTargetObj.metadata) {
-        scriptingTargetObj.metadata = {};
-    }
-    scriptingTargetObj.metadata.scriptType = 'blockly';
-    // Storing the generated JS for now. Ideally, this would be Blockly XML or a script ID.
-    // This is a simplified approach for this step.
-    scriptingTargetObj.metadata.scriptContent = ${JSON.stringify(bLocklyScriptContent)};
-    scriptingTargetObj.metadata.scriptAttached = true;
-    console.log('Blockly script metadata set for object: ' + scriptingTargetObjName);
-} else {
-    console.warn('Attach Script: Could not find object: ' + scriptingTargetObjName);
-}
-`;
-                return code; // This generated code sets up the metadata. Execution happens later.
-            };
+            // javascript.javascriptGenerator.forBlock['attach_script_to_object'] = function(block, generator) { // REMOVED
+            //     // ...
+            // };
 
             // --- Existing JavaScript Generators ---
             javascript.javascriptGenerator.forBlock['position_model'] = function (block, generator) {
@@ -1573,7 +1590,6 @@ if (scriptingTargetObj) {
                 const cameraVar = Blockly.JavaScript.nameDB_.getName(block.getFieldValue('CAMERA'), Blockly.Variables.NAME_TYPE);
                 const meshVar = Blockly.JavaScript.nameDB_.getName(block.getFieldValue('MESH'), Blockly.Variables.NAME_TYPE);
 
-                // Generate code to set the camera target
                 const code = `
 
 
@@ -1602,7 +1618,7 @@ if (scriptingTargetObj) {
             objects['${modelVarName}'] = rootMesh;
             ${modelVarName} = rootMesh;
             console.log('3D model saved as variable "${modelVarName}", ID "${uniqueId}", and placed at (${posX}, ${posY}, ${posZ}).');
-            if (typeof populateObjectSelector === 'function') { setTimeout(populateObjectSelector, 100); }
+            // populateObjectSelector call removed
           } else {
             console.warn('No meshes were imported from the URL: ${modelUrl}.');
           }
@@ -1631,7 +1647,7 @@ if (scriptingTargetObj) {
           objects['${uniqueId}'] = rootMesh;
           objects['${baseName}'] = rootMesh;
           console.log('3D file imported and placed successfully at (${posX}, ${posY}, ${posZ}). ID: ${uniqueId}');
-          if (typeof populateObjectSelector === 'function') { setTimeout(populateObjectSelector, 100); }
+          // populateObjectSelector call removed
         } else {
           console.warn('No meshes were imported from the 3D file: ${fileUrl}');
         }
@@ -1658,7 +1674,7 @@ if (scriptingTargetObj) {
               objects['${modelVarName}'] = rootMesh;
               ${modelVarName} = rootMesh;
               console.log('3D model imported as variable "${modelVarName}", ID "${uniqueId}".');
-              if (typeof populateObjectSelector === 'function') { setTimeout(populateObjectSelector, 100); }
+              // populateObjectSelector call removed
               ${onSuccessCode}
             } else {
               console.warn('No meshes were imported from URL: ${modelUrl}');
@@ -1699,7 +1715,7 @@ if (scriptingTargetObj) {
             objects['${uniqueId}'] = rootMesh;
             objects['${baseName}'] = rootMesh;
             console.log('3D file "${fileName}" imported successfully. ID: ${uniqueId}');
-            if (typeof populateObjectSelector === 'function') { setTimeout(populateObjectSelector, 100); }
+            // populateObjectSelector call removed
             ${onSuccessCode}
           } else {
             console.warn('No meshes were imported from file: ${fileName}');
@@ -1722,7 +1738,7 @@ if (scriptingTargetObj) {
           groundMesh.name = '${name}';
           objects['${uniqueId}'] = groundMesh;
           objects['${name}'] = groundMesh;
-          if (typeof populateObjectSelector === 'function') { populateObjectSelector(); }
+          // populateObjectSelector call removed
           `;
             };
 
@@ -1766,7 +1782,7 @@ if (scriptingTargetObj) {
           boxMesh.position.set(${x}, ${y}, ${z});
           objects['${uniqueId}'] = boxMesh;
           objects['${name}'] = boxMesh;
-          if (typeof populateObjectSelector === 'function') { populateObjectSelector(); }
+          // populateObjectSelector call removed
           \n`;
             };
 
@@ -1783,7 +1799,7 @@ if (scriptingTargetObj) {
           sphereMesh.position.set(${x}, ${y}, ${z});
           objects['${uniqueId}'] = sphereMesh;
           objects['${name}'] = sphereMesh;
-          if (typeof populateObjectSelector === 'function') { populateObjectSelector(); }
+          // populateObjectSelector call removed
           \n`;
             };
 
@@ -1909,32 +1925,27 @@ if (scriptingTargetObj) {
             return javascript.javascriptGenerator.workspaceToCode(workspace);
         }
 
-        function clearScene(currentScene) { // Renamed 'scene' to 'currentScene'
-
-            while (currentScene.meshes.length) { // Use 'currentScene'
-                var mesh = currentScene.meshes[0]; // Use 'currentScene'
+        function clearScene(currentScene) {
+            while (currentScene.meshes.length) {
+                var mesh = currentScene.meshes[0];
                 console.log('Disposing mesh:', mesh.name, 'ID:', mesh.id);
-                // Clear script metadata before disposing
-                if (mesh.metadata) {
-                    mesh.metadata.scriptType = null;
-                    mesh.metadata.scriptContent = null;
-                    mesh.metadata.scriptAttached = false;
-                    mesh.metadata.blocklyFrameLoop = null; // Clear frame loop content
-                }
+                // if (mesh.metadata) { // Removed old metadata clearing
+                //     mesh.metadata.scriptType = null;
+                //     mesh.metadata.scriptContent = null;
+                //     mesh.metadata.scriptAttached = false;
+                //     mesh.metadata.blocklyFrameLoop = null;
+                // }
                 mesh.dispose();
             }
 
-            while (currentScene.materials.length) { // Use 'currentScene'
-                var material = currentScene.materials[0]; // Use 'currentScene'
+            while (currentScene.materials.length) {
+                var material = currentScene.materials[0];
                 console.log(material.name);
                 material.dispose();
             }
 
-            // Clear any objects or materials tracked in global objects
             Object.keys(objects).forEach(key => delete objects[key]);
             Object.keys(materials).forEach(key => delete materials[key]);
-
-            if (typeof populateObjectSelector === 'function') { populateObjectSelector(); } // Refresh dropdown
         }
 
 
@@ -1953,12 +1964,8 @@ if (scriptingTargetObj) {
         }
 
         function loadWorkspace(button) {
-            // Get your saved state from somewhere, e.g. local storage.
             const state = localStorage.getItem('myProgram');
-
             var workspace = Blockly.getMainWorkspace();
-
-            // Deserialize the state.
             Blockly.serialization.workspaces.load(JSON.parse(state), workspace);
         }
 
@@ -2026,238 +2033,156 @@ if (scriptingTargetObj) {
             }
 
             var workspace = Blockly.getMainWorkspace();
-
-            // Deserialize the state.
             Blockly.serialization.workspaces.load(state, workspace);
-
             doRun();
         }
 
         function doRun() {
-            const code = generateCode();
-            clearScene(scene); // Pass the global 'scene' object
+            let codeToRun = '';
+            if (currentView === 'blockly') {
+                codeToRun = generateCode(); // Get code from Blockly workspace
+                console.log("Running code from Blockly workspace");
+            } else if (currentView === 'javascript') {
+                if (monacoEditorInstance) {
+                    codeToRun = monacoEditorInstance.getValue(); // Get code from Monaco editor
+                    console.log("Running code from JavaScript editor (Monaco)");
+                } else {
+                    console.error("Monaco editor instance not available. Cannot run JS code.");
+                    return;
+                }
+            } else {
+                console.error("Unknown view selected. Cannot run code.");
+                return;
+            }
+
+            clearScene(scene);
+            window.sceneSpecificPerFrameFunctions = []; // Clear any existing per-frame functions
+
             try {
-                eval(code);
+                eval(codeToRun); // This will populate window.sceneSpecificPerFrameFunctions
             } catch (error) {
                 console.error('Error executing code:', error);
             }
         }
 
-
-
         const helper = function () {
-            // `this` is the block.
             this.getField('MODEL_URL').maxDisplayLength = 16;
         }
         Blockly.Extensions.register('set_max_display_length', helper);
 
-
-        // Object Registry
         const objects = {};
         const materials = {};
+        window.sceneSpecificPerFrameFunctions = []; // Initialize global array for per-frame functions
 
-        // Babylon.js Initialization
         const canvas = document.getElementById('gameCanvas');
         const engine = new BABYLON.Engine(canvas, true);
-        const scene = new BABYLON.Scene(engine); // This is the global 'scene' object
+        const scene = new BABYLON.Scene(engine);
         const camera = new BABYLON.ArcRotateCamera('Camera', Math.PI / 2, Math.PI / 4, 10, BABYLON.Vector3.Zero(), scene);
         camera.attachControl(canvas, true);
-
         const light = new BABYLON.HemisphericLight('light', new BABYLON.Vector3(1, 1, 0), scene);
-
-        const physicsPlugin = new BABYLON.CannonJSPlugin(); // Or AmmoJSPlugin
+        const physicsPlugin = new BABYLON.CannonJSPlugin();
         scene.enablePhysics(new BABYLON.Vector3(0, -9.8, 0), physicsPlugin);
 
-
-        // Execute Blockly Code
         document.getElementById('runButton').addEventListener('click', () => {
             doRun();
         });
-
         document.getElementById('saveButton').addEventListener('click', () => {
             saveWorkspace();
         });
-
         document.getElementById('loadButton').addEventListener('click', () => {
             loadWorkspace();
         });
 
-        // Game Loop
-        scene.registerBeforeRender(function () {
-            const deltaTime = engine.getDeltaTime(); // Get delta time in milliseconds
+        let lastTime = performance.now(); // For deltaTime calculation
 
-            scene.meshes.forEach(mesh => {
-                if (mesh.metadata && mesh.metadata.scriptAttached && mesh.metadata.scriptContent) {
-                    try {
-                        if (mesh.metadata.scriptType === 'javascript') {
-                            // Execute raw JavaScript
-                            // 'this' inside the script will refer to 'mesh'
-                            // It also gets 'scene', 'BABYLON', and 'deltaTime' (in ms) as arguments
-                            new Function('thisMesh', 'scene', 'BABYLON', 'deltaTime', mesh.metadata.scriptContent)
-                                .call(mesh, mesh, scene, BABYLON, deltaTime);
-                        } else if (mesh.metadata.scriptType === 'blockly') {
-                            // Check for specific frame loop code from 'event_every_frame'
-                            if (mesh.metadata.blocklyFrameLoop) {
-                                new Function('thisMesh', 'scene', 'BABYLON', 'deltaTime', mesh.metadata.blocklyFrameLoop)
-                                    .call(mesh, mesh, scene, BABYLON, deltaTime);
-                            }
-                            // The generic mesh.metadata.scriptContent for 'blockly' type (from attach_script_to_object)
-                            // might still be relevant if it contains setup or non-looping logic.
-                            // However, running it every frame is usually not what's intended for general script attachments.
-                            // For now, we prioritize blocklyFrameLoop for per-frame execution.
-                            // If 'attach_script_to_object' is meant for one-time setup, its generated code
-                            // (currently in scriptContent) is already run when the main Blockly workspace is evaluated.
+        engine.runRenderLoop(() => {
+            const currentTime = performance.now();
+            const deltaTime = currentTime - lastTime; // deltaTime in milliseconds
+            lastTime = currentTime;
+
+            if (window.sceneSpecificPerFrameFunctions && window.sceneSpecificPerFrameFunctions.length > 0) {
+                window.sceneSpecificPerFrameFunctions.forEach(task => {
+                    if (task.targetMesh && !task.targetMesh.isDisposed() && typeof task.func === 'function') {
+                        try {
+                            // Pass the specific mesh and deltaTime to the function
+                            task.func(task.targetMesh, deltaTime);
+                        } catch (e) {
+                            console.error(`Error executing per-frame function ${task.name || 'anonymous'} for mesh ${task.targetMesh.name}:`, e);
+                            // Optional: remove problematic function to prevent repeated errors
+                            // window.sceneSpecificPerFrameFunctions = window.sceneSpecificPerFrameFunctions.filter(f => f !== task);
                         }
-                    } catch (e) {
-                        console.error(`Error executing script for object ${mesh.name} (ID: ${mesh.id}):`, e);
-                        // Optionally, disable the script to prevent repeated errors
-                        // mesh.metadata.scriptAttached = false;
+                    } else if (task.targetMesh && task.targetMesh.isDisposed()) {
+                        // Optional: Clean up functions for disposed meshes
+                        // console.log(`Removing per-frame function for disposed mesh ${task.targetMesh.name}`);
+                        // window.sceneSpecificPerFrameFunctions = window.sceneSpecificPerFrameFunctions.filter(f => f !== task);
                     }
-                }
-            });
+                });
+            }
+            scene.render();
         });
-        engine.runRenderLoop(() => scene.render());
 
-        // Resize canvas on window resize
         window.addEventListener('resize', resizeCanvas);
-        resizeCanvas(); // Initial resize
+        resizeCanvas();
 
-        // --- Object Scripting UI Logic ---
-        const scriptingObjectSelector = document.getElementById('scriptingObjectSelector');
-        const rawJsTextarea = document.getElementById('rawJsTextarea');
-        const saveJsScriptButton = document.getElementById('saveJsScriptButton');
-        const clearObjectScriptButton = document.getElementById('clearObjectScriptButton');
-        const currentScriptTypeIndicator = document.getElementById('currentScriptTypeIndicator');
+        // --- Monaco Editor & View Switching Logic ---
+        const blocklyDiv = document.getElementById('blocklyDiv');
+        const monacoEditorContainer = document.getElementById('monacoEditorContainer');
+        const showBlocksButton = document.getElementById('showBlocksButton');
+        const showJsButton = document.getElementById('showJsButton');
+        let monacoEditorInstance = null;
+        let currentView = 'blockly'; // 'blockly' or 'javascript'
 
-        function populateObjectSelector() {
-            console.log('Attempting to populate object selector. Current scene.meshes count:', scene.meshes.length);
-            const currentSelectedId = scriptingObjectSelector.value; // Preserve selection if possible
-            scriptingObjectSelector.innerHTML = '<option value="">-- Select Object --</option>';
-
-            let foundMeshes = 0;
-            scene.meshes.forEach(mesh => {
-                if (mesh.id && mesh.name) { // Ensure both id and name are present
-                    // console.log(`Found mesh for selector: Name: ${mesh.name}, ID: ${mesh.id}`);
-                    const option = document.createElement('option');
-                    option.value = mesh.id;
-                    option.textContent = `${mesh.name} (ID: ...${mesh.id.slice(-6)})`;
-                    scriptingObjectSelector.appendChild(option);
-                    foundMeshes++;
-                } else {
-                    // console.log('Mesh skipped (no ID or name):', mesh.name);
-                }
+        // Initialize Monaco Editor
+        require.config({ paths: { 'vs': 'https://cdn.jsdelivr.net/npm/monaco-editor@0.49.0/min/vs' }});
+        require(['vs/editor/editor.main'], function() {
+            monacoEditorInstance = monaco.editor.create(monacoEditorContainer, {
+                language: 'javascript',
+                theme: 'vs-light', // Or 'vs-dark'
+                readOnly: false, // Allow editing
+                automaticLayout: true // Adjusts editor layout on container resize
             });
-            console.log(`Populated object selector with ${foundMeshes} meshes.`);
-            if (currentSelectedId && scriptingObjectSelector.querySelector(`option[value="${currentSelectedId}"]`)) {
-                scriptingObjectSelector.value = currentSelectedId; // Restore selection
-            }
-            updateScriptingUIForSelectedObject(); // Refresh editor based on new list/selection
-        }
-
-        function updateScriptingUIForSelectedObject() {
-            const selectedObjectId = scriptingObjectSelector.value;
-            rawJsTextarea.value = ''; // Clear textarea
-            currentScriptTypeIndicator.textContent = 'None';
-            rawJsTextarea.disabled = true;
-            saveJsScriptButton.disabled = true;
-
-            if (selectedObjectId) {
-                const selectedMesh = scene.getMeshById(selectedObjectId);
-                if (selectedMesh && selectedMesh.metadata) {
-                    currentScriptTypeIndicator.textContent = selectedMesh.metadata.scriptType || 'None';
-                    if (selectedMesh.metadata.scriptType === 'javascript') {
-                        rawJsTextarea.value = selectedMesh.metadata.scriptContent || '';
-                        rawJsTextarea.disabled = false;
-                        saveJsScriptButton.disabled = false;
-                    } else if (selectedMesh.metadata.scriptType === 'blockly') {
-                        rawJsTextarea.value = "// This object is scripted using Blockly.\n// Edit in Blockly workspace or clear script to use JavaScript.";
-                        // Textarea remains disabled for Blockly scripts
-                    } else {
-                        // No script or unknown type, allow JS editing
-                        rawJsTextarea.disabled = false;
-                        saveJsScriptButton.disabled = false;
-                    }
-                } else if (selectedMesh) { // Mesh exists but no metadata yet
-                     rawJsTextarea.disabled = false;
-                     saveJsScriptButton.disabled = false;
-                }
-            }
-        }
-
-        scriptingObjectSelector.addEventListener('change', updateScriptingUIForSelectedObject);
-
-        saveJsScriptButton.addEventListener('click', () => {
-            const selectedObjectId = scriptingObjectSelector.value;
-            if (!selectedObjectId) {
-                alert('Please select an object first.');
-                return;
-            }
-            const selectedMesh = scene.getMeshById(selectedObjectId);
-            if (selectedMesh) {
-                if (!selectedMesh.metadata) {
-                    selectedMesh.metadata = {};
-                }
-                selectedMesh.metadata.scriptType = 'javascript';
-                selectedMesh.metadata.scriptContent = rawJsTextarea.value;
-                selectedMesh.metadata.scriptAttached = true;
-                console.log(`Saved JavaScript to object: ${selectedMesh.name} (ID: ${selectedMesh.id})`);
-                updateScriptingUIForSelectedObject(); // Refresh UI
-                alert('JavaScript saved to object!');
-            } else {
-                alert('Selected object not found in scene.');
+            // Initial population when editor is ready
+            if (currentView === 'javascript') {
+                populateMonacoWithBlocklyCode();
             }
         });
 
-        clearObjectScriptButton.addEventListener('click', () => {
-            const selectedObjectId = scriptingObjectSelector.value;
-            if (!selectedObjectId) {
-                alert('Please select an object first.');
-                return;
+        function populateMonacoWithBlocklyCode() {
+            if (monacoEditorInstance) {
+                const blocklyJsCode = generateCode(); // generateCode() is already defined
+                monacoEditorInstance.setValue(blocklyJsCode);
             }
-            const selectedMesh = scene.getMeshById(selectedObjectId);
-            if (selectedMesh) {
-                if (selectedMesh.metadata) {
-                    selectedMesh.metadata.scriptType = null;
-                    selectedMesh.metadata.scriptContent = null;
-                    selectedMesh.metadata.scriptAttached = false;
-                    console.log(`Cleared script from object: ${selectedMesh.name} (ID: ${selectedMesh.id})`);
-                }
-                updateScriptingUIForSelectedObject(); // Refresh UI
-                alert('Script cleared from object!');
-            } else {
-                alert('Selected object not found in scene.');
+        }
+
+        showBlocksButton.addEventListener('click', () => {
+            if (currentView === 'javascript') {
+                blocklyDiv.style.display = 'block';
+                monacoEditorContainer.style.display = 'none';
+                currentView = 'blockly';
+                // Potentially trigger a resize/refresh for Blockly if needed
+                Blockly.svgResize(workspace);
+                console.log("Switched to Blockly view");
             }
         });
 
-        // Override doRun to refresh the object selector after code execution
-        const originalDoRun = doRun;
-        doRun = function() {
-            originalDoRun();
-            // populateObjectSelector will now be called by creation blocks or by the fallback initial call.
-            // We still might want to refresh the UI state if an object that was previously selected is re-selected or still valid.
-            setTimeout(updateScriptingUIForSelectedObject, 150);
-        }
+        showJsButton.addEventListener('click', () => {
+            if (currentView === 'blockly') {
+                populateMonacoWithBlocklyCode(); // Update Monaco content before showing
+                blocklyDiv.style.display = 'none';
+                monacoEditorContainer.style.display = 'block';
+                currentView = 'javascript';
+                if (monacoEditorInstance) {
+                     // It's good practice to explicitly tell Monaco to layout itself
+                     // when its container becomes visible or changes size,
+                     // especially if automaticLayout isn't perfectly handling all cases.
+                    monacoEditorInstance.layout();
+                }
+                console.log("Switched to JavaScript view");
+            }
+        });
 
-        // Initial population
+        // Adjust save/load/run if they need to be aware of the current view
+        // For now, run will always use Blockly code, save/load workspace.
+        // This will be updated in later steps.
+
         loadWorkspaceDefault();
-        // Fallback populate after a delay, in case default workspace creates objects without triggering individual populates.
-        setTimeout(populateObjectSelector, 600);
-
-        // More robust way: Observe when new meshes are added to the scene
-        if (scene && scene.onNewMeshAddedObservable) {
-            scene.onNewMeshAddedObservable.add((mesh) => {
-                console.log(`New mesh added observable: ${mesh.name}, ID: ${mesh.id}. Refreshing selector.`);
-                // Ensure the mesh has an ID and name, which our creation blocks should be doing.
-                // If not, this won't add them, which is fine.
-                if (mesh.id && mesh.name) {
-                     // Give a very slight delay for any final setup on the mesh if needed by other systems
-                    setTimeout(populateObjectSelector, 50);
-                }
-            });
-        }
-        if (scene && scene.onMeshRemovedObservable) {
-            scene.onMeshRemovedObservable.add((mesh) => {
-                console.log(`Mesh removed observable: ${mesh.name}, ID: ${mesh.id}. Refreshing selector.`);
-                setTimeout(populateObjectSelector, 50); // Refresh after removal
-            });
-        }

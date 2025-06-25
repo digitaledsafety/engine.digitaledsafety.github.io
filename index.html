@@ -103,32 +103,22 @@
             <canvas id="gameCanvas"></canvas>
         </div>
         <div class="controls">
-            <div id="blocklyDiv" class="blockly-workspace"></div>
-            <button id="runButton" class="btn btn-run">Run</button>
-            <button id="saveButton" class="btn">Save</button>
-            <button id="loadButton" class="btn">Load</button>
-
-            <hr style="margin: 20px 0;">
-
-            <div id="objectScriptingSection">
-                <h3>Object Scripting</h3>
-                <div>
-                    <label for="scriptingObjectSelector">Select Object:</label>
-                    <select id="scriptingObjectSelector" class="btn" style="width: 100%; margin-bottom: 10px;"></select>
-                </div>
-                <div>
-                    <p>Current Script Type: <span id="currentScriptTypeIndicator">None</span></p>
-                </div>
-                <div>
-                    <label for="rawJsTextarea">JavaScript Code (for selected object):</label>
-                    <textarea id="rawJsTextarea" style="width: 100%; height: 150px; margin-bottom: 10px; font-family: monospace;"></textarea>
-                </div>
-                <button id="saveJsScriptButton" class="btn">Save JavaScript to Object</button>
-                <button id="clearObjectScriptButton" class="btn">Clear Object's Script</button>
+            <div class="editor-toggle-buttons" style="margin-bottom: 10px;">
+                <button id="showBlocksButton" class="btn" style="background-color: #6c757d;">Show Blocks</button>
+                <button id="showJsButton" class="btn" style="background-color: #6c757d;">Show JavaScript</button>
             </div>
+            <div id="blocklyDiv" class="blockly-workspace"></div>
+            <div id="monacoEditorContainer" class="editor-container" style="height: 80%; min-height: 300px; border: 1px solid #ddd; margin-bottom: 10px; display: none;">
+                <!-- Monaco Editor will be initialized here by script.js -->
+            </div>
+            <button id="runButton" class="btn btn-run">Run</button>
+            <button id="saveButton" class="btn">Save</button> <!-- Consider if save/load needs to be context-aware for JS view -->
+            <button id="loadButton" class="btn">Load</button> <!-- Consider if save/load needs to be context-aware for JS view -->
         </div>
     </div>
 
+    <!-- Monaco Editor CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.49.0/min/vs/loader.js"></script>
     <script src="script.js" defer></script>
 </body>
 </html>
