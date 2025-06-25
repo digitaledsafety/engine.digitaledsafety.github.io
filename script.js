@@ -1584,33 +1584,32 @@ if (scriptingTargetObj) {
 
             javascript.javascriptGenerator.forBlock['save_3d_model_with_position'] = function (block, generator) {
                 const modelUrl = block.getFieldValue('MODEL_URL');
-                const modelVar = Blockly.JavaScript.nameDB_.getName(
-                    block.getFieldValue('MODEL_VAR'),
-                    Blockly.Variables.NAME_TYPE
-                );
-                console.log(modelVar);
-                const posX = Blockly.JavaScript.valueToCode(block, 'POS_X', Blockly.JavaScript.ORDER_ATOMIC) || '0';
-                const posY = Blockly.JavaScript.valueToCode(block, 'POS_Y', Blockly.JavaScript.ORDER_ATOMIC) || '0';
-                const posZ = Blockly.JavaScript.valueToCode(block, 'POS_Z', Blockly.JavaScript.ORDER_ATOMIC) || '0';
-                console.log(posX);
+                const modelVarName = generator.nameDB_.getName(block.getFieldValue('MODEL_VAR'), Blockly.Variables.NAME_TYPE);
+                const posX = generator.valueToCode(block, 'POS_X', javascript.javascriptGenerator.ORDER_ATOMIC) || '0';
+                const posY = generator.valueToCode(block, 'POS_Y', javascript.javascriptGenerator.ORDER_ATOMIC) || '0';
+                const posZ = generator.valueToCode(block, 'POS_Z', javascript.javascriptGenerator.ORDER_ATOMIC) || '0';
+                const uniqueId = modelVarName + '_' + BABYLON.Tools.RandomId();
 
-                let ret = `
-    BABYLON.SceneLoader.ImportMeshAsync('', '', '${modelUrl}', scene).then(
-      function(sceneResult) { // Renamed 'scene' to 'sceneResult' to avoid conflict
-          if (sceneResult.meshes.length > 0) { // Use 'sceneResult'
-            console.log(sceneResult.meshes);
-            let ${modelVar} = sceneResult.meshes[0]; // Use 'sceneResult'
-            ${modelVar}.position = new BABYLON.Vector3(${posX}, ${posY}, ${posZ});
-            console.log('3D model saved as variable "${modelVar}" and placed at (${posX}, ${posY}, ${posZ}).');
+                return `
+    BABYLON.SceneLoader.ImportMeshAsync(null, '', '${modelUrl}', scene).then(
+      function(result) {
+          if (result.meshes.length > 0) {
+            let rootMesh = result.meshes[0];
+            rootMesh.id = '${uniqueId}';
+            rootMesh.name = '${modelVarName}';
+            rootMesh.position = new BABYLON.Vector3(${posX}, ${posY}, ${posZ});
+            objects['${uniqueId}'] = rootMesh;
+            objects['${modelVarName}'] = rootMesh;
+            ${modelVarName} = rootMesh;
+            console.log('3D model saved as variable "${modelVarName}", ID "${uniqueId}", and placed at (${posX}, ${posY}, ${posZ}).');
+            if (typeof populateObjectSelector === 'function') { setTimeout(populateObjectSelector, 100); }
           } else {
             console.warn('No meshes were imported from the URL: ${modelUrl}.');
           }
+      }).catch(function(error) {
+          console.error('Error importing model: ${modelUrl}', error);
       });
       `;
-
-                console.log(ret);
-
-                return ret;
             };
 
             javascript.javascriptGenerator.forBlock['import_3d_file_url_with_position'] = function (block, generator) {
@@ -1618,80 +1617,75 @@ if (scriptingTargetObj) {
                 const posX = block.getFieldValue('POS_X');
                 const posY = block.getFieldValue('POS_Y');
                 const posZ = block.getFieldValue('POS_Z');
+                const baseName = fileUrl.substring(fileUrl.lastIndexOf('/') + 1) || 'importedModel';
+                const uniqueId = baseName.replace(/[^a-zA-Z0-9]/g, '_') + '_' + BABYLON.Tools.RandomId();
 
                 return `
-    BABYLON.SceneLoader.Append(
-      '${fileUrl}',
-      '',
-      scene,
-      function (meshes) {
-        if (meshes.length > 0) {
-          // Set position of the root mesh
-          meshes[0].position = new BABYLON.Vector3(${posX}, ${posY}, ${posZ});
-          console.log('3D file imported and placed successfully at (${posX}, ${posY}, ${posZ}).');
+    BABYLON.SceneLoader.ImportMeshAsync(null, '', '${fileUrl}', scene).then(
+      function (result) {
+        if (result.meshes.length > 0) {
+          let rootMesh = result.meshes[0];
+          rootMesh.id = '${uniqueId}';
+          rootMesh.name = '${baseName}';
+          rootMesh.position = new BABYLON.Vector3(${posX}, ${posY}, ${posZ});
+          objects['${uniqueId}'] = rootMesh;
+          objects['${baseName}'] = rootMesh;
+          console.log('3D file imported and placed successfully at (${posX}, ${posY}, ${posZ}). ID: ${uniqueId}');
+          if (typeof populateObjectSelector === 'function') { setTimeout(populateObjectSelector, 100); }
         } else {
-          console.warn('No meshes were imported from the 3D file.');
+          console.warn('No meshes were imported from the 3D file: ${fileUrl}');
         }
-      },
-      function (scene, message, exception) {
-        console.error('Failed to load 3D file:', message, exception);
-      }
-    );
+      }).catch(function(error) {
+        console.error('Failed to load 3D file: ${fileUrl}', error);
+      });
     `;
             };
 
-
             javascript.javascriptGenerator.forBlock['import_3d_file_url'] = function (block, generator) {
-                const fileUrl = block.getFieldValue('MODEL_URL');
-                const modelVar = Blockly.JavaScript.nameDB_.getName(
-                    block.getFieldValue('MODEL_VAR'),
-                    Blockly.Variables.NAME_TYPE
-                );
-                const onSuccessCode = Blockly.JavaScript.statementToCode(block, 'ON_SUCCESS');
+                const modelUrl = block.getFieldValue('MODEL_URL');
+                const modelVarName = generator.nameDB_.getName(block.getFieldValue('MODEL_VAR'), Blockly.Variables.NAME_TYPE);
+                const onSuccessCode = generator.statementToCode(block, 'ON_SUCCESS') || '';
+                const uniqueId = modelVarName + '_' + BABYLON.Tools.RandomId();
 
-                let ret = `
-        BABYLON.SceneLoader.ImportMeshAsync(
-          null,
-          '${fileUrl}',
-          null,
-          scene,
-          function (event) {
-            console.log(event);
-          },
-          null,
-          '${modelVar}'
-        ).then(
-          function (sceneResult) { // Renamed 'scene' to 'sceneResult'
-            ${onSuccessCode}
-          }
-        );
+                return `
+        BABYLON.SceneLoader.ImportMeshAsync(null, '', '${modelUrl}', scene)
+          .then(function (result) {
+            if (result.meshes.length > 0) {
+              let rootMesh = result.meshes[0];
+              rootMesh.id = '${uniqueId}';
+              rootMesh.name = '${modelVarName}';
+              objects['${uniqueId}'] = rootMesh;
+              objects['${modelVarName}'] = rootMesh;
+              ${modelVarName} = rootMesh;
+              console.log('3D model imported as variable "${modelVarName}", ID "${uniqueId}".');
+              if (typeof populateObjectSelector === 'function') { setTimeout(populateObjectSelector, 100); }
+              ${onSuccessCode}
+            } else {
+              console.warn('No meshes were imported from URL: ${modelUrl}');
+            }
+          })
+          .catch(function(error) {
+            console.error('Error importing model for variable ${modelVarName} from URL: ${modelUrl}', error);
+          });
       `;
-
-                console.log(ret);
-
-                return ret;
             };
 
             javascript.javascriptGenerator.forBlock['set_isometric_camera'] = function (block, generator) {
                 const cameraName = block.getFieldValue('CAMERA');
 
                 return `
-          // TODO: only 1 main camera for now, see scene init code
-
           let camera = scene.cameras.find(camera => camera.name === '${cameraName}');
           if (camera) {
-            camera.position = new BABYLON.Vector3(10, 10, 10); // Position for isometric view
-            camera.setTarget(new BABYLON.Vector3(0, 0, 0)); // Point to origin
+            camera.position = new BABYLON.Vector3(10, 10, 10);
+            camera.setTarget(new BABYLON.Vector3(0, 0, 0));
           }
           `;
             };
-
 
             javascript.javascriptGenerator.forBlock['import_3d_file'] = function (block, generator) {
                 const fileName = block.getFieldValue('FILE_NAME');
                 const rootPath = block.getFieldValue('ROOT_PATH');
                 const onSuccessCode = generator.statementToCode(block, 'ON_SUCCESS') || '';
-                // Create a default name if none, and ensure uniqueness for ID
                 const baseName = fileName.replace(/[^a-zA-Z0-9]/g, '_') || 'importedFileModel';
                 const uniqueId = baseName + '_' + BABYLON.Tools.RandomId();
 
@@ -1701,10 +1695,11 @@ if (scriptingTargetObj) {
           if (result.meshes.length > 0) {
             let rootMesh = result.meshes[0];
             rootMesh.id = '${uniqueId}';
-            rootMesh.name = '${baseName}'; // Assign a name
-            objects['${uniqueId}'] = rootMesh; // Store by unique ID
-            objects['${baseName}'] = rootMesh; // Store by name
+            rootMesh.name = '${baseName}';
+            objects['${uniqueId}'] = rootMesh;
+            objects['${baseName}'] = rootMesh;
             console.log('3D file "${fileName}" imported successfully. ID: ${uniqueId}');
+            if (typeof populateObjectSelector === 'function') { setTimeout(populateObjectSelector, 100); }
             ${onSuccessCode}
           } else {
             console.warn('No meshes were imported from file: ${fileName}');
@@ -1718,15 +1713,16 @@ if (scriptingTargetObj) {
 
             javascript.javascriptGenerator.forBlock['create_ground'] = function (block, generator) {
                 const name = block.getFieldValue('NAME');
-                const width = Blockly.JavaScript.valueToCode(block, 'WIDTH', Blockly.JavaScript.ORDER_ATOMIC) || 10;
-                const height = Blockly.JavaScript.valueToCode(block, 'HEIGHT', Blockly.JavaScript.ORDER_ATOMIC) || 10;
-                // Ensure unique ID and consistent naming/storage
+                const width = generator.valueToCode(block, 'WIDTH', javascript.javascriptGenerator.ORDER_ATOMIC) || 10;
+                const height = generator.valueToCode(block, 'HEIGHT', javascript.javascriptGenerator.ORDER_ATOMIC) || 10;
                 const uniqueId = name + '_' + BABYLON.Tools.RandomId();
                 return `
           const groundMesh = BABYLON.MeshBuilder.CreateGround('${name}', { width: ${width}, height: ${height} }, scene);
-          groundMesh.id = '${uniqueId}'; // Assign unique ID
-          objects['${uniqueId}'] = groundMesh; // Store by unique ID
-          objects['${name}'] = groundMesh; // Also store by given name for compatibility if needed
+          groundMesh.id = '${uniqueId}';
+          groundMesh.name = '${name}';
+          objects['${uniqueId}'] = groundMesh;
+          objects['${name}'] = groundMesh;
+          if (typeof populateObjectSelector === 'function') { populateObjectSelector(); }
           `;
             };
 
@@ -1759,31 +1755,35 @@ if (scriptingTargetObj) {
 
             javascript.javascriptGenerator.forBlock['create_box'] = function (block, generator) {
                 const name = block.getFieldValue('NAME');
-                const x = Blockly.JavaScript.valueToCode(block, 'X', Blockly.JavaScript.ORDER_ATOMIC) || 0;
-                const y = Blockly.JavaScript.valueToCode(block, 'Y', Blockly.JavaScript.ORDER_ATOMIC) || 0;
-                const z = Blockly.JavaScript.valueToCode(block, 'Z', Blockly.JavaScript.ORDER_ATOMIC) || 0;
+                const x = generator.valueToCode(block, 'X', javascript.javascriptGenerator.ORDER_ATOMIC) || 0;
+                const y = generator.valueToCode(block, 'Y', javascript.javascriptGenerator.ORDER_ATOMIC) || 0;
+                const z = generator.valueToCode(block, 'Z', javascript.javascriptGenerator.ORDER_ATOMIC) || 0;
                 const uniqueId = name + '_' + BABYLON.Tools.RandomId();
                 return `
           const boxMesh = BABYLON.MeshBuilder.CreateBox('${name}', {}, scene);
           boxMesh.id = '${uniqueId}';
+          boxMesh.name = '${name}';
           boxMesh.position.set(${x}, ${y}, ${z});
           objects['${uniqueId}'] = boxMesh;
-          objects['${name}'] = boxMesh; // Keep for compatibility
+          objects['${name}'] = boxMesh;
+          if (typeof populateObjectSelector === 'function') { populateObjectSelector(); }
           \n`;
             };
 
             javascript.javascriptGenerator.forBlock['create_sphere'] = function (block, generator) {
                 const name = block.getFieldValue('NAME');
-                const x = Blockly.JavaScript.valueToCode(block, 'X', Blockly.JavaScript.ORDER_ATOMIC) || 0;
-                const y = Blockly.JavaScript.valueToCode(block, 'Y', Blockly.JavaScript.ORDER_ATOMIC) || 0;
-                const z = Blockly.JavaScript.valueToCode(block, 'Z', Blockly.JavaScript.ORDER_ATOMIC) || 0;
+                const x = generator.valueToCode(block, 'X', javascript.javascriptGenerator.ORDER_ATOMIC) || 0;
+                const y = generator.valueToCode(block, 'Y', javascript.javascriptGenerator.ORDER_ATOMIC) || 0;
+                const z = generator.valueToCode(block, 'Z', javascript.javascriptGenerator.ORDER_ATOMIC) || 0;
                 const uniqueId = name + '_' + BABYLON.Tools.RandomId();
                 return `
           const sphereMesh = BABYLON.MeshBuilder.CreateSphere('${name}', { diameter: 2 }, scene);
           sphereMesh.id = '${uniqueId}';
+          sphereMesh.name = '${name}';
           sphereMesh.position.set(${x}, ${y}, ${z});
           objects['${uniqueId}'] = sphereMesh;
-          objects['${name}'] = sphereMesh; // Keep for compatibility
+          objects['${name}'] = sphereMesh;
+          if (typeof populateObjectSelector === 'function') { populateObjectSelector(); }
           \n`;
             };
 
@@ -1919,6 +1919,7 @@ if (scriptingTargetObj) {
                     mesh.metadata.scriptType = null;
                     mesh.metadata.scriptContent = null;
                     mesh.metadata.scriptAttached = false;
+                    mesh.metadata.blocklyFrameLoop = null; // Clear frame loop content
                 }
                 mesh.dispose();
             }
@@ -1932,6 +1933,8 @@ if (scriptingTargetObj) {
             // Clear any objects or materials tracked in global objects
             Object.keys(objects).forEach(key => delete objects[key]);
             Object.keys(materials).forEach(key => delete materials[key]);
+
+            if (typeof populateObjectSelector === 'function') { populateObjectSelector(); } // Refresh dropdown
         }
 
 
@@ -2127,18 +2130,28 @@ if (scriptingTargetObj) {
         const currentScriptTypeIndicator = document.getElementById('currentScriptTypeIndicator');
 
         function populateObjectSelector() {
-            scriptingObjectSelector.innerHTML = '<option value="">-- Select Object --</option>'; // Clear existing options
+            console.log('Attempting to populate object selector. Current scene.meshes count:', scene.meshes.length);
+            const currentSelectedId = scriptingObjectSelector.value; // Preserve selection if possible
+            scriptingObjectSelector.innerHTML = '<option value="">-- Select Object --</option>';
 
-            // Populate with meshes that have an ID (which we now assign during creation)
+            let foundMeshes = 0;
             scene.meshes.forEach(mesh => {
-                if (mesh.id) { // Only list meshes that have an ID
+                if (mesh.id && mesh.name) { // Ensure both id and name are present
+                    // console.log(`Found mesh for selector: Name: ${mesh.name}, ID: ${mesh.id}`);
                     const option = document.createElement('option');
                     option.value = mesh.id;
-                    // Display name and a snippet of the ID for uniqueness if names clash
                     option.textContent = `${mesh.name} (ID: ...${mesh.id.slice(-6)})`;
                     scriptingObjectSelector.appendChild(option);
+                    foundMeshes++;
+                } else {
+                    // console.log('Mesh skipped (no ID or name):', mesh.name);
                 }
             });
+            console.log(`Populated object selector with ${foundMeshes} meshes.`);
+            if (currentSelectedId && scriptingObjectSelector.querySelector(`option[value="${currentSelectedId}"]`)) {
+                scriptingObjectSelector.value = currentSelectedId; // Restore selection
+            }
+            updateScriptingUIForSelectedObject(); // Refresh editor based on new list/selection
         }
 
         function updateScriptingUIForSelectedObject() {
@@ -2220,13 +2233,31 @@ if (scriptingTargetObj) {
         const originalDoRun = doRun;
         doRun = function() {
             originalDoRun();
-            // Delay slightly to ensure scene has updated
-            setTimeout(populateObjectSelector, 500);
-            setTimeout(updateScriptingUIForSelectedObject, 550); // Refresh editor if object selection persists
+            // populateObjectSelector will now be called by creation blocks or by the fallback initial call.
+            // We still might want to refresh the UI state if an object that was previously selected is re-selected or still valid.
+            setTimeout(updateScriptingUIForSelectedObject, 150);
         }
 
         // Initial population
-        loadWorkspaceDefault(); // This calls doRun, which will now call populateObjectSelector
-        // We might need an earlier call if loadWorkspaceDefault doesn't immediately create meshes
-        // that should be scriptable before the first run.
-        // For now, relying on doRun's populate.
+        loadWorkspaceDefault();
+        // Fallback populate after a delay, in case default workspace creates objects without triggering individual populates.
+        setTimeout(populateObjectSelector, 600);
+
+        // More robust way: Observe when new meshes are added to the scene
+        if (scene && scene.onNewMeshAddedObservable) {
+            scene.onNewMeshAddedObservable.add((mesh) => {
+                console.log(`New mesh added observable: ${mesh.name}, ID: ${mesh.id}. Refreshing selector.`);
+                // Ensure the mesh has an ID and name, which our creation blocks should be doing.
+                // If not, this won't add them, which is fine.
+                if (mesh.id && mesh.name) {
+                     // Give a very slight delay for any final setup on the mesh if needed by other systems
+                    setTimeout(populateObjectSelector, 50);
+                }
+            });
+        }
+        if (scene && scene.onMeshRemovedObservable) {
+            scene.onMeshRemovedObservable.add((mesh) => {
+                console.log(`Mesh removed observable: ${mesh.name}, ID: ${mesh.id}. Refreshing selector.`);
+                setTimeout(populateObjectSelector, 50); // Refresh after removal
+            });
+        }
