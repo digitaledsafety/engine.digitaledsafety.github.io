@@ -100,16 +100,23 @@ var toolbox = {
 
         {
             kind: 'category',
+            name: 'Controller',
+            categorystyle: 'logic_category',
+            contents: [
+                {
+                    kind: 'block',
+                    type: 'on_button_press',
+                },
+            ]
+        },
+        {
+            kind: 'category',
             name: 'Player',
             categorystyle: 'logic_category',
             contents: [
                 {
                     kind: 'block',
                     type: 'set_as_player',
-                },
-                {
-                    kind: 'block',
-                    type: 'on_key_press',
                 },
                 {
                     kind: 'block',
@@ -983,8 +990,15 @@ class BabylonSceneManager {
         this.materials = {};
         this.player = null;
         this.perFrameFunctions = [];
-        this.keyPressActions = {};
+        this.buttonPressActions = {};
         this.inputState = { keys: {} };
+        this.inputMap = {
+            ' ': 'A',
+            'ArrowLeft': 'Left',
+            'ArrowRight': 'Right',
+            'ArrowUp': 'Up',
+            'ArrowDown': 'Down'
+        };
 
         this.initScene();
         this.initInputListeners();
@@ -1015,10 +1029,13 @@ class BabylonSceneManager {
             const deltaTime = currentTime - lastTime;
             lastTime = currentTime;
 
-            // Handle continuous key presses
-            for (const key in this.keyPressActions) {
-                if (this.inputState.keys[key]) {
-                    this.keyPressActions[key].forEach(action => action());
+            // Handle continuous button presses via input map
+            for (const key in this.inputState.keys) {
+                if (this.inputState.keys[key]) { // If the physical key is pressed
+                    const button = this.inputMap[key]; // Find the logical button
+                    if (button && this.buttonPressActions[button]) {
+                        this.buttonPressActions[button].forEach(action => action());
+                    }
                 }
             }
 
@@ -1041,8 +1058,9 @@ class BabylonSceneManager {
         this.initScene();
         this.objects = {};
         this.materials = {};
+        this.player = null;
         this.perFrameFunctions = [];
-        this.keyPressActions = {};
+        this.buttonPressActions = {};
         this.inputState = { keys: {} }; // Reset state on clear
     }
 
@@ -1602,21 +1620,25 @@ class BabylonSceneManager {
                 "tooltip": "Continuously rotates the object. Use inside an 'every frame' block for the target object.",
                 "helpUrl": ""
             },
-            // Player Control Blocks
+            // Controller Block
             {
-                "type": "on_key_press",
-                "message0": "on key %1 pressed do %2",
+                "type": "on_button_press",
+                "message0": "on %1 button pressed %2 do %3",
                 "args0": [
                     {
                         "type": "field_dropdown",
-                        "name": "KEY",
+                        "name": "BUTTON",
                         "options": [
-                            ["space", " "],
-                            ["arrow up", "ArrowUp"],
-                            ["arrow down", "ArrowDown"],
-                            ["arrow left", "ArrowLeft"],
-                            ["arrow right", "ArrowRight"]
+                            ["A", "A"],
+                            ["B", "B"],
+                            ["Left", "Left"],
+                            ["Right", "Right"],
+                            ["Up", "Up"],
+                            ["Down", "Down"]
                         ]
+                    },
+                    {
+                        "type": "input_dummy"
                     },
                     {
                         "type": "input_statement",
@@ -1626,18 +1648,13 @@ class BabylonSceneManager {
                 "previousStatement": null,
                 "nextStatement": null,
                 "colour": "%{BKY_LOOPS_HUE}",
-                "tooltip": "Executes code when a specific key is pressed.",
+                "tooltip": "Executes code when a controller button is pressed.",
                 "helpUrl": ""
             },
             {
                 "type": "player_jump",
-                "message0": "make %1 jump with force %2",
+                "message0": "make player jump with force %1",
                 "args0": [
-                    {
-                        "type": "input_value",
-                        "name": "PLAYER",
-                        "check": "String"
-                    },
                     {
                         "type": "input_value",
                         "name": "FORCE",
@@ -1647,18 +1664,13 @@ class BabylonSceneManager {
                 "previousStatement": null,
                 "nextStatement": null,
                 "colour": "#4C97FF",
-                "tooltip": "Makes the specified object jump.",
+                "tooltip": "Makes the player character jump.",
                 "helpUrl": ""
             },
             {
                 "type": "player_move",
-                "message0": "move %1 with speed %2 in direction %3",
+                "message0": "move player with speed %1 in direction %2",
                 "args0": [
-                    {
-                        "type": "input_value",
-                        "name": "PLAYER",
-                        "check": "String"
-                    },
                     {
                         "type": "input_value",
                         "name": "SPEED",
@@ -1678,7 +1690,7 @@ class BabylonSceneManager {
                 "previousStatement": null,
                 "nextStatement": null,
                 "colour": "#4C97FF",
-                "tooltip": "Moves the specified object in a direction.",
+                "tooltip": "Moves the player character in a direction.",
                 "helpUrl": ""
             },
             // Gameplay Blocks
@@ -1887,28 +1899,26 @@ if (targetToDestroy) {
 `;
             };
 
-            // --- Player Control Block Generators ---
-            javascript.javascriptGenerator.forBlock['on_key_press'] = function(block, generator) {
-                const key = block.getFieldValue('KEY');
+            // --- Controller Block Generator ---
+            javascript.javascriptGenerator.forBlock['on_button_press'] = function(block, generator) {
+                const button = block.getFieldValue('BUTTON');
                 const doCode = generator.statementToCode(block, 'DO');
 
                 return `
-if (!sceneManager.keyPressActions['${key}']) {
-    sceneManager.keyPressActions['${key}'] = [];
+if (!sceneManager.buttonPressActions['${button}']) {
+    sceneManager.buttonPressActions['${button}'] = [];
 }
-sceneManager.keyPressActions['${key}'].push(() => {
+sceneManager.buttonPressActions['${button}'].push(() => {
     ${doCode}
 });
 `;
             };
 
             javascript.javascriptGenerator.forBlock['player_jump'] = function(block, generator) {
-                const playerVar = generator.valueToCode(block, 'PLAYER', generator.ORDER_ATOMIC) || 'null';
                 const force = generator.valueToCode(block, 'FORCE', generator.ORDER_ATOMIC) || '5';
 
                 return `
-let jumpTargetName = ${playerVar};
-let jumpTargetMesh = sceneManager.objects[jumpTargetName] || sceneManager.scene.getMeshByName(jumpTargetName) || sceneManager.scene.getMeshById(jumpTargetName);
+let jumpTargetMesh = sceneManager.player;
 
 if (jumpTargetMesh && jumpTargetMesh.physicsImpostor) {
     const verticalVelocity = jumpTargetMesh.physicsImpostor.getLinearVelocity().y;
@@ -1920,32 +1930,32 @@ if (jumpTargetMesh && jumpTargetMesh.physicsImpostor) {
             };
 
             javascript.javascriptGenerator.forBlock['player_move'] = function(block, generator) {
-                const playerVar = generator.valueToCode(block, 'PLAYER', generator.ORDER_ATOMIC) || 'null';
                 const speed = generator.valueToCode(block, 'SPEED', generator.ORDER_ATOMIC) || '1';
                 const direction = block.getFieldValue('DIRECTION');
 
-                let velocity = 'new BABYLON.Vector3(0, 0, 0)';
+                let velocityX = 0;
+                let velocityZ = 0;
+
                 switch (direction) {
                     case 'FORWARD':
-                        velocity = `new BABYLON.Vector3(0, 0, ${speed})`;
+                        velocityZ = speed;
                         break;
                     case 'BACKWARD':
-                        velocity = `new BABYLON.Vector3(0, 0, -${speed})`;
+                        velocityZ = `-${speed}`;
                         break;
                     case 'LEFT':
-                        velocity = `new BABYLON.Vector3(-${speed}, 0, 0)`;
+                        velocityX = `-${speed}`;
                         break;
                     case 'RIGHT':
-                        velocity = `new BABYLON.Vector3(${speed}, 0, 0)`;
+                        velocityX = speed;
                         break;
                 }
 
                 return `
-let moveTargetName = ${playerVar};
-let moveTargetMesh = sceneManager.objects[moveTargetName] || sceneManager.scene.getMeshByName(moveTargetName) || sceneManager.scene.getMeshById(moveTargetName);
-
+let moveTargetMesh = sceneManager.player;
 if (moveTargetMesh && moveTargetMesh.physicsImpostor) {
-    moveTargetMesh.physicsImpostor.setLinearVelocity(${velocity});
+    const currentVelocity = moveTargetMesh.physicsImpostor.getLinearVelocity();
+    moveTargetMesh.physicsImpostor.setLinearVelocity(new BABYLON.Vector3(${velocityX}, currentVelocity.y, ${velocityZ}));
 }
 `;
             };
@@ -2251,23 +2261,19 @@ if (sceneManager.objects['${name}']) {
                 "blocks": {
                     "languageVersion": 0,
                     "blocks": [
+                        // Setup Scene
                         {
-                            "type": "create_ground",
-                            "id": "ground_block",
-                            "x": 50,
-                            "y": 50,
+                            "type": "create_ground", "id": "ground", "x": 50, "y": 50,
                             "inputs": {
                                 "WIDTH": { "block": { "type": "math_number", "fields": { "NUM": 20 } } },
                                 "HEIGHT": { "block": { "type": "math_number", "fields": { "NUM": 20 } } }
                             },
                             "next": {
                                 "block": {
-                                    "type": "set_ground_physics",
-                                    "id": "ground_physics_block",
+                                    "type": "set_ground_physics", "id": "g_phys",
                                     "next": {
                                         "block": {
-                                            "type": "create_box",
-                                            "id": "player_block",
+                                            "type": "create_box", "id": "p_box",
                                             "inputs": {
                                                 "NAME": { "block": { "type": "text", "fields": { "TEXT": "player" } } },
                                                 "X": { "block": { "type": "math_number", "fields": { "NUM": 0 } } },
@@ -2276,21 +2282,18 @@ if (sceneManager.objects['${name}']) {
                                             },
                                             "next": {
                                                 "block": {
-                                                    "type": "enable_physics",
-                                                    "id": "player_physics_block",
+                                                    "type": "enable_physics", "id": "p_phys",
                                                     "inputs": {
                                                         "NAME": { "block": { "type": "text", "fields": { "TEXT": "player" } } },
                                                         "MASS": { "block": { "type": "math_number", "fields": { "NUM": 1 } } }
                                                     },
                                                     "next": {
                                                         "block": {
-                                                            "type": "set_as_player",
-                                                            "id": "set_player_block",
+                                                            "type": "set_as_player", "id": "p_set",
                                                             "inputs": { "OBJECT": { "block": { "type": "text", "fields": { "TEXT": "player" } } } },
                                                             "next": {
                                                                 "block": {
-                                                                    "type": "camera_follow",
-                                                                    "id": "camera_follow_block",
+                                                                    "type": "camera_follow", "id": "cam_f",
                                                                     "inputs": { "OBJECT": { "block": { "type": "text", "fields": { "TEXT": "player" } } } }
                                                                 }
                                                             }
@@ -2303,102 +2306,36 @@ if (sceneManager.objects['${name}']) {
                                 }
                             }
                         },
+                        // Controls
                         {
-                            "type": "on_key_press",
-                            "id": "jump_control_block",
-                            "x": 50,
-                            "y": 350,
-                            "fields": { "KEY": " " },
-                            "inputs": {
-                                "DO": {
-                                    "block": {
-                                        "type": "player_jump",
-                                        "id": "jump_action_block",
-                                        "inputs": {
-                                            "PLAYER": { "block": { "type": "text", "fields": { "TEXT": "player" } } },
-                                            "FORCE": { "block": { "type": "math_number", "fields": { "NUM": 8 } } }
-                                        }
-                                    }
-                                }
-                            }
+                            "type": "on_button_press", "id": "jump_ctl", "x": 50, "y": 350, "fields": { "BUTTON": "A" },
+                            "inputs": { "DO": { "block": { "type": "player_jump", "id": "jump_act", "inputs": { "FORCE": { "block": { "type": "math_number", "fields": { "NUM": 8 } } } } } } }
                         },
                         {
-                            "type": "on_key_press",
-                            "id": "left_control_block",
-                            "x": 50,
-                            "y": 450,
-                            "fields": { "KEY": "ArrowLeft" },
-                            "inputs": {
-                                "DO": {
-                                    "block": {
-                                        "type": "player_move",
-                                        "id": "left_action_block",
-                                        "fields": { "DIRECTION": "LEFT" },
-                                        "inputs": {
-                                            "PLAYER": { "block": { "type": "text", "fields": { "TEXT": "player" } } },
-                                            "SPEED": { "block": { "type": "math_number", "fields": { "NUM": 5 } } }
-                                        }
-                                    }
-                                }
-                            }
+                            "type": "on_button_press", "id": "left_ctl", "x": 50, "y": 450, "fields": { "BUTTON": "Left" },
+                            "inputs": { "DO": { "block": { "type": "player_move", "id": "left_act", "fields": { "DIRECTION": "LEFT" }, "inputs": { "SPEED": { "block": { "type": "math_number", "fields": { "NUM": 5 } } } } } } }
                         },
                         {
-                            "type": "on_key_press",
-                            "id": "right_control_block",
-                            "x": 50,
-                            "y": 550,
-                            "fields": { "KEY": "ArrowRight" },
-                            "inputs": {
-                                "DO": {
-                                    "block": {
-                                        "type": "player_move",
-                                        "id": "right_action_block",
-                                        "fields": { "DIRECTION": "RIGHT" },
-                                        "inputs": {
-                                            "PLAYER": { "block": { "type": "text", "fields": { "TEXT": "player" } } },
-                                            "SPEED": { "block": { "type": "math_number", "fields": { "NUM": 5 } } }
-                                        }
-                                    }
-                                }
-                            }
+                            "type": "on_button_press", "id": "right_ctl", "x": 50, "y": 550, "fields": { "BUTTON": "Right" },
+                            "inputs": { "DO": { "block": { "type": "player_move", "id": "right_act", "fields": { "DIRECTION": "RIGHT" }, "inputs": { "SPEED": { "block": { "type": "math_number", "fields": { "NUM": 5 } } } } } } }
                         },
+                        // Coin
                         {
-                            "type": "create_box",
-                            "id": "coin_block",
-                            "x": 400,
-                            "y": 50,
+                            "type": "create_box", "id": "coin", "x": 400, "y": 50,
                             "inputs": {
                                 "NAME": { "block": { "type": "text", "fields": { "TEXT": "coin" } } },
                                 "X": { "block": { "type": "math_number", "fields": { "NUM": 5 } } },
                                 "Y": { "block": { "type": "math_number", "fields": { "NUM": 2 } } },
                                 "Z": { "block": { "type": "math_number", "fields": { "NUM": 0 } } }
                             },
-                             "next": {
-                                "block": {
-                                    "type": "change_object_color",
-                                    "id": "coin_color_block",
-                                     "fields": {"COLOR": "#FFD700"},
-                                    "inputs": {"NAME": { "block": { "type": "text", "fields": { "TEXT": "coin" } } } }
-                                }
-                            }
+                             "next": { "block": { "type": "change_object_color", "id": "c_color", "fields": {"COLOR": "#FFD700"}, "inputs": {"NAME": { "block": { "type": "text", "fields": { "TEXT": "coin" } } } } } }
                         },
                         {
-                            "type": "on_collision",
-                            "id": "collision_block",
-                            "x": 400,
-                            "y": 150,
+                            "type": "on_collision", "id": "collide", "x": 400, "y": 150,
                             "inputs": {
                                 "OBJECT1": { "block": { "type": "text", "fields": { "TEXT": "player" } } },
                                 "OBJECT2": { "block": { "type": "text", "fields": { "TEXT": "coin" } } },
-                                "DO": {
-                                    "block": {
-                                        "type": "destroy_object",
-                                        "id": "destroy_coin_block",
-                                        "inputs": {
-                                            "OBJECT": { "block": { "type": "text", "fields": { "TEXT": "coin" } } }
-                                        }
-                                    }
-                                }
+                                "DO": { "block": { "type": "destroy_object", "id": "destroy_c", "inputs": { "OBJECT": { "block": { "type": "text", "fields": { "TEXT": "coin" } } } } } }
                             }
                         }
                     ]
