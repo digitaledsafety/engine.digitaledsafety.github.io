@@ -1999,7 +1999,7 @@ if (sceneManager.objects['${name}']) {
 
         let lastTime = performance.now(); // For deltaTime calculation
 
-        engine.runRenderLoop(() => {
+        sceneManager.engine.runRenderLoop(() => {
             const currentTime = performance.now();
             const deltaTime = currentTime - lastTime; // deltaTime in milliseconds
             lastTime = currentTime;
@@ -2022,7 +2022,7 @@ if (sceneManager.objects['${name}']) {
                     }
                 });
             }
-            scene.render();
+            sceneManager.scene.render();
         });
 
         window.addEventListener('resize', resizeCanvas);
