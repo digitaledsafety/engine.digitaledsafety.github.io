@@ -1128,17 +1128,21 @@ var toolbox = {
             },
             {
                 type: 'create_box',
-                message0: 'Create box named %1 at x %2 y %3 z %4',
+                message0: 'Create box named %1 with width %2 height %3 depth %4 at x %5 y %6 z %7',
                 args0: [
                     { type: 'field_input', name: 'NAME', text: 'box' },
+                    { type: 'input_value', name: 'WIDTH', check: 'Number' },
+                    { type: 'input_value', name: 'HEIGHT', check: 'Number' },
+                    { type: 'input_value', name: 'DEPTH', check: 'Number' },
                     { type: 'input_value', name: 'X', check: 'Number' },
                     { type: 'input_value', name: 'Y', check: 'Number' },
                     { type: 'input_value', name: 'Z', check: 'Number' },
                 ],
+                "inputsInline": true,
                 previousStatement: null,
                 nextStatement: null,
                 colour: 160,
-                tooltip: 'Creates a box at the specified position',
+                tooltip: 'Creates a box with specified dimensions at the specified position',
             },
             {
                 type: 'create_sphere',
@@ -1567,16 +1571,12 @@ if (thisMesh) {
 
             // --- Existing JavaScript Generators ---
             javascript.javascriptGenerator.forBlock['position_model'] = function (block, generator) {
-                const modelVar = Blockly.JavaScript.nameDB_.getName(block.getFieldValue('MODEL'), Blockly.Variables.NAME_TYPE);
-                const x = Blockly.JavaScript.valueToCode(block, 'X', Blockly.JavaScript.ORDER_ATOMIC) || '0';
-                const y = Blockly.JavaScript.valueToCode(block, 'Y', Blockly.JavaScript.ORDER_ATOMIC) || '0';
-                const z = Blockly.JavaScript.valueToCode(block, 'Z', Blockly.JavaScript.ORDER_ATOMIC) || '0';
+                const modelVar = generator.nameDB_.getName(block.getFieldValue('MODEL'), Blockly.Variables.NAME_TYPE);
+                const x = generator.valueToCode(block, 'X', generator.ORDER_ATOMIC) || '0';
+                const y = generator.valueToCode(block, 'Y', generator.ORDER_ATOMIC) || '0';
+                const z = generator.valueToCode(block, 'Z', generator.ORDER_ATOMIC) || '0';
 
-                const code = `
-
-      scene.meshes[0].position.set(${x}, ${y}, ${z});\n
-      `;
-                return code;
+                return `${modelVar}.position = new BABYLON.Vector3(${x}, ${y}, ${z});\n`;
             };
 
             javascript.javascriptGenerator.forBlock['create_camera'] = function (block, generator) {
@@ -1769,12 +1769,15 @@ if (thisMesh) {
 
             javascript.javascriptGenerator.forBlock['create_box'] = function (block, generator) {
                 const name = block.getFieldValue('NAME');
+                const width = generator.valueToCode(block, 'WIDTH', javascript.javascriptGenerator.ORDER_ATOMIC) || 1;
+                const height = generator.valueToCode(block, 'HEIGHT', javascript.javascriptGenerator.ORDER_ATOMIC) || 1;
+                const depth = generator.valueToCode(block, 'DEPTH', javascript.javascriptGenerator.ORDER_ATOMIC) || 1;
                 const x = generator.valueToCode(block, 'X', javascript.javascriptGenerator.ORDER_ATOMIC) || 0;
                 const y = generator.valueToCode(block, 'Y', javascript.javascriptGenerator.ORDER_ATOMIC) || 0;
                 const z = generator.valueToCode(block, 'Z', javascript.javascriptGenerator.ORDER_ATOMIC) || 0;
                 const uniqueId = name + '_' + BABYLON.Tools.RandomId();
                 return `
-          const boxMesh = BABYLON.MeshBuilder.CreateBox('${name}', {}, scene);
+          const boxMesh = BABYLON.MeshBuilder.CreateBox('${name}', { width: ${width}, height: ${height}, depth: ${depth} }, scene);
           boxMesh.id = '${uniqueId}';
           boxMesh.name = '${name}';
           boxMesh.position.set(${x}, ${y}, ${z});
@@ -1973,30 +1976,20 @@ if (thisMesh) {
                     "languageVersion": 0,
                     "blocks": [
                         {
-                            "type": "create_ground",
-                            "id": "default_platform",
+                            "type": "create_box",
+                            "id": "default_platform_box",
                             "x": 26,
                             "y": 10,
                             "fields": {
                                 "NAME": "platform"
                             },
                             "inputs": {
-                                "WIDTH": {
-                                    "block": {
-                                        "type": "math_number",
-                                        "fields": {
-                                            "NUM": 10
-                                        }
-                                    }
-                                },
-                                "HEIGHT": {
-                                    "block": {
-                                        "type": "math_number",
-                                        "fields": {
-                                            "NUM": 10
-                                        }
-                                    }
-                                }
+                                "WIDTH": { "block": { "type": "math_number", "fields": { "NUM": 10 } } },
+                                "HEIGHT": { "block": { "type": "math_number", "fields": { "NUM": 0.5 } } },
+                                "DEPTH": { "block": { "type": "math_number", "fields": { "NUM": 10 } } },
+                                "X": { "block": { "type": "math_number", "fields": { "NUM": 0 } } },
+                                "Y": { "block": { "type": "math_number", "fields": { "NUM": -0.25 } } },
+                                "Z": { "block": { "type": "math_number", "fields": { "NUM": 0 } } }
                             },
                             "next": {
                                 "block": {
@@ -2004,31 +1997,42 @@ if (thisMesh) {
                                     "id": "-xy:B4jNLPcdjK9qYqjf",
                                     "fields": {
                                         "MODEL_URL": "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/main/2.0/Duck/glTF-Binary/Duck.glb",
-                                        "MODEL_VAR": {
-                                            "id": "Tw=U+h6sN{r/zUez!;j8"
-                                        }
+                                        "MODEL_VAR": { "id": "Tw=U+h6sN{r/zUez!;j8" }
                                     },
                                     "inputs": {
                                         "ON_SUCCESS": {
                                             "block": {
-                                                "type": "create_camera",
-                                                "id": "P@8M:RocH3uoSQ04_F14",
-                                                "fields": {
-                                                    "NAME": "camera",
-                                                    "MODEL_VAR": {
-                                                        "id": "EZe?g.{eh_}M^PAF=wxy"
-                                                    }
+                                                "type": "position_model",
+                                                "id": "position_duck",
+                                                "fields": { "MODEL": { "id": "Tw=U+h6sN{r/zUez!;j8" } },
+                                                "inputs": {
+                                                    "X": { "block": { "type": "math_number", "fields": { "NUM": 0 } } },
+                                                    "Y": { "block": { "type": "math_number", "fields": { "NUM": 0.25 } } },
+                                                    "Z": { "block": { "type": "math_number", "fields": { "NUM": 0 } } }
                                                 },
                                                 "next": {
                                                     "block": {
-                                                        "type": "point_camera_at_mesh",
-                                                        "id": "E{8BD5:R^4;nqCvlCbL)",
+                                                        "type": "create_camera",
+                                                        "id": "P@8M:RocH3uoSQ04_F14",
                                                         "fields": {
-                                                            "CAMERA": {
-                                                                "id": "EZe?g.{eh_}M^PAF=wxy"
-                                                            },
-                                                            "MESH": {
-                                                                "id": "Tw=U+h6sN{r/zUez!;j8"
+                                                            "NAME": "camera",
+                                                            "MODEL_VAR": { "id": "EZe?g.{eh_}M^PAF=wxy" }
+                                                        },
+                                                        "next": {
+                                                            "block": {
+                                                                "type": "set_isometric_camera",
+                                                                "id": "set_iso_view",
+                                                                "fields": { "CAMERA": "camera" },
+                                                                "next": {
+                                                                    "block": {
+                                                                        "type": "point_camera_at_mesh",
+                                                                        "id": "E{8BD5:R^4;nqCvlCbL)",
+                                                                        "fields": {
+                                                                            "CAMERA": { "id": "EZe?g.{eh_}M^PAF=wxy" },
+                                                                            "MESH": { "id": "Tw=U+h6sN{r/zUez!;j8" }
+                                                                        }
+                                                                    }
+                                                                }
                                                             }
                                                         }
                                                     }
@@ -2042,18 +2046,9 @@ if (thisMesh) {
                     ]
                 },
                 "variables": [
-                    {
-                        "name": "model",
-                        "id": "Tw=U+h6sN{r/zUez!;j8"
-                    },
-                    {
-                        "name": "camera",
-                        "id": "EZe?g.{eh_}M^PAF=wxy"
-                    },
-                    {
-                        "name": "mesh",
-                        "id": "j;nQCHM[i@HS@uJ1|kNe"
-                    }
+                    { "name": "model", "id": "Tw=U+h6sN{r/zUez!;j8" },
+                    { "name": "camera", "id": "EZe?g.{eh_}M^PAF=wxy" },
+                    { "name": "mesh", "id": "j;nQCHM[i@HS@uJ1|kNe" }
                 ]
             }
 
