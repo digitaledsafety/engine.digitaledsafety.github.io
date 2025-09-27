@@ -103,13 +103,22 @@
             <canvas id="gameCanvas"></canvas>
         </div>
         <div class="controls">
+            <div class="editor-toggle-buttons" style="margin-bottom: 10px;">
+                <button id="showBlocksButton" class="btn" style="background-color: #6c757d;">Show Blocks</button>
+                <button id="showJsButton" class="btn" style="background-color: #6c757d;">Show JavaScript</button>
+            </div>
             <div id="blocklyDiv" class="blockly-workspace"></div>
+            <div id="monacoEditorContainer" class="editor-container" style="height: 80%; min-height: 300px; border: 1px solid #ddd; margin-bottom: 10px; display: none;">
+                <!-- Monaco Editor will be initialized here by script.js -->
+            </div>
             <button id="runButton" class="btn btn-run">Run</button>
-            <button id="saveButton" class="btn">Save</button>
-            <button id="loadButton" class="btn">Load</button>
+            <button id="saveButton" class="btn">Save</button> <!-- Consider if save/load needs to be context-aware for JS view -->
+            <button id="loadButton" class="btn">Load</button> <!-- Consider if save/load needs to be context-aware for JS view -->
         </div>
     </div>
 
+    <!-- Monaco Editor CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.49.0/min/vs/loader.js"></script>
     <script src="script.js" defer></script>
 </body>
 </html>

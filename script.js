@@ -65,6 +65,36 @@ var toolbox = {
                         },
                     ],
                 },
+                {
+                    kind: 'sep',
+                },
+                {
+                    kind: 'category',
+                    name: 'Scripting',
+                    categorystyle: 'logic_category', // Or a new custom style
+                    contents: [
+                        {
+                            kind: 'block',
+                            type: 'select_object',
+                        },
+                        // { // attach_script_to_object - REMOVED
+                        //     kind: 'block',
+                        //     type: 'attach_script_to_object',
+                        // },
+                        {
+                            kind: 'block',
+                            type: 'event_on_click',
+                        },
+                        {
+                            kind: 'block',
+                            type: 'event_every_frame',
+                        },
+                        {
+                            kind: 'block',
+                            type: 'action_rotate_continuously',
+                        },
+                    ],
+                },
             ],
         },
 
@@ -879,11 +909,8 @@ var toolbox = {
             ],
         }
     ]
-}
+};
 
-
-
-        
 
         const workspace = Blockly.inject('blocklyDiv', {
             toolbox: toolbox,
@@ -990,7 +1017,7 @@ var toolbox = {
                 tooltip: 'Imports a 3D model and saves it as a variable for later use, with dynamic position.',
                 helpUrl: '',
                 extensions: [
-                    'set_max_display_length',  // This line added!!
+                    'set_max_display_length',
                 ],
             },
             {
@@ -1055,7 +1082,7 @@ var toolbox = {
                 tooltip: 'Imports a 3D file from a URL and executes actions on success.',
                 helpUrl: '',
                 extensions: [
-                    'set_max_display_length',  // This line added!!
+                    'set_max_display_length',
                 ],
             },
 
@@ -1320,11 +1347,225 @@ var toolbox = {
                 nextStatement: null,
                 colour: 180,
                 tooltip: 'Enables physics on the ground object with the selected impostor',
+            },
+            // Scripting Blocks
+            {
+                "type": "select_object",
+                "message0": "object named %1",
+                "args0": [
+                    {
+                        "type": "field_input",
+                        "name": "OBJECT_NAME",
+                        "text": "myObject" // Default text
+                    }
+                ],
+                "output": "String", // Outputs the object name/ID as a string
+                "colour": "%{BKY_LOGIC_HUE}", // Using logic hue for now
+                "tooltip": "Selects an object from the scene by its name.",
+                "helpUrl": ""
+            },
+            // { // attach_script_to_object JSON Definition - REMOVED
+            //     "type": "attach_script_to_object",
+            //     "message0": "attach script to %1 %2 do %3",
+            //     "args0": [
+            //         {
+            //             "type": "input_value",
+            //             "name": "OBJECT_SELECTOR",
+            //             "check": "String"
+            //         },
+            //         {
+            //             "type": "input_dummy"
+            //         },
+            //         {
+            //             "type": "input_statement",
+            //             "name": "SCRIPT_CODE"
+            //         }
+            //     ],
+            //     "previousStatement": null,
+            //     "nextStatement": null,
+            //     "colour": "%{BKY_LOGIC_HUE}",
+            //     "tooltip": "Attaches a script to the specified object.",
+            //     "helpUrl": ""
+            // },
+            // Phase 2 Blockly Blocks
+            {
+                "type": "event_on_click",
+                "message0": "when %1 is clicked %2 do %3",
+                "args0": [
+                    {
+                        "type": "input_value",
+                        "name": "OBJECT_SELECTOR",
+                        "check": "String"
+                    },
+                    {
+                        "type": "input_dummy"
+                    },
+                    {
+                        "type": "input_statement",
+                        "name": "DO_CODE"
+                    }
+                ],
+                "previousStatement": null,
+                "nextStatement": null,
+                "colour": "%{BKY_LOOPS_HUE}",
+                "tooltip": "Executes code when the specified object is clicked.",
+                "helpUrl": ""
+            },
+            {
+                "type": "event_every_frame",
+                "message0": "for %1 every frame %2 do %3",
+                "args0": [
+                    {
+                        "type": "input_value",
+                        "name": "OBJECT_SELECTOR",
+                        "check": "String"
+                    },
+                    {
+                        "type": "input_dummy"
+                    },
+                    {
+                        "type": "input_statement",
+                        "name": "DO_CODE"
+                    }
+                ],
+                "previousStatement": null,
+                "nextStatement": null,
+                "colour": "%{BKY_LOOPS_HUE}",
+                "tooltip": "Executes code for the specified object every frame.",
+                "helpUrl": ""
+            },
+            {
+                "type": "action_rotate_continuously",
+                "message0": "rotate current object continuously by x %1 y %2 z %3 deg/sec",
+                "args0": [
+                    {
+                        "type": "input_value",
+                        "name": "ROTATE_X_SPEED",
+                        "check": "Number"
+                    },
+                    {
+                        "type": "input_value",
+                        "name": "ROTATE_Y_SPEED",
+                        "check": "Number"
+                    },
+                    {
+                        "type": "input_value",
+                        "name": "ROTATE_Z_SPEED",
+                        "check": "Number"
+                    }
+                ],
+                "inputsInline": false,
+                "previousStatement": null,
+                "nextStatement": null,
+                "colour": "%{BKY_MATH_HUE}",
+                "tooltip": "Continuously rotates the object. Use inside an 'every frame' block for the target object.",
+                "helpUrl": ""
             }
         ]);
 
         {
 
+            // --- Scripting Block Generators ---
+
+            javascript.javascriptGenerator.forBlock['event_on_click'] = function(block, generator) {
+                const objectNameValue = generator.valueToCode(block, 'OBJECT_SELECTOR', generator.ORDER_ATOMIC) || 'null';
+                const doCode = generator.statementToCode(block, 'DO_CODE');
+
+                // For the new unified script model, this generated code will be part of the single script
+                // executed by doRun(). It sets up the event listener.
+                let code = `
+let onClickTargetName = ${objectNameValue};
+let onClickTargetMesh = objects[onClickTargetName] || scene.getMeshByName(onClickTargetName) || scene.getMeshById(onClickTargetName);
+
+if (onClickTargetMesh) {
+    if (!onClickTargetMesh.actionManager) {
+        onClickTargetMesh.actionManager = new BABYLON.ActionManager(scene);
+    }
+    onClickTargetMesh.actionManager.registerAction(
+        new BABYLON.ExecuteCodeAction(
+            BABYLON.ActionManager.OnPickTrigger,
+            function(evt) {
+                const thisMesh = onClickTargetMesh;
+                console.log('Clicked on ' + thisMesh.name);
+                try {
+                    ${doCode}
+                } catch (e) {
+                    console.error('Error in OnClick script for ' + thisMesh.name + ':', e);
+                }
+            }
+        )
+    );
+    // Metadata assignment removed - this block now just sets up the listener.
+    console.log('On-click event action registered for: ' + onClickTargetName);
+} else {
+    console.warn('On-click event: Could not find object: ' + onClickTargetName);
+}
+`;
+                return code;
+            };
+
+            javascript.javascriptGenerator.forBlock['event_every_frame'] = function(block, generator) {
+                const objectNameValue = generator.valueToCode(block, 'OBJECT_SELECTOR', generator.ORDER_ATOMIC) || 'null';
+                const doCode = generator.statementToCode(block, 'DO_CODE');
+
+                let code = `
+let frameLoopTargetName = ${objectNameValue};
+let frameLoopTargetMesh = objects[frameLoopTargetName] || scene.getMeshByName(frameLoopTargetName) || scene.getMeshById(frameLoopTargetName);
+
+if (frameLoopTargetMesh) {
+    // Ensure the global array for per-frame functions exists
+    window.sceneSpecificPerFrameFunctions = window.sceneSpecificPerFrameFunctions || [];
+
+    // Define the function to be called each frame for this specific mesh
+    const frameFunctionName = \`frameLoop_\${frameLoopTargetMesh.id || frameLoopTargetMesh.name}_\${BABYLON.Tools.RandomId()}\`;
+    let perFrameFunction = function(thisMesh, deltaTime) {
+        // Note: 'thisMesh' and 'deltaTime' will be provided by the central loop
+        ${doCode}
+    };
+
+    // Store the function code and target, or directly the function if preferred
+    window.sceneSpecificPerFrameFunctions.push({
+        targetMesh: frameLoopTargetMesh,
+        func: perFrameFunction,
+        name: frameFunctionName // For debugging or potential removal later
+    });
+    console.log('Every-frame function registered for: ' + frameLoopTargetName);
+
+} else {
+    console.warn('Every-frame event: Could not find object: ' + frameLoopTargetName);
+}
+`;
+                // This block now just registers a function; it doesn't return executable code directly into the main script flow.
+                // The actual execution is handled by the central render loop.
+                // However, Blockly expects a string to be returned. We can return a comment or an empty string.
+                return '// Registered per-frame function for ' + frameLoopTargetName + '\\n';
+            };
+
+            javascript.javascriptGenerator.forBlock['action_rotate_continuously'] = function(block, generator) {
+                const rotateXSpeed = generator.valueToCode(block, 'ROTATE_X_SPEED', generator.ORDER_ATOMIC) || 0;
+                const rotateYSpeed = generator.valueToCode(block, 'ROTATE_Y_SPEED', generator.ORDER_ATOMIC) || 0;
+                const rotateZSpeed = generator.valueToCode(block, 'ROTATE_Z_SPEED', generator.ORDER_ATOMIC) || 0;
+
+                let code = `
+if (thisMesh) {
+    thisMesh.rotation.x += (${rotateXSpeed} * (Math.PI / 180)) * (deltaTime / 1000);
+    thisMesh.rotation.y += (${rotateYSpeed} * (Math.PI / 180)) * (deltaTime / 1000);
+    thisMesh.rotation.z += (${rotateZSpeed} * (Math.PI / 180)) * (deltaTime / 1000);
+}
+`;
+                return code;
+            };
+
+            javascript.javascriptGenerator.forBlock['select_object'] = function(block, generator) {
+                const objectName = block.getFieldValue('OBJECT_NAME');
+                return [objectName, generator.ORDER_ATOMIC];
+            };
+
+            // javascript.javascriptGenerator.forBlock['attach_script_to_object'] = function(block, generator) { // REMOVED
+            //     // ...
+            // };
+
+            // --- Existing JavaScript Generators ---
             javascript.javascriptGenerator.forBlock['position_model'] = function (block, generator) {
                 const modelVar = Blockly.JavaScript.nameDB_.getName(block.getFieldValue('MODEL'), Blockly.Variables.NAME_TYPE);
                 const x = Blockly.JavaScript.valueToCode(block, 'X', Blockly.JavaScript.ORDER_ATOMIC) || '0';
@@ -1352,7 +1593,6 @@ var toolbox = {
                 const cameraVar = Blockly.JavaScript.nameDB_.getName(block.getFieldValue('CAMERA'), Blockly.Variables.NAME_TYPE);
                 const meshVar = Blockly.JavaScript.nameDB_.getName(block.getFieldValue('MESH'), Blockly.Variables.NAME_TYPE);
 
-                // Generate code to set the camera target
                 const code = `
 
 
@@ -1363,33 +1603,32 @@ var toolbox = {
 
             javascript.javascriptGenerator.forBlock['save_3d_model_with_position'] = function (block, generator) {
                 const modelUrl = block.getFieldValue('MODEL_URL');
-                const modelVar = Blockly.JavaScript.nameDB_.getName(
-                    block.getFieldValue('MODEL_VAR'),
-                    Blockly.Variables.NAME_TYPE
-                );
-                console.log(modelVar);
-                const posX = Blockly.JavaScript.valueToCode(block, 'POS_X', Blockly.JavaScript.ORDER_ATOMIC) || '0';
-                const posY = Blockly.JavaScript.valueToCode(block, 'POS_Y', Blockly.JavaScript.ORDER_ATOMIC) || '0';
-                const posZ = Blockly.JavaScript.valueToCode(block, 'POS_Z', Blockly.JavaScript.ORDER_ATOMIC) || '0';
-                console.log(posX);
+                const modelVarName = generator.nameDB_.getName(block.getFieldValue('MODEL_VAR'), Blockly.Variables.NAME_TYPE);
+                const posX = generator.valueToCode(block, 'POS_X', javascript.javascriptGenerator.ORDER_ATOMIC) || '0';
+                const posY = generator.valueToCode(block, 'POS_Y', javascript.javascriptGenerator.ORDER_ATOMIC) || '0';
+                const posZ = generator.valueToCode(block, 'POS_Z', javascript.javascriptGenerator.ORDER_ATOMIC) || '0';
+                const uniqueId = modelVarName + '_' + BABYLON.Tools.RandomId();
 
-                let ret = `
-    BABYLON.SceneLoader.ImportMeshAsync('', '', '${modelUrl}', scene).then(
-      function(sceneResult) { // Renamed 'scene' to 'sceneResult' to avoid conflict
-          if (sceneResult.meshes.length > 0) { // Use 'sceneResult'
-            console.log(sceneResult.meshes);
-            let ${modelVar} = sceneResult.meshes[0]; // Use 'sceneResult'
-            ${modelVar}.position = new BABYLON.Vector3(${posX}, ${posY}, ${posZ});
-            console.log('3D model saved as variable "${modelVar}" and placed at (${posX}, ${posY}, ${posZ}).');
+                return `
+    BABYLON.SceneLoader.ImportMeshAsync(null, '', '${modelUrl}', scene).then(
+      function(result) {
+          if (result.meshes.length > 0) {
+            let rootMesh = result.meshes[0];
+            rootMesh.id = '${uniqueId}';
+            rootMesh.name = '${modelVarName}';
+            rootMesh.position = new BABYLON.Vector3(${posX}, ${posY}, ${posZ});
+            objects['${uniqueId}'] = rootMesh;
+            objects['${modelVarName}'] = rootMesh;
+            ${modelVarName} = rootMesh;
+            console.log('3D model saved as variable "${modelVarName}", ID "${uniqueId}", and placed at (${posX}, ${posY}, ${posZ}).');
+            // populateObjectSelector call removed
           } else {
             console.warn('No meshes were imported from the URL: ${modelUrl}.');
           }
+      }).catch(function(error) {
+          console.error('Error importing model: ${modelUrl}', error);
       });
       `;
-
-                console.log(ret);
-
-                return ret;
             };
 
             javascript.javascriptGenerator.forBlock['import_3d_file_url_with_position'] = function (block, generator) {
@@ -1397,105 +1636,112 @@ var toolbox = {
                 const posX = block.getFieldValue('POS_X');
                 const posY = block.getFieldValue('POS_Y');
                 const posZ = block.getFieldValue('POS_Z');
+                const baseName = fileUrl.substring(fileUrl.lastIndexOf('/') + 1) || 'importedModel';
+                const uniqueId = baseName.replace(/[^a-zA-Z0-9]/g, '_') + '_' + BABYLON.Tools.RandomId();
 
                 return `
-    BABYLON.SceneLoader.Append(
-      '${fileUrl}',
-      '',
-      scene,
-      function (meshes) {
-        if (meshes.length > 0) {
-          // Set position of the root mesh
-          meshes[0].position = new BABYLON.Vector3(${posX}, ${posY}, ${posZ});
-          console.log('3D file imported and placed successfully at (${posX}, ${posY}, ${posZ}).');
+    BABYLON.SceneLoader.ImportMeshAsync(null, '', '${fileUrl}', scene).then(
+      function (result) {
+        if (result.meshes.length > 0) {
+          let rootMesh = result.meshes[0];
+          rootMesh.id = '${uniqueId}';
+          rootMesh.name = '${baseName}';
+          rootMesh.position = new BABYLON.Vector3(${posX}, ${posY}, ${posZ});
+          objects['${uniqueId}'] = rootMesh;
+          objects['${baseName}'] = rootMesh;
+          console.log('3D file imported and placed successfully at (${posX}, ${posY}, ${posZ}). ID: ${uniqueId}');
+          // populateObjectSelector call removed
         } else {
-          console.warn('No meshes were imported from the 3D file.');
+          console.warn('No meshes were imported from the 3D file: ${fileUrl}');
         }
-      },
-      function (scene, message, exception) {
-        console.error('Failed to load 3D file:', message, exception);
-      }
-    );
+      }).catch(function(error) {
+        console.error('Failed to load 3D file: ${fileUrl}', error);
+      });
     `;
             };
 
-
             javascript.javascriptGenerator.forBlock['import_3d_file_url'] = function (block, generator) {
-                const fileUrl = block.getFieldValue('MODEL_URL');
-                const modelVar = Blockly.JavaScript.nameDB_.getName(
-                    block.getFieldValue('MODEL_VAR'),
-                    Blockly.Variables.NAME_TYPE
-                );
-                const onSuccessCode = Blockly.JavaScript.statementToCode(block, 'ON_SUCCESS');
+                const modelUrl = block.getFieldValue('MODEL_URL');
+                const modelVarName = generator.nameDB_.getName(block.getFieldValue('MODEL_VAR'), Blockly.Variables.NAME_TYPE);
+                const onSuccessCode = generator.statementToCode(block, 'ON_SUCCESS') || '';
+                const uniqueId = modelVarName + '_' + BABYLON.Tools.RandomId();
 
-                let ret = `
-        BABYLON.SceneLoader.ImportMeshAsync(
-          null,
-          '${fileUrl}',
-          null,
-          scene,
-          function (event) {
-            console.log(event);
-          },
-          null,
-          '${modelVar}'
-        ).then(
-          function (sceneResult) { // Renamed 'scene' to 'sceneResult'
-            ${onSuccessCode}
-          }
-        );
+                return `
+        BABYLON.SceneLoader.ImportMeshAsync(null, '', '${modelUrl}', scene)
+          .then(function (result) {
+            if (result.meshes.length > 0) {
+              let rootMesh = result.meshes[0];
+              rootMesh.id = '${uniqueId}';
+              rootMesh.name = '${modelVarName}';
+              objects['${uniqueId}'] = rootMesh;
+              objects['${modelVarName}'] = rootMesh;
+              ${modelVarName} = rootMesh;
+              console.log('3D model imported as variable "${modelVarName}", ID "${uniqueId}".');
+              // populateObjectSelector call removed
+              ${onSuccessCode}
+            } else {
+              console.warn('No meshes were imported from URL: ${modelUrl}');
+            }
+          })
+          .catch(function(error) {
+            console.error('Error importing model for variable ${modelVarName} from URL: ${modelUrl}', error);
+          });
       `;
-
-                console.log(ret);
-
-                return ret;
             };
 
             javascript.javascriptGenerator.forBlock['set_isometric_camera'] = function (block, generator) {
                 const cameraName = block.getFieldValue('CAMERA');
 
                 return `
-          // TODO: only 1 main camera for now, see scene init code
-
           let camera = scene.cameras.find(camera => camera.name === '${cameraName}');
           if (camera) {
-            camera.position = new BABYLON.Vector3(10, 10, 10); // Position for isometric view
-            camera.setTarget(new BABYLON.Vector3(0, 0, 0)); // Point to origin
+            camera.position = new BABYLON.Vector3(10, 10, 10);
+            camera.setTarget(new BABYLON.Vector3(0, 0, 0));
           }
           `;
             };
 
-
             javascript.javascriptGenerator.forBlock['import_3d_file'] = function (block, generator) {
                 const fileName = block.getFieldValue('FILE_NAME');
                 const rootPath = block.getFieldValue('ROOT_PATH');
-                const onSuccessCode = Blockly.JavaScript.statementToCode(block, 'ON_SUCCESS');
+                const onSuccessCode = generator.statementToCode(block, 'ON_SUCCESS') || '';
+                const baseName = fileName.replace(/[^a-zA-Z0-9]/g, '_') || 'importedFileModel';
+                const uniqueId = baseName + '_' + BABYLON.Tools.RandomId();
 
                 return `
-      BABYLON.SceneLoader.ImportMesh(
-        null, // No specific mesh names to import
-        '${rootPath}',
-        '${fileName}',
-        scene,
-        function (meshes, particleSystems, skeletons) {
-          ${onSuccessCode}
-        },
-        null, // No progress callback
-        function (scene, message, exception) {
-          console.error('Failed to load 3D file:', message, exception);
-        }
-      );
+      BABYLON.SceneLoader.ImportMeshAsync(null, '${rootPath}', '${fileName}', scene)
+        .then(function (result) {
+          if (result.meshes.length > 0) {
+            let rootMesh = result.meshes[0];
+            rootMesh.id = '${uniqueId}';
+            rootMesh.name = '${baseName}';
+            objects['${uniqueId}'] = rootMesh;
+            objects['${baseName}'] = rootMesh;
+            console.log('3D file "${fileName}" imported successfully. ID: ${uniqueId}');
+            // populateObjectSelector call removed
+            ${onSuccessCode}
+          } else {
+            console.warn('No meshes were imported from file: ${fileName}');
+          }
+        })
+        .catch(function(error) {
+          console.error('Failed to load 3D file: ${fileName}', error);
+        });
     `;
             };
 
             javascript.javascriptGenerator.forBlock['create_ground'] = function (block, generator) {
                 const name = block.getFieldValue('NAME');
-                const width = Blockly.JavaScript.valueToCode(block, 'WIDTH', Blockly.JavaScript.ORDER_ATOMIC) || 10;
-                const height = Blockly.JavaScript.valueToCode(block, 'HEIGHT', Blockly.JavaScript.ORDER_ATOMIC) || 10;
-
+                const width = generator.valueToCode(block, 'WIDTH', javascript.javascriptGenerator.ORDER_ATOMIC) || 10;
+                const height = generator.valueToCode(block, 'HEIGHT', javascript.javascriptGenerator.ORDER_ATOMIC) || 10;
+                const uniqueId = name + '_' + BABYLON.Tools.RandomId();
                 return `
-          const ${name} = BABYLON.MeshBuilder.CreateGround('${name}', { width: ${width}, height: ${height} }, scene);
-          objects['${name}'] = ${name};
+          const groundMesh = BABYLON.MeshBuilder.CreateGround('${name}', { width: ${width}, height: ${height} }, scene);
+          groundMesh.id = '${uniqueId}';
+          groundMesh.name = '${name}';
+          objects['${uniqueId}'] = groundMesh;
+          objects['${name}'] = groundMesh;
+          // populateObjectSelector call removed
           `;
             };
 
@@ -1528,18 +1774,36 @@ var toolbox = {
 
             javascript.javascriptGenerator.forBlock['create_box'] = function (block, generator) {
                 const name = block.getFieldValue('NAME');
-                const x = Blockly.JavaScript.valueToCode(block, 'X', Blockly.JavaScript.ORDER_ATOMIC) || 0;
-                const y = Blockly.JavaScript.valueToCode(block, 'Y', Blockly.JavaScript.ORDER_ATOMIC) || 0;
-                const z = Blockly.JavaScript.valueToCode(block, 'Z', Blockly.JavaScript.ORDER_ATOMIC) || 0;
-                return `objects['${name}'] = BABYLON.MeshBuilder.CreateBox('${name}', {}, scene); objects['${name}'].position.set(${x}, ${y}, ${z});\n`;
+                const x = generator.valueToCode(block, 'X', javascript.javascriptGenerator.ORDER_ATOMIC) || 0;
+                const y = generator.valueToCode(block, 'Y', javascript.javascriptGenerator.ORDER_ATOMIC) || 0;
+                const z = generator.valueToCode(block, 'Z', javascript.javascriptGenerator.ORDER_ATOMIC) || 0;
+                const uniqueId = name + '_' + BABYLON.Tools.RandomId();
+                return `
+          const boxMesh = BABYLON.MeshBuilder.CreateBox('${name}', {}, scene);
+          boxMesh.id = '${uniqueId}';
+          boxMesh.name = '${name}';
+          boxMesh.position.set(${x}, ${y}, ${z});
+          objects['${uniqueId}'] = boxMesh;
+          objects['${name}'] = boxMesh;
+          // populateObjectSelector call removed
+          \n`;
             };
 
             javascript.javascriptGenerator.forBlock['create_sphere'] = function (block, generator) {
                 const name = block.getFieldValue('NAME');
-                const x = Blockly.JavaScript.valueToCode(block, 'X', Blockly.JavaScript.ORDER_ATOMIC) || 0;
-                const y = Blockly.JavaScript.valueToCode(block, 'Y', Blockly.JavaScript.ORDER_ATOMIC) || 0;
-                const z = Blockly.JavaScript.valueToCode(block, 'Z', Blockly.JavaScript.ORDER_ATOMIC) || 0;
-                return `objects['${name}'] = BABYLON.MeshBuilder.CreateSphere('${name}', { diameter: 2 }, scene); objects['${name}'].position.set(${x}, ${y}, ${z});\n`;
+                const x = generator.valueToCode(block, 'X', javascript.javascriptGenerator.ORDER_ATOMIC) || 0;
+                const y = generator.valueToCode(block, 'Y', javascript.javascriptGenerator.ORDER_ATOMIC) || 0;
+                const z = generator.valueToCode(block, 'Z', javascript.javascriptGenerator.ORDER_ATOMIC) || 0;
+                const uniqueId = name + '_' + BABYLON.Tools.RandomId();
+                return `
+          const sphereMesh = BABYLON.MeshBuilder.CreateSphere('${name}', { diameter: 2 }, scene);
+          sphereMesh.id = '${uniqueId}';
+          sphereMesh.name = '${name}';
+          sphereMesh.position.set(${x}, ${y}, ${z});
+          objects['${uniqueId}'] = sphereMesh;
+          objects['${name}'] = sphereMesh;
+          // populateObjectSelector call removed
+          \n`;
             };
 
             javascript.javascriptGenerator.forBlock['move_object'] = function (block, generator) {
@@ -1664,21 +1928,25 @@ var toolbox = {
             return javascript.javascriptGenerator.workspaceToCode(workspace);
         }
 
-        function clearScene(currentScene) { // Renamed 'scene' to 'currentScene'
-
-            while (currentScene.meshes.length) { // Use 'currentScene'
-                var mesh = currentScene.meshes[0]; // Use 'currentScene'
-                console.log(mesh.name);
+        function clearScene(currentScene) {
+            while (currentScene.meshes.length) {
+                var mesh = currentScene.meshes[0];
+                console.log('Disposing mesh:', mesh.name, 'ID:', mesh.id);
+                // if (mesh.metadata) { // Removed old metadata clearing
+                //     mesh.metadata.scriptType = null;
+                //     mesh.metadata.scriptContent = null;
+                //     mesh.metadata.scriptAttached = false;
+                //     mesh.metadata.blocklyFrameLoop = null;
+                // }
                 mesh.dispose();
             }
 
-            while (currentScene.materials.length) { // Use 'currentScene'
-                var material = currentScene.materials[0]; // Use 'currentScene'
+            while (currentScene.materials.length) {
+                var material = currentScene.materials[0];
                 console.log(material.name);
                 material.dispose();
             }
 
-            // Clear any objects or materials tracked in global objects
             Object.keys(objects).forEach(key => delete objects[key]);
             Object.keys(materials).forEach(key => delete materials[key]);
         }
@@ -1699,12 +1967,8 @@ var toolbox = {
         }
 
         function loadWorkspace(button) {
-            // Get your saved state from somewhere, e.g. local storage.
             const state = localStorage.getItem('myProgram');
-
             var workspace = Blockly.getMainWorkspace();
-
-            // Deserialize the state.
             Blockly.serialization.workspaces.load(JSON.parse(state), workspace);
         }
 
@@ -1772,67 +2036,156 @@ var toolbox = {
             }
 
             var workspace = Blockly.getMainWorkspace();
-
-            // Deserialize the state.
             Blockly.serialization.workspaces.load(state, workspace);
-
             doRun();
         }
 
         function doRun() {
-            const code = generateCode();
-            clearScene(scene); // Pass the global 'scene' object
+            let codeToRun = '';
+            if (currentView === 'blockly') {
+                codeToRun = generateCode(); // Get code from Blockly workspace
+                console.log("Running code from Blockly workspace");
+            } else if (currentView === 'javascript') {
+                if (monacoEditorInstance) {
+                    codeToRun = monacoEditorInstance.getValue(); // Get code from Monaco editor
+                    console.log("Running code from JavaScript editor (Monaco)");
+                } else {
+                    console.error("Monaco editor instance not available. Cannot run JS code.");
+                    return;
+                }
+            } else {
+                console.error("Unknown view selected. Cannot run code.");
+                return;
+            }
+
+            clearScene(scene);
+            window.sceneSpecificPerFrameFunctions = []; // Clear any existing per-frame functions
+
             try {
-                eval(code);
+                eval(codeToRun); // This will populate window.sceneSpecificPerFrameFunctions
             } catch (error) {
                 console.error('Error executing code:', error);
             }
         }
 
-
-
         const helper = function () {
-            // `this` is the block.
             this.getField('MODEL_URL').maxDisplayLength = 16;
         }
         Blockly.Extensions.register('set_max_display_length', helper);
 
-
-        // Object Registry
         const objects = {};
         const materials = {};
+        window.sceneSpecificPerFrameFunctions = []; // Initialize global array for per-frame functions
 
-        // Babylon.js Initialization
         const canvas = document.getElementById('gameCanvas');
         const engine = new BABYLON.Engine(canvas, true);
-        const scene = new BABYLON.Scene(engine); // This is the global 'scene' object
+        const scene = new BABYLON.Scene(engine);
         const camera = new BABYLON.ArcRotateCamera('Camera', Math.PI / 2, Math.PI / 4, 10, BABYLON.Vector3.Zero(), scene);
         camera.attachControl(canvas, true);
-
         const light = new BABYLON.HemisphericLight('light', new BABYLON.Vector3(1, 1, 0), scene);
-
-        const physicsPlugin = new BABYLON.CannonJSPlugin(); // Or AmmoJSPlugin
+        const physicsPlugin = new BABYLON.CannonJSPlugin();
         scene.enablePhysics(new BABYLON.Vector3(0, -9.8, 0), physicsPlugin);
 
-
-        // Execute Blockly Code
         document.getElementById('runButton').addEventListener('click', () => {
             doRun();
         });
-
         document.getElementById('saveButton').addEventListener('click', () => {
             saveWorkspace();
         });
-
         document.getElementById('loadButton').addEventListener('click', () => {
             loadWorkspace();
         });
 
-        // Game Loop
-        engine.runRenderLoop(() => scene.render());
+        let lastTime = performance.now(); // For deltaTime calculation
 
-        // Resize canvas on window resize
+        engine.runRenderLoop(() => {
+            const currentTime = performance.now();
+            const deltaTime = currentTime - lastTime; // deltaTime in milliseconds
+            lastTime = currentTime;
+
+            if (window.sceneSpecificPerFrameFunctions && window.sceneSpecificPerFrameFunctions.length > 0) {
+                window.sceneSpecificPerFrameFunctions.forEach(task => {
+                    if (task.targetMesh && !task.targetMesh.isDisposed() && typeof task.func === 'function') {
+                        try {
+                            // Pass the specific mesh and deltaTime to the function
+                            task.func(task.targetMesh, deltaTime);
+                        } catch (e) {
+                            console.error(`Error executing per-frame function ${task.name || 'anonymous'} for mesh ${task.targetMesh.name}:`, e);
+                            // Optional: remove problematic function to prevent repeated errors
+                            // window.sceneSpecificPerFrameFunctions = window.sceneSpecificPerFrameFunctions.filter(f => f !== task);
+                        }
+                    } else if (task.targetMesh && task.targetMesh.isDisposed()) {
+                        // Optional: Clean up functions for disposed meshes
+                        // console.log(`Removing per-frame function for disposed mesh ${task.targetMesh.name}`);
+                        // window.sceneSpecificPerFrameFunctions = window.sceneSpecificPerFrameFunctions.filter(f => f !== task);
+                    }
+                });
+            }
+            scene.render();
+        });
+
         window.addEventListener('resize', resizeCanvas);
-        resizeCanvas(); // Initial resize
+        resizeCanvas();
+
+        // --- Monaco Editor & View Switching Logic ---
+        const blocklyDiv = document.getElementById('blocklyDiv');
+        const monacoEditorContainer = document.getElementById('monacoEditorContainer');
+        const showBlocksButton = document.getElementById('showBlocksButton');
+        const showJsButton = document.getElementById('showJsButton');
+        let monacoEditorInstance = null;
+        let currentView = 'blockly'; // 'blockly' or 'javascript'
+
+        // Initialize Monaco Editor
+        require.config({ paths: { 'vs': 'https://cdn.jsdelivr.net/npm/monaco-editor@0.49.0/min/vs' }});
+        require(['vs/editor/editor.main'], function() {
+            monacoEditorInstance = monaco.editor.create(monacoEditorContainer, {
+                language: 'javascript',
+                theme: 'vs-light', // Or 'vs-dark'
+                readOnly: false, // Allow editing
+                automaticLayout: true // Adjusts editor layout on container resize
+            });
+            // Initial population when editor is ready
+            if (currentView === 'javascript') {
+                populateMonacoWithBlocklyCode();
+            }
+        });
+
+        function populateMonacoWithBlocklyCode() {
+            if (monacoEditorInstance) {
+                const blocklyJsCode = generateCode(); // generateCode() is already defined
+                monacoEditorInstance.setValue(blocklyJsCode);
+            }
+        }
+
+        showBlocksButton.addEventListener('click', () => {
+            if (currentView === 'javascript') {
+                blocklyDiv.style.display = 'block';
+                monacoEditorContainer.style.display = 'none';
+                currentView = 'blockly';
+                // Potentially trigger a resize/refresh for Blockly if needed
+                Blockly.svgResize(workspace);
+                console.log("Switched to Blockly view");
+            }
+        });
+
+        showJsButton.addEventListener('click', () => {
+            if (currentView === 'blockly') {
+                populateMonacoWithBlocklyCode(); // Update Monaco content before showing
+                blocklyDiv.style.display = 'none';
+                monacoEditorContainer.style.display = 'block';
+                currentView = 'javascript';
+                if (monacoEditorInstance) {
+                     // It's good practice to explicitly tell Monaco to layout itself
+                     // when its container becomes visible or changes size,
+                     // especially if automaticLayout isn't perfectly handling all cases.
+                    monacoEditorInstance.layout();
+                }
+                console.log("Switched to JavaScript view");
+            }
+        });
+
+        // Adjust save/load/run if they need to be aware of the current view
+        // For now, run will always use Blockly code, save/load workspace.
+        // This will be updated in later steps.
 
         loadWorkspaceDefault();
