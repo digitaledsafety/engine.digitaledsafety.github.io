@@ -911,6 +911,7 @@ var toolbox = {
     ]
 };
 
+
         const workspace = Blockly.inject('blocklyDiv', {
             toolbox: toolbox,
             zoom: {
