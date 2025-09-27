@@ -100,6 +100,54 @@ var toolbox = {
 
         {
             kind: 'category',
+            name: 'Player',
+            categorystyle: 'logic_category',
+            contents: [
+                {
+                    kind: 'block',
+                    type: 'set_as_player',
+                },
+                {
+                    kind: 'block',
+                    type: 'on_key_press',
+                },
+                {
+                    kind: 'block',
+                    type: 'player_jump',
+                },
+                {
+                    kind: 'block',
+                    type: 'player_move',
+                },
+            ]
+        },
+
+        {
+            kind: 'category',
+            name: 'Camera',
+            categorystyle: 'math_category',
+            contents: [
+                {
+                    kind: 'block',
+                    type: 'create_camera',
+                },
+                {
+                    kind: 'block',
+                    type: 'set_isometric_camera',
+                },
+                {
+                    kind: 'block',
+                    type: 'point_camera_at_mesh'
+                },
+                {
+                    kind: 'block',
+                    type: 'camera_follow',
+                },
+            ]
+        },
+
+        {
+            kind: 'category',
             name: 'Objects',
             categorystyle: 'math_category',
             contents: [
@@ -240,6 +288,21 @@ var toolbox = {
             ]
         },
 
+        {
+            kind: 'category',
+            name: 'Gameplay',
+            categorystyle: 'logic_category',
+            contents: [
+                {
+                    kind: 'block',
+                    type: 'on_collision',
+                },
+                {
+                    kind: 'block',
+                    type: 'destroy_object',
+                },
+            ]
+        },
 
         {
             kind: 'category',
@@ -918,10 +981,23 @@ class BabylonSceneManager {
         this.scene = new BABYLON.Scene(this.engine);
         this.objects = {};
         this.materials = {};
+        this.player = null;
         this.perFrameFunctions = [];
+        this.keyPressActions = {};
+        this.inputState = { keys: {} };
 
         this.initScene();
+        this.initInputListeners();
         this.runRenderLoop();
+    }
+
+    initInputListeners() {
+        window.addEventListener('keydown', (event) => {
+            this.inputState.keys[event.key] = true;
+        });
+        window.addEventListener('keyup', (event) => {
+            this.inputState.keys[event.key] = false;
+        });
     }
 
     initScene() {
@@ -938,6 +1014,13 @@ class BabylonSceneManager {
             const currentTime = performance.now();
             const deltaTime = currentTime - lastTime;
             lastTime = currentTime;
+
+            // Handle continuous key presses
+            for (const key in this.keyPressActions) {
+                if (this.inputState.keys[key]) {
+                    this.keyPressActions[key].forEach(action => action());
+                }
+            }
 
             this.perFrameFunctions.forEach(task => {
                 if (task.targetMesh && !task.targetMesh.isDisposed() && typeof task.func === 'function') {
@@ -959,6 +1042,8 @@ class BabylonSceneManager {
         this.objects = {};
         this.materials = {};
         this.perFrameFunctions = [];
+        this.keyPressActions = {};
+        this.inputState = { keys: {} }; // Reset state on clear
     }
 
     dispose() {
@@ -1516,6 +1601,162 @@ class BabylonSceneManager {
                 "colour": "%{BKY_MATH_HUE}",
                 "tooltip": "Continuously rotates the object. Use inside an 'every frame' block for the target object.",
                 "helpUrl": ""
+            },
+            // Player Control Blocks
+            {
+                "type": "on_key_press",
+                "message0": "on key %1 pressed do %2",
+                "args0": [
+                    {
+                        "type": "field_dropdown",
+                        "name": "KEY",
+                        "options": [
+                            ["space", " "],
+                            ["arrow up", "ArrowUp"],
+                            ["arrow down", "ArrowDown"],
+                            ["arrow left", "ArrowLeft"],
+                            ["arrow right", "ArrowRight"]
+                        ]
+                    },
+                    {
+                        "type": "input_statement",
+                        "name": "DO"
+                    }
+                ],
+                "previousStatement": null,
+                "nextStatement": null,
+                "colour": "%{BKY_LOOPS_HUE}",
+                "tooltip": "Executes code when a specific key is pressed.",
+                "helpUrl": ""
+            },
+            {
+                "type": "player_jump",
+                "message0": "make %1 jump with force %2",
+                "args0": [
+                    {
+                        "type": "input_value",
+                        "name": "PLAYER",
+                        "check": "String"
+                    },
+                    {
+                        "type": "input_value",
+                        "name": "FORCE",
+                        "check": "Number"
+                    }
+                ],
+                "previousStatement": null,
+                "nextStatement": null,
+                "colour": "#4C97FF",
+                "tooltip": "Makes the specified object jump.",
+                "helpUrl": ""
+            },
+            {
+                "type": "player_move",
+                "message0": "move %1 with speed %2 in direction %3",
+                "args0": [
+                    {
+                        "type": "input_value",
+                        "name": "PLAYER",
+                        "check": "String"
+                    },
+                    {
+                        "type": "input_value",
+                        "name": "SPEED",
+                        "check": "Number"
+                    },
+                    {
+                        "type": "field_dropdown",
+                        "name": "DIRECTION",
+                        "options": [
+                            ["forward", "FORWARD"],
+                            ["backward", "BACKWARD"],
+                            ["left", "LEFT"],
+                            ["right", "RIGHT"]
+                        ]
+                    }
+                ],
+                "previousStatement": null,
+                "nextStatement": null,
+                "colour": "#4C97FF",
+                "tooltip": "Moves the specified object in a direction.",
+                "helpUrl": ""
+            },
+            // Gameplay Blocks
+            {
+                "type": "on_collision",
+                "message0": "when %1 collides with %2 %3 do %4",
+                "args0": [
+                    {
+                        "type": "input_value",
+                        "name": "OBJECT1",
+                        "check": "String"
+                    },
+                    {
+                        "type": "input_value",
+                        "name": "OBJECT2",
+                        "check": "String"
+                    },
+                    {
+                        "type": "input_dummy"
+                    },
+                    {
+                        "type": "input_statement",
+                        "name": "DO"
+                    }
+                ],
+                "previousStatement": null,
+                "nextStatement": null,
+                "colour": "#5BA55B",
+                "tooltip": "Executes code when two objects collide.",
+                "helpUrl": ""
+            },
+            {
+                "type": "destroy_object",
+                "message0": "destroy object %1",
+                "args0": [
+                    {
+                        "type": "input_value",
+                        "name": "OBJECT",
+                        "check": "String"
+                    }
+                ],
+                "previousStatement": null,
+                "nextStatement": null,
+                "colour": "#5BA55B",
+                "tooltip": "Destroys the specified object.",
+                "helpUrl": ""
+            },
+            {
+                "type": "set_as_player",
+                "message0": "set %1 as player",
+                "args0": [
+                    {
+                        "type": "input_value",
+                        "name": "OBJECT",
+                        "check": "String"
+                    }
+                ],
+                "previousStatement": null,
+                "nextStatement": null,
+                "colour": "#4C97FF",
+                "tooltip": "Designates the specified object as the player character.",
+                "helpUrl": ""
+            },
+            {
+                "type": "camera_follow",
+                "message0": "make camera follow %1",
+                "args0": [
+                    {
+                        "type": "input_value",
+                        "name": "OBJECT",
+                        "check": "String"
+                    }
+                ],
+                "previousStatement": null,
+                "nextStatement": null,
+                "colour": "#A55B80",
+                "tooltip": "Makes the camera follow the specified object.",
+                "helpUrl": ""
             }
         ]);
 
@@ -1591,6 +1832,123 @@ if (thisMesh) {
             // javascript.javascriptGenerator.forBlock['attach_script_to_object'] = function(block, generator) { // REMOVED
             //     // ...
             // };
+
+            // --- Player and Camera Block Generators ---
+            javascript.javascriptGenerator.forBlock['set_as_player'] = function(block, generator) {
+                const objectVar = generator.valueToCode(block, 'OBJECT', generator.ORDER_ATOMIC) || 'null';
+                return `
+let playerMesh = sceneManager.objects[${objectVar}] || sceneManager.scene.getMeshByName(${objectVar}) || sceneManager.scene.getMeshById(${objectVar});
+if (playerMesh) {
+    sceneManager.player = playerMesh;
+}
+`;
+            };
+
+            javascript.javascriptGenerator.forBlock['camera_follow'] = function(block, generator) {
+                const objectVar = generator.valueToCode(block, 'OBJECT', generator.ORDER_ATOMIC) || 'null';
+                return `
+let targetToFollow = sceneManager.objects[${objectVar}] || sceneManager.scene.getMeshByName(${objectVar}) || sceneManager.scene.getMeshById(${objectVar});
+if (targetToFollow && sceneManager.scene.activeCamera) {
+    sceneManager.scene.activeCamera.lockedTarget = targetToFollow;
+}
+`;
+            };
+
+            // --- Gameplay Block Generators ---
+            javascript.javascriptGenerator.forBlock['on_collision'] = function(block, generator) {
+                const obj1 = generator.valueToCode(block, 'OBJECT1', generator.ORDER_ATOMIC) || 'null';
+                const obj2 = generator.valueToCode(block, 'OBJECT2', generator.ORDER_ATOMIC) || 'null';
+                const doCode = generator.statementToCode(block, 'DO');
+
+                return `
+let obj1Mesh = sceneManager.objects[${obj1}] || sceneManager.scene.getMeshByName(${obj1}) || sceneManager.scene.getMeshById(${obj1});
+let obj2Mesh = sceneManager.objects[${obj2}] || sceneManager.scene.getMeshByName(${obj2}) || sceneManager.scene.getMeshById(${obj2});
+
+if (obj1Mesh && obj2Mesh && obj1Mesh.physicsImpostor && obj2Mesh.physicsImpostor) {
+    obj1Mesh.physicsImpostor.onCollideEvent = (main, collided) => {
+        if (collided.object === obj2Mesh) {
+            ${doCode}
+        }
+    };
+}
+`;
+            };
+
+            javascript.javascriptGenerator.forBlock['destroy_object'] = function(block, generator) {
+                const objectVar = generator.valueToCode(block, 'OBJECT', generator.ORDER_ATOMIC) || 'null';
+                return `
+let targetToDestroyName = ${objectVar};
+let targetToDestroy = sceneManager.objects[targetToDestroyName] || sceneManager.scene.getMeshByName(targetToDestroyName) || sceneManager.scene.getMeshById(targetToDestroyName);
+
+if (targetToDestroy) {
+    targetToDestroy.dispose();
+    delete sceneManager.objects[targetToDestroyName];
+}
+`;
+            };
+
+            // --- Player Control Block Generators ---
+            javascript.javascriptGenerator.forBlock['on_key_press'] = function(block, generator) {
+                const key = block.getFieldValue('KEY');
+                const doCode = generator.statementToCode(block, 'DO');
+
+                return `
+if (!sceneManager.keyPressActions['${key}']) {
+    sceneManager.keyPressActions['${key}'] = [];
+}
+sceneManager.keyPressActions['${key}'].push(() => {
+    ${doCode}
+});
+`;
+            };
+
+            javascript.javascriptGenerator.forBlock['player_jump'] = function(block, generator) {
+                const playerVar = generator.valueToCode(block, 'PLAYER', generator.ORDER_ATOMIC) || 'null';
+                const force = generator.valueToCode(block, 'FORCE', generator.ORDER_ATOMIC) || '5';
+
+                return `
+let jumpTargetName = ${playerVar};
+let jumpTargetMesh = sceneManager.objects[jumpTargetName] || sceneManager.scene.getMeshByName(jumpTargetName) || sceneManager.scene.getMeshById(jumpTargetName);
+
+if (jumpTargetMesh && jumpTargetMesh.physicsImpostor) {
+    const verticalVelocity = jumpTargetMesh.physicsImpostor.getLinearVelocity().y;
+    if (Math.abs(verticalVelocity) < 0.1) { // Check if on ground
+        jumpTargetMesh.physicsImpostor.applyImpulse(new BABYLON.Vector3(0, ${force}, 0), jumpTargetMesh.getAbsolutePosition());
+    }
+}
+`;
+            };
+
+            javascript.javascriptGenerator.forBlock['player_move'] = function(block, generator) {
+                const playerVar = generator.valueToCode(block, 'PLAYER', generator.ORDER_ATOMIC) || 'null';
+                const speed = generator.valueToCode(block, 'SPEED', generator.ORDER_ATOMIC) || '1';
+                const direction = block.getFieldValue('DIRECTION');
+
+                let velocity = 'new BABYLON.Vector3(0, 0, 0)';
+                switch (direction) {
+                    case 'FORWARD':
+                        velocity = `new BABYLON.Vector3(0, 0, ${speed})`;
+                        break;
+                    case 'BACKWARD':
+                        velocity = `new BABYLON.Vector3(0, 0, -${speed})`;
+                        break;
+                    case 'LEFT':
+                        velocity = `new BABYLON.Vector3(-${speed}, 0, 0)`;
+                        break;
+                    case 'RIGHT':
+                        velocity = `new BABYLON.Vector3(${speed}, 0, 0)`;
+                        break;
+                }
+
+                return `
+let moveTargetName = ${playerVar};
+let moveTargetMesh = sceneManager.objects[moveTargetName] || sceneManager.scene.getMeshByName(moveTargetName) || sceneManager.scene.getMeshById(moveTargetName);
+
+if (moveTargetMesh && moveTargetMesh.physicsImpostor) {
+    moveTargetMesh.physicsImpostor.setLinearVelocity(${velocity});
+}
+`;
+            };
 
             // --- Existing JavaScript Generators ---
             javascript.javascriptGenerator.forBlock['position_model'] = function (block, generator) {
@@ -1894,37 +2252,49 @@ if (sceneManager.objects['${name}']) {
                     "languageVersion": 0,
                     "blocks": [
                         {
-                            "type": "import_3d_file_url",
-                            "id": "-xy:B4jNLPcdjK9qYqjf",
-                            "x": 26,
-                            "y": 10,
-                            "fields": {
-                                "MODEL_URL": "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/main/2.0/Duck/glTF-Binary/Duck.glb",
-                                "MODEL_VAR": {
-                                    "id": "Tw=U+h6sN{r/zUez!;j8"
-                                }
-                            },
+                            "type": "create_ground",
+                            "id": "ground_block",
+                            "x": 50,
+                            "y": 50,
                             "inputs": {
-                                "ON_SUCCESS": {
-                                    "block": {
-                                        "type": "create_camera",
-                                        "id": "P@8M:RocH3uoSQ04_F14",
-                                        "fields": {
-                                            "NAME": "camera",
-                                            "MODEL_VAR": {
-                                                "id": "EZe?g.{eh_}M^PAF=wxy"
-                                            }
-                                        },
-                                        "next": {
-                                            "block": {
-                                                "type": "point_camera_at_mesh",
-                                                "id": "E{8BD5:R^4;nqCvlCbL)",
-                                                "fields": {
-                                                    "CAMERA": {
-                                                        "id": "EZe?g.{eh_}M^PAF=wxy"
+                                "WIDTH": { "block": { "type": "math_number", "fields": { "NUM": 20 } } },
+                                "HEIGHT": { "block": { "type": "math_number", "fields": { "NUM": 20 } } }
+                            },
+                            "next": {
+                                "block": {
+                                    "type": "set_ground_physics",
+                                    "id": "ground_physics_block",
+                                    "next": {
+                                        "block": {
+                                            "type": "create_box",
+                                            "id": "player_block",
+                                            "inputs": {
+                                                "NAME": { "block": { "type": "text", "fields": { "TEXT": "player" } } },
+                                                "X": { "block": { "type": "math_number", "fields": { "NUM": 0 } } },
+                                                "Y": { "block": { "type": "math_number", "fields": { "NUM": 5 } } },
+                                                "Z": { "block": { "type": "math_number", "fields": { "NUM": 0 } } }
+                                            },
+                                            "next": {
+                                                "block": {
+                                                    "type": "enable_physics",
+                                                    "id": "player_physics_block",
+                                                    "inputs": {
+                                                        "NAME": { "block": { "type": "text", "fields": { "TEXT": "player" } } },
+                                                        "MASS": { "block": { "type": "math_number", "fields": { "NUM": 1 } } }
                                                     },
-                                                    "MESH": {
-                                                        "id": "Tw=U+h6sN{r/zUez!;j8"
+                                                    "next": {
+                                                        "block": {
+                                                            "type": "set_as_player",
+                                                            "id": "set_player_block",
+                                                            "inputs": { "OBJECT": { "block": { "type": "text", "fields": { "TEXT": "player" } } } },
+                                                            "next": {
+                                                                "block": {
+                                                                    "type": "camera_follow",
+                                                                    "id": "camera_follow_block",
+                                                                    "inputs": { "OBJECT": { "block": { "type": "text", "fields": { "TEXT": "player" } } } }
+                                                                }
+                                                            }
+                                                        }
                                                     }
                                                 }
                                             }
@@ -1932,25 +2302,108 @@ if (sceneManager.objects['${name}']) {
                                     }
                                 }
                             }
+                        },
+                        {
+                            "type": "on_key_press",
+                            "id": "jump_control_block",
+                            "x": 50,
+                            "y": 350,
+                            "fields": { "KEY": " " },
+                            "inputs": {
+                                "DO": {
+                                    "block": {
+                                        "type": "player_jump",
+                                        "id": "jump_action_block",
+                                        "inputs": {
+                                            "PLAYER": { "block": { "type": "text", "fields": { "TEXT": "player" } } },
+                                            "FORCE": { "block": { "type": "math_number", "fields": { "NUM": 8 } } }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "type": "on_key_press",
+                            "id": "left_control_block",
+                            "x": 50,
+                            "y": 450,
+                            "fields": { "KEY": "ArrowLeft" },
+                            "inputs": {
+                                "DO": {
+                                    "block": {
+                                        "type": "player_move",
+                                        "id": "left_action_block",
+                                        "fields": { "DIRECTION": "LEFT" },
+                                        "inputs": {
+                                            "PLAYER": { "block": { "type": "text", "fields": { "TEXT": "player" } } },
+                                            "SPEED": { "block": { "type": "math_number", "fields": { "NUM": 5 } } }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "type": "on_key_press",
+                            "id": "right_control_block",
+                            "x": 50,
+                            "y": 550,
+                            "fields": { "KEY": "ArrowRight" },
+                            "inputs": {
+                                "DO": {
+                                    "block": {
+                                        "type": "player_move",
+                                        "id": "right_action_block",
+                                        "fields": { "DIRECTION": "RIGHT" },
+                                        "inputs": {
+                                            "PLAYER": { "block": { "type": "text", "fields": { "TEXT": "player" } } },
+                                            "SPEED": { "block": { "type": "math_number", "fields": { "NUM": 5 } } }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "type": "create_box",
+                            "id": "coin_block",
+                            "x": 400,
+                            "y": 50,
+                            "inputs": {
+                                "NAME": { "block": { "type": "text", "fields": { "TEXT": "coin" } } },
+                                "X": { "block": { "type": "math_number", "fields": { "NUM": 5 } } },
+                                "Y": { "block": { "type": "math_number", "fields": { "NUM": 2 } } },
+                                "Z": { "block": { "type": "math_number", "fields": { "NUM": 0 } } }
+                            },
+                             "next": {
+                                "block": {
+                                    "type": "change_object_color",
+                                    "id": "coin_color_block",
+                                     "fields": {"COLOR": "#FFD700"},
+                                    "inputs": {"NAME": { "block": { "type": "text", "fields": { "TEXT": "coin" } } } }
+                                }
+                            }
+                        },
+                        {
+                            "type": "on_collision",
+                            "id": "collision_block",
+                            "x": 400,
+                            "y": 150,
+                            "inputs": {
+                                "OBJECT1": { "block": { "type": "text", "fields": { "TEXT": "player" } } },
+                                "OBJECT2": { "block": { "type": "text", "fields": { "TEXT": "coin" } } },
+                                "DO": {
+                                    "block": {
+                                        "type": "destroy_object",
+                                        "id": "destroy_coin_block",
+                                        "inputs": {
+                                            "OBJECT": { "block": { "type": "text", "fields": { "TEXT": "coin" } } }
+                                        }
+                                    }
+                                }
+                            }
                         }
                     ]
-                },
-                "variables": [
-                    {
-                        "name": "model",
-                        "id": "Tw=U+h6sN{r/zUez!;j8"
-                    },
-                    {
-                        "name": "camera",
-                        "id": "EZe?g.{eh_}M^PAF=wxy"
-                    },
-                    {
-                        "name": "mesh",
-                        "id": "j;nQCHM[i@HS@uJ1|kNe"
-                    }
-                ]
-            }
-
+                }
+            };
             var workspace = Blockly.getMainWorkspace();
             Blockly.serialization.workspaces.load(state, workspace);
             doRun();
@@ -2088,5 +2541,29 @@ if (sceneManager.objects['${name}']) {
         // Adjust save/load/run if they need to be aware of the current view
         // For now, run will always use Blockly code, save/load workspace.
         // This will be updated in later steps.
+
+        // --- Touch Control Event Listeners ---
+        const touchLeft = document.getElementById('touch-left');
+        const touchRight = document.getElementById('touch-right');
+        const touchJump = document.getElementById('touch-jump');
+
+        const handleTouch = (key, isPressed) => {
+            sceneManager.inputState.keys[key] = isPressed;
+        };
+
+        // Left Button
+        touchLeft.addEventListener('touchstart', (e) => { e.preventDefault(); handleTouch('ArrowLeft', true); }, { passive: false });
+        touchLeft.addEventListener('touchend', (e) => { e.preventDefault(); handleTouch('ArrowLeft', false); }, { passive: false });
+        touchLeft.addEventListener('touchcancel', (e) => { e.preventDefault(); handleTouch('ArrowLeft', false); }, { passive: false });
+
+        // Right Button
+        touchRight.addEventListener('touchstart', (e) => { e.preventDefault(); handleTouch('ArrowRight', true); }, { passive: false });
+        touchRight.addEventListener('touchend', (e) => { e.preventDefault(); handleTouch('ArrowRight', false); }, { passive: false });
+        touchRight.addEventListener('touchcancel', (e) => { e.preventDefault(); handleTouch('ArrowRight', false); }, { passive: false });
+
+        // Jump Button
+        touchJump.addEventListener('touchstart', (e) => { e.preventDefault(); handleTouch(' ', true); }, { passive: false });
+        touchJump.addEventListener('touchend', (e) => { e.preventDefault(); handleTouch(' ', false); }, { passive: false });
+        touchJump.addEventListener('touchcancel', (e) => { e.preventDefault(); handleTouch(' ', false); }, { passive: false });
 
         loadWorkspaceDefault();

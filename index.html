@@ -78,8 +78,42 @@
             background-color: #0056b3;
         }
 
-        /* Responsive for Mobile */
+        #touch-controls {
+            display: none; /* Hidden by default on desktop */
+            position: fixed;
+            bottom: 20px;
+            left: 0;
+            width: 100%;
+            justify-content: space-between;
+            padding: 0 5%;
+            box-sizing: border-box;
+            z-index: 10;
+            -webkit-user-select: none; /* Safari */
+            -ms-user-select: none; /* IE 10+ */
+            user-select: none; /* Standard syntax */
+        }
+
+        #touch-controls .touch-cluster {
+            display: flex;
+            gap: 20px;
+        }
+
+        #touch-controls button {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background-color: rgba(90, 90, 90, 0.6);
+            color: white;
+            font-size: 28px;
+            border: 2px solid rgba(255, 255, 255, 0.8);
+            font-weight: bold;
+        }
+
+        /* Show and arrange for Mobile */
         @media (max-width: 768px) {
+            #touch-controls {
+                display: flex;
+            }
             .container {
                 flex-direction: column;
             }
@@ -101,6 +135,15 @@
     <div class="container">
         <div class="canvas-container">
             <canvas id="gameCanvas"></canvas>
+            <div id="touch-controls">
+                <div id="touch-move" class="touch-cluster">
+                    <button id="touch-left">⇦</button>
+                    <button id="touch-right">⇨</button>
+                </div>
+                <div id="touch-action" class="touch-cluster">
+                    <button id="touch-jump">⇧</button>
+                </div>
+            </div>
         </div>
         <div class="controls">
             <div class="editor-toggle-buttons" style="margin-bottom: 10px;">
