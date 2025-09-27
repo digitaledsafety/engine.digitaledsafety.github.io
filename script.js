@@ -2264,6 +2264,7 @@ if (sceneManager.objects['${name}']) {
                         // Setup Scene
                         {
                             "type": "create_ground", "id": "ground", "x": 50, "y": 50,
+                            "fields": { "NAME": "ground" },
                             "inputs": {
                                 "WIDTH": { "block": { "type": "math_number", "fields": { "NUM": 20 } } },
                                 "HEIGHT": { "block": { "type": "math_number", "fields": { "NUM": 20 } } }
@@ -2271,11 +2272,12 @@ if (sceneManager.objects['${name}']) {
                             "next": {
                                 "block": {
                                     "type": "set_ground_physics", "id": "g_phys",
+                                    "fields": { "NAME": "ground" },
                                     "next": {
                                         "block": {
                                             "type": "create_box", "id": "p_box",
+                                            "fields": { "NAME": "player" },
                                             "inputs": {
-                                                "NAME": { "block": { "type": "text", "fields": { "TEXT": "player" } } },
                                                 "X": { "block": { "type": "math_number", "fields": { "NUM": 0 } } },
                                                 "Y": { "block": { "type": "math_number", "fields": { "NUM": 5 } } },
                                                 "Z": { "block": { "type": "math_number", "fields": { "NUM": 0 } } }
@@ -2283,8 +2285,8 @@ if (sceneManager.objects['${name}']) {
                                             "next": {
                                                 "block": {
                                                     "type": "enable_physics", "id": "p_phys",
+                                                    "fields": { "NAME": "player" },
                                                     "inputs": {
-                                                        "NAME": { "block": { "type": "text", "fields": { "TEXT": "player" } } },
                                                         "MASS": { "block": { "type": "math_number", "fields": { "NUM": 1 } } }
                                                     },
                                                     "next": {
@@ -2322,13 +2324,13 @@ if (sceneManager.objects['${name}']) {
                         // Coin
                         {
                             "type": "create_box", "id": "coin", "x": 400, "y": 50,
+                            "fields": { "NAME": "coin" },
                             "inputs": {
-                                "NAME": { "block": { "type": "text", "fields": { "TEXT": "coin" } } },
                                 "X": { "block": { "type": "math_number", "fields": { "NUM": 5 } } },
                                 "Y": { "block": { "type": "math_number", "fields": { "NUM": 2 } } },
                                 "Z": { "block": { "type": "math_number", "fields": { "NUM": 0 } } }
                             },
-                             "next": { "block": { "type": "change_object_color", "id": "c_color", "fields": {"COLOR": "#FFD700"}, "inputs": {"NAME": { "block": { "type": "text", "fields": { "TEXT": "coin" } } } } } }
+                             "next": { "block": { "type": "change_object_color", "id": "c_color", "fields": { "NAME": "coin", "COLOR": "#FFD700" } } }
                         },
                         {
                             "type": "on_collision", "id": "collide", "x": 400, "y": 150,
