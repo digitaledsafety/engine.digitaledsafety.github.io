@@ -2077,8 +2077,10 @@ if (camera) {
                 const width = generator.valueToCode(block, 'WIDTH', generator.ORDER_ATOMIC) || 10;
                 const height = generator.valueToCode(block, 'HEIGHT', generator.ORDER_ATOMIC) || 10;
                 return `
-const groundMesh = BABYLON.MeshBuilder.CreateGround('${name}', { width: ${width}, height: ${height} }, sceneManager.scene);
-sceneManager.objects['${name}'] = groundMesh;
+{
+    const groundMesh = BABYLON.MeshBuilder.CreateGround('${name}', { width: ${width}, height: ${height} }, sceneManager.scene);
+    sceneManager.objects['${name}'] = groundMesh;
+}
 `;
             };
 
@@ -2108,9 +2110,11 @@ if (sceneManager.objects['${name}']) {
                 const y = generator.valueToCode(block, 'Y', generator.ORDER_ATOMIC) || 0;
                 const z = generator.valueToCode(block, 'Z', generator.ORDER_ATOMIC) || 0;
                 return `
-const boxMesh = BABYLON.MeshBuilder.CreateBox('${name}', {}, sceneManager.scene);
-boxMesh.position.set(${x}, ${y}, ${z});
-sceneManager.objects['${name}'] = boxMesh;
+{
+    const boxMesh = BABYLON.MeshBuilder.CreateBox('${name}', {}, sceneManager.scene);
+    boxMesh.position.set(${x}, ${y}, ${z});
+    sceneManager.objects['${name}'] = boxMesh;
+}
 `;
             };
 
@@ -2120,9 +2124,11 @@ sceneManager.objects['${name}'] = boxMesh;
                 const y = generator.valueToCode(block, 'Y', generator.ORDER_ATOMIC) || 0;
                 const z = generator.valueToCode(block, 'Z', generator.ORDER_ATOMIC) || 0;
                 return `
-const sphereMesh = BABYLON.MeshBuilder.CreateSphere('${name}', { diameter: 2 }, sceneManager.scene);
-sphereMesh.position.set(${x}, ${y}, ${z});
-sceneManager.objects['${name}'] = sphereMesh;
+{
+    const sphereMesh = BABYLON.MeshBuilder.CreateSphere('${name}', { diameter: 2 }, sceneManager.scene);
+    sphereMesh.position.set(${x}, ${y}, ${z});
+    sceneManager.objects['${name}'] = sphereMesh;
+}
 `;
             };
 
@@ -2139,7 +2145,7 @@ sceneManager.objects['${name}'] = sphereMesh;
                 const x = generator.valueToCode(block, 'X', generator.ORDER_ATOMIC) || 0;
                 const y = generator.valueToCode(block, 'Y', generator.ORDER_ATOMIC) || 0;
                 const z = generator.valueToCode(block, 'Z', generator.ORDER_ATOMIC) || 0;
-                return `const ${name} = new BABYLON.PointLight('${name}', new BABYLON.Vector3(${x}, ${y}, ${z}), sceneManager.scene);\n`;
+                return `{ const light = new BABYLON.PointLight('${name}', new BABYLON.Vector3(${x}, ${y}, ${z}), sceneManager.scene); }\n`;
             };
 
             javascript.javascriptGenerator.forBlock['change_object_color'] = function (block, generator) {
