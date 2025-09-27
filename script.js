@@ -911,6 +911,62 @@ var toolbox = {
     ]
 };
 
+class BabylonSceneManager {
+    constructor(canvas) {
+        this.canvas = canvas;
+        this.engine = new BABYLON.Engine(this.canvas, true);
+        this.scene = new BABYLON.Scene(this.engine);
+        this.objects = {};
+        this.materials = {};
+        this.perFrameFunctions = [];
+
+        this.initScene();
+        this.runRenderLoop();
+    }
+
+    initScene() {
+        const camera = new BABYLON.ArcRotateCamera('Camera', Math.PI / 2, Math.PI / 4, 10, BABYLON.Vector3.Zero(), this.scene);
+        camera.attachControl(this.canvas, true);
+        const light = new BABYLON.HemisphericLight('light', new BABYLON.Vector3(1, 1, 0), this.scene);
+        const physicsPlugin = new BABYLON.CannonJSPlugin();
+        this.scene.enablePhysics(new BABYLON.Vector3(0, -9.8, 0), physicsPlugin);
+    }
+
+    runRenderLoop() {
+        let lastTime = performance.now();
+        this.engine.runRenderLoop(() => {
+            const currentTime = performance.now();
+            const deltaTime = currentTime - lastTime;
+            lastTime = currentTime;
+
+            this.perFrameFunctions.forEach(task => {
+                if (task.targetMesh && !task.targetMesh.isDisposed() && typeof task.func === 'function') {
+                    try {
+                        task.func(task.targetMesh, deltaTime);
+                    } catch (e) {
+                        console.error(`Error executing per-frame function for mesh ${task.targetMesh.name}:`, e);
+                    }
+                }
+            });
+            this.scene.render();
+        });
+    }
+
+    clear() {
+        this.scene.dispose();
+        this.scene = new BABYLON.Scene(this.engine);
+        this.initScene();
+        this.objects = {};
+        this.materials = {};
+        this.perFrameFunctions = [];
+    }
+
+    dispose() {
+        this.scene.dispose();
+        this.engine.dispose();
+    }
+}
+
 
         const workspace = Blockly.inject('blocklyDiv', {
             toolbox: toolbox,
@@ -1471,74 +1527,45 @@ var toolbox = {
                 const objectNameValue = generator.valueToCode(block, 'OBJECT_SELECTOR', generator.ORDER_ATOMIC) || 'null';
                 const doCode = generator.statementToCode(block, 'DO_CODE');
 
-                // For the new unified script model, this generated code will be part of the single script
-                // executed by doRun(). It sets up the event listener.
-                let code = `
+                return `
 let onClickTargetName = ${objectNameValue};
-let onClickTargetMesh = objects[onClickTargetName] || scene.getMeshByName(onClickTargetName) || scene.getMeshById(onClickTargetName);
+let onClickTargetMesh = sceneManager.objects[onClickTargetName] || sceneManager.scene.getMeshByName(onClickTargetName) || sceneManager.scene.getMeshById(onClickTargetName);
 
 if (onClickTargetMesh) {
     if (!onClickTargetMesh.actionManager) {
-        onClickTargetMesh.actionManager = new BABYLON.ActionManager(scene);
+        onClickTargetMesh.actionManager = new BABYLON.ActionManager(sceneManager.scene);
     }
     onClickTargetMesh.actionManager.registerAction(
         new BABYLON.ExecuteCodeAction(
             BABYLON.ActionManager.OnPickTrigger,
             function(evt) {
                 const thisMesh = onClickTargetMesh;
-                console.log('Clicked on ' + thisMesh.name);
-                try {
-                    ${doCode}
-                } catch (e) {
-                    console.error('Error in OnClick script for ' + thisMesh.name + ':', e);
-                }
+                ${doCode}
             }
         )
     );
-    // Metadata assignment removed - this block now just sets up the listener.
-    console.log('On-click event action registered for: ' + onClickTargetName);
-} else {
-    console.warn('On-click event: Could not find object: ' + onClickTargetName);
 }
 `;
-                return code;
             };
 
             javascript.javascriptGenerator.forBlock['event_every_frame'] = function(block, generator) {
                 const objectNameValue = generator.valueToCode(block, 'OBJECT_SELECTOR', generator.ORDER_ATOMIC) || 'null';
                 const doCode = generator.statementToCode(block, 'DO_CODE');
 
-                let code = `
+                return `
 let frameLoopTargetName = ${objectNameValue};
-let frameLoopTargetMesh = objects[frameLoopTargetName] || scene.getMeshByName(frameLoopTargetName) || scene.getMeshById(frameLoopTargetName);
+let frameLoopTargetMesh = sceneManager.objects[frameLoopTargetName] || sceneManager.scene.getMeshByName(frameLoopTargetName) || sceneManager.scene.getMeshById(frameLoopTargetName);
 
 if (frameLoopTargetMesh) {
-    // Ensure the global array for per-frame functions exists
-    window.sceneSpecificPerFrameFunctions = window.sceneSpecificPerFrameFunctions || [];
-
-    // Define the function to be called each frame for this specific mesh
-    const frameFunctionName = \`frameLoop_\${frameLoopTargetMesh.id || frameLoopTargetMesh.name}_\${BABYLON.Tools.RandomId()}\`;
-    let perFrameFunction = function(thisMesh, deltaTime) {
-        // Note: 'thisMesh' and 'deltaTime' will be provided by the central loop
+    const perFrameFunction = function(thisMesh, deltaTime) {
         ${doCode}
     };
-
-    // Store the function code and target, or directly the function if preferred
-    window.sceneSpecificPerFrameFunctions.push({
+    sceneManager.perFrameFunctions.push({
         targetMesh: frameLoopTargetMesh,
-        func: perFrameFunction,
-        name: frameFunctionName // For debugging or potential removal later
+        func: perFrameFunction
     });
-    console.log('Every-frame function registered for: ' + frameLoopTargetName);
-
-} else {
-    console.warn('Every-frame event: Could not find object: ' + frameLoopTargetName);
 }
 `;
-                // This block now just registers a function; it doesn't return executable code directly into the main script flow.
-                // The actual execution is handled by the central render loop.
-                // However, Blockly expects a string to be returned. We can return a comment or an empty string.
-                return '// Registered per-frame function for ' + frameLoopTargetName + '\\n';
             };
 
             javascript.javascriptGenerator.forBlock['action_rotate_continuously'] = function(block, generator) {
@@ -1567,68 +1594,45 @@ if (thisMesh) {
 
             // --- Existing JavaScript Generators ---
             javascript.javascriptGenerator.forBlock['position_model'] = function (block, generator) {
-                const modelVar = Blockly.JavaScript.nameDB_.getName(block.getFieldValue('MODEL'), Blockly.Variables.NAME_TYPE);
-                const x = Blockly.JavaScript.valueToCode(block, 'X', Blockly.JavaScript.ORDER_ATOMIC) || '0';
-                const y = Blockly.JavaScript.valueToCode(block, 'Y', Blockly.JavaScript.ORDER_ATOMIC) || '0';
-                const z = Blockly.JavaScript.valueToCode(block, 'Z', Blockly.JavaScript.ORDER_ATOMIC) || '0';
-
-                const code = `
-
-      scene.meshes[0].position.set(${x}, ${y}, ${z});\n
-      `;
-                return code;
+                const modelVar = generator.nameDB_.getName(block.getFieldValue('MODEL'), Blockly.Variables.NAME_TYPE);
+                const x = generator.valueToCode(block, 'X', generator.ORDER_ATOMIC) || '0';
+                const y = generator.valueToCode(block, 'Y', generator.ORDER_ATOMIC) || '0';
+                const z = generator.valueToCode(block, 'Z', generator.ORDER_ATOMIC) || '0';
+                return `${modelVar}.position = new BABYLON.Vector3(${x}, ${y}, ${z});\n`;
             };
 
             javascript.javascriptGenerator.forBlock['create_camera'] = function (block, generator) {
                 const name = block.getFieldValue('NAME');
-
-                return `
-          const ${name} = new BABYLON.ArcRotateCamera('${name}', Math.PI / 2, Math.PI / 4, 10, BABYLON.Vector3.Zero(), scene);
-          ${name}.attachControl(canvas, true);
-          `;
+                const modelVarName = generator.nameDB_.getName(block.getFieldValue('MODEL_VAR'), Blockly.Variables.NAME_TYPE);
+                return `const ${modelVarName} = new BABYLON.ArcRotateCamera('${name}', Math.PI / 2, Math.PI / 4, 10, BABYLON.Vector3.Zero(), sceneManager.scene);
+${modelVarName}.attachControl(sceneManager.canvas, true);\n`;
             };
 
-
             javascript.javascriptGenerator.forBlock['point_camera_at_mesh'] = function (block, generator) {
-                const cameraVar = Blockly.JavaScript.nameDB_.getName(block.getFieldValue('CAMERA'), Blockly.Variables.NAME_TYPE);
-                const meshVar = Blockly.JavaScript.nameDB_.getName(block.getFieldValue('MESH'), Blockly.Variables.NAME_TYPE);
-
-                const code = `
-
-
-      camera.setTarget(scene.meshes[0].position);\n
-      `;
-                return code;
+                const cameraVar = generator.nameDB_.getName(block.getFieldValue('CAMERA'), Blockly.Variables.NAME_TYPE);
+                const meshVar = generator.nameDB_.getName(block.getFieldValue('MESH'), Blockly.Variables.NAME_TYPE);
+                return `${cameraVar}.setTarget(${meshVar}.position);\n`;
             };
 
             javascript.javascriptGenerator.forBlock['save_3d_model_with_position'] = function (block, generator) {
                 const modelUrl = block.getFieldValue('MODEL_URL');
                 const modelVarName = generator.nameDB_.getName(block.getFieldValue('MODEL_VAR'), Blockly.Variables.NAME_TYPE);
-                const posX = generator.valueToCode(block, 'POS_X', javascript.javascriptGenerator.ORDER_ATOMIC) || '0';
-                const posY = generator.valueToCode(block, 'POS_Y', javascript.javascriptGenerator.ORDER_ATOMIC) || '0';
-                const posZ = generator.valueToCode(block, 'POS_Z', javascript.javascriptGenerator.ORDER_ATOMIC) || '0';
-                const uniqueId = modelVarName + '_' + BABYLON.Tools.RandomId();
+                const posX = generator.valueToCode(block, 'POS_X', generator.ORDER_ATOMIC) || '0';
+                const posY = generator.valueToCode(block, 'POS_Y', generator.ORDER_ATOMIC) || '0';
+                const posZ = generator.valueToCode(block, 'POS_Z', generator.ORDER_ATOMIC) || '0';
 
                 return `
-    BABYLON.SceneLoader.ImportMeshAsync(null, '', '${modelUrl}', scene).then(
-      function(result) {
-          if (result.meshes.length > 0) {
-            let rootMesh = result.meshes[0];
-            rootMesh.id = '${uniqueId}';
-            rootMesh.name = '${modelVarName}';
-            rootMesh.position = new BABYLON.Vector3(${posX}, ${posY}, ${posZ});
-            objects['${uniqueId}'] = rootMesh;
-            objects['${modelVarName}'] = rootMesh;
-            ${modelVarName} = rootMesh;
-            console.log('3D model saved as variable "${modelVarName}", ID "${uniqueId}", and placed at (${posX}, ${posY}, ${posZ}).');
-            // populateObjectSelector call removed
-          } else {
-            console.warn('No meshes were imported from the URL: ${modelUrl}.');
-          }
-      }).catch(function(error) {
-          console.error('Error importing model: ${modelUrl}', error);
-      });
-      `;
+{
+    const result = await BABYLON.SceneLoader.ImportMeshAsync(null, '', '${modelUrl}', sceneManager.scene);
+    if (result.meshes.length > 0) {
+        const rootMesh = result.meshes[0];
+        rootMesh.name = '${modelVarName}';
+        rootMesh.position = new BABYLON.Vector3(${posX}, ${posY}, ${posZ});
+        sceneManager.objects['${modelVarName}'] = rootMesh;
+        var ${modelVarName} = rootMesh;
+    }
+}
+`;
             };
 
             javascript.javascriptGenerator.forBlock['import_3d_file_url_with_position'] = function (block, generator) {
@@ -1636,289 +1640,225 @@ if (thisMesh) {
                 const posX = block.getFieldValue('POS_X');
                 const posY = block.getFieldValue('POS_Y');
                 const posZ = block.getFieldValue('POS_Z');
-                const baseName = fileUrl.substring(fileUrl.lastIndexOf('/') + 1) || 'importedModel';
-                const uniqueId = baseName.replace(/[^a-zA-Z0-9]/g, '_') + '_' + BABYLON.Tools.RandomId();
+                const baseName = (fileUrl.substring(fileUrl.lastIndexOf('/') + 1) || 'importedModel').replace(/[^a-zA-Z0-9]/g, '_');
 
                 return `
-    BABYLON.SceneLoader.ImportMeshAsync(null, '', '${fileUrl}', scene).then(
-      function (result) {
-        if (result.meshes.length > 0) {
-          let rootMesh = result.meshes[0];
-          rootMesh.id = '${uniqueId}';
-          rootMesh.name = '${baseName}';
-          rootMesh.position = new BABYLON.Vector3(${posX}, ${posY}, ${posZ});
-          objects['${uniqueId}'] = rootMesh;
-          objects['${baseName}'] = rootMesh;
-          console.log('3D file imported and placed successfully at (${posX}, ${posY}, ${posZ}). ID: ${uniqueId}');
-          // populateObjectSelector call removed
-        } else {
-          console.warn('No meshes were imported from the 3D file: ${fileUrl}');
-        }
-      }).catch(function(error) {
-        console.error('Failed to load 3D file: ${fileUrl}', error);
-      });
-    `;
+{
+    const result = await BABYLON.SceneLoader.ImportMeshAsync(null, '', '${fileUrl}', sceneManager.scene);
+    if (result.meshes.length > 0) {
+        const rootMesh = result.meshes[0];
+        rootMesh.name = '${baseName}';
+        rootMesh.position = new BABYLON.Vector3(${posX}, ${posY}, ${posZ});
+        sceneManager.objects['${baseName}'] = rootMesh;
+    }
+}
+`;
             };
 
             javascript.javascriptGenerator.forBlock['import_3d_file_url'] = function (block, generator) {
                 const modelUrl = block.getFieldValue('MODEL_URL');
                 const modelVarName = generator.nameDB_.getName(block.getFieldValue('MODEL_VAR'), Blockly.Variables.NAME_TYPE);
                 const onSuccessCode = generator.statementToCode(block, 'ON_SUCCESS') || '';
-                const uniqueId = modelVarName + '_' + BABYLON.Tools.RandomId();
 
                 return `
-        BABYLON.SceneLoader.ImportMeshAsync(null, '', '${modelUrl}', scene)
-          .then(function (result) {
-            if (result.meshes.length > 0) {
-              let rootMesh = result.meshes[0];
-              rootMesh.id = '${uniqueId}';
-              rootMesh.name = '${modelVarName}';
-              objects['${uniqueId}'] = rootMesh;
-              objects['${modelVarName}'] = rootMesh;
-              ${modelVarName} = rootMesh;
-              console.log('3D model imported as variable "${modelVarName}", ID "${uniqueId}".');
-              // populateObjectSelector call removed
-              ${onSuccessCode}
-            } else {
-              console.warn('No meshes were imported from URL: ${modelUrl}');
-            }
-          })
-          .catch(function(error) {
-            console.error('Error importing model for variable ${modelVarName} from URL: ${modelUrl}', error);
-          });
-      `;
+{
+    const result = await BABYLON.SceneLoader.ImportMeshAsync(null, '', '${modelUrl}', sceneManager.scene);
+    if (result.meshes.length > 0) {
+        const rootMesh = result.meshes[0];
+        rootMesh.name = '${modelVarName}';
+        sceneManager.objects['${modelVarName}'] = rootMesh;
+        var ${modelVarName} = rootMesh;
+        ${onSuccessCode}
+    }
+}
+`;
             };
 
             javascript.javascriptGenerator.forBlock['set_isometric_camera'] = function (block, generator) {
                 const cameraName = block.getFieldValue('CAMERA');
-
                 return `
-          let camera = scene.cameras.find(camera => camera.name === '${cameraName}');
-          if (camera) {
-            camera.position = new BABYLON.Vector3(10, 10, 10);
-            camera.setTarget(new BABYLON.Vector3(0, 0, 0));
-          }
-          `;
+let camera = sceneManager.scene.getCameraByName('${cameraName}');
+if (camera) {
+    camera.position = new BABYLON.Vector3(10, 10, 10);
+    camera.setTarget(BABYLON.Vector3.Zero());
+}
+`;
             };
 
             javascript.javascriptGenerator.forBlock['import_3d_file'] = function (block, generator) {
                 const fileName = block.getFieldValue('FILE_NAME');
                 const rootPath = block.getFieldValue('ROOT_PATH');
                 const onSuccessCode = generator.statementToCode(block, 'ON_SUCCESS') || '';
-                const baseName = fileName.replace(/[^a-zA-Z0-9]/g, '_') || 'importedFileModel';
-                const uniqueId = baseName + '_' + BABYLON.Tools.RandomId();
+                const baseName = (fileName.replace(/[^a-zA-Z0-9]/g, '_') || 'importedFileModel');
 
                 return `
-      BABYLON.SceneLoader.ImportMeshAsync(null, '${rootPath}', '${fileName}', scene)
-        .then(function (result) {
-          if (result.meshes.length > 0) {
-            let rootMesh = result.meshes[0];
-            rootMesh.id = '${uniqueId}';
-            rootMesh.name = '${baseName}';
-            objects['${uniqueId}'] = rootMesh;
-            objects['${baseName}'] = rootMesh;
-            console.log('3D file "${fileName}" imported successfully. ID: ${uniqueId}');
-            // populateObjectSelector call removed
-            ${onSuccessCode}
-          } else {
-            console.warn('No meshes were imported from file: ${fileName}');
-          }
-        })
-        .catch(function(error) {
-          console.error('Failed to load 3D file: ${fileName}', error);
-        });
-    `;
+{
+    const result = await BABYLON.SceneLoader.ImportMeshAsync(null, '${rootPath}', '${fileName}', sceneManager.scene);
+    if (result.meshes.length > 0) {
+        const rootMesh = result.meshes[0];
+        rootMesh.name = '${baseName}';
+        sceneManager.objects['${baseName}'] = rootMesh;
+        ${onSuccessCode}
+    }
+}
+`;
             };
 
             javascript.javascriptGenerator.forBlock['create_ground'] = function (block, generator) {
                 const name = block.getFieldValue('NAME');
-                const width = generator.valueToCode(block, 'WIDTH', javascript.javascriptGenerator.ORDER_ATOMIC) || 10;
-                const height = generator.valueToCode(block, 'HEIGHT', javascript.javascriptGenerator.ORDER_ATOMIC) || 10;
-                const uniqueId = name + '_' + BABYLON.Tools.RandomId();
+                const width = generator.valueToCode(block, 'WIDTH', generator.ORDER_ATOMIC) || 10;
+                const height = generator.valueToCode(block, 'HEIGHT', generator.ORDER_ATOMIC) || 10;
                 return `
-          const groundMesh = BABYLON.MeshBuilder.CreateGround('${name}', { width: ${width}, height: ${height} }, scene);
-          groundMesh.id = '${uniqueId}';
-          groundMesh.name = '${name}';
-          objects['${uniqueId}'] = groundMesh;
-          objects['${name}'] = groundMesh;
-          // populateObjectSelector call removed
-          `;
+const groundMesh = BABYLON.MeshBuilder.CreateGround('${name}', { width: ${width}, height: ${height} }, sceneManager.scene);
+sceneManager.objects['${name}'] = groundMesh;
+`;
             };
 
             javascript.javascriptGenerator.forBlock['set_ground_material'] = function (block, generator) {
-                const material = block.getFieldValue('MATERIAL');
+                const materialName = block.getFieldValue('MATERIAL');
                 const name = block.getFieldValue('NAME');
-
                 return `
-          if (materials['${material}'] && objects['${name}']) {
-            objects['${name}'].material = materials['${material}'];
-          }
-          `;
+if (sceneManager.materials['${materialName}'] && sceneManager.objects['${name}']) {
+    sceneManager.objects['${name}'].material = sceneManager.materials['${materialName}'];
+}
+`;
             };
 
             javascript.javascriptGenerator.forBlock['set_ground_physics'] = function (block, generator) {
                 const name = block.getFieldValue('NAME');
                 const impostor = block.getFieldValue('IMPOSTOR');
-
                 return `
-          if (objects['${name}']) {
-            objects['${name}'].physicsImpostor = new BABYLON.PhysicsImpostor(
-              objects['${name}'],
-              ${impostor},
-              { mass: 0, restitution: 0.9 },
-              scene
-            );
-          }
-          `;
+if (sceneManager.objects['${name}']) {
+    sceneManager.objects['${name}'].physicsImpostor = new BABYLON.PhysicsImpostor(sceneManager.objects['${name}'], ${impostor}, { mass: 0, restitution: 0.9 }, sceneManager.scene);
+}
+`;
             };
 
             javascript.javascriptGenerator.forBlock['create_box'] = function (block, generator) {
                 const name = block.getFieldValue('NAME');
-                const x = generator.valueToCode(block, 'X', javascript.javascriptGenerator.ORDER_ATOMIC) || 0;
-                const y = generator.valueToCode(block, 'Y', javascript.javascriptGenerator.ORDER_ATOMIC) || 0;
-                const z = generator.valueToCode(block, 'Z', javascript.javascriptGenerator.ORDER_ATOMIC) || 0;
-                const uniqueId = name + '_' + BABYLON.Tools.RandomId();
+                const x = generator.valueToCode(block, 'X', generator.ORDER_ATOMIC) || 0;
+                const y = generator.valueToCode(block, 'Y', generator.ORDER_ATOMIC) || 0;
+                const z = generator.valueToCode(block, 'Z', generator.ORDER_ATOMIC) || 0;
                 return `
-          const boxMesh = BABYLON.MeshBuilder.CreateBox('${name}', {}, scene);
-          boxMesh.id = '${uniqueId}';
-          boxMesh.name = '${name}';
-          boxMesh.position.set(${x}, ${y}, ${z});
-          objects['${uniqueId}'] = boxMesh;
-          objects['${name}'] = boxMesh;
-          // populateObjectSelector call removed
-          \n`;
+const boxMesh = BABYLON.MeshBuilder.CreateBox('${name}', {}, sceneManager.scene);
+boxMesh.position.set(${x}, ${y}, ${z});
+sceneManager.objects['${name}'] = boxMesh;
+`;
             };
 
             javascript.javascriptGenerator.forBlock['create_sphere'] = function (block, generator) {
                 const name = block.getFieldValue('NAME');
-                const x = generator.valueToCode(block, 'X', javascript.javascriptGenerator.ORDER_ATOMIC) || 0;
-                const y = generator.valueToCode(block, 'Y', javascript.javascriptGenerator.ORDER_ATOMIC) || 0;
-                const z = generator.valueToCode(block, 'Z', javascript.javascriptGenerator.ORDER_ATOMIC) || 0;
-                const uniqueId = name + '_' + BABYLON.Tools.RandomId();
+                const x = generator.valueToCode(block, 'X', generator.ORDER_ATOMIC) || 0;
+                const y = generator.valueToCode(block, 'Y', generator.ORDER_ATOMIC) || 0;
+                const z = generator.valueToCode(block, 'Z', generator.ORDER_ATOMIC) || 0;
                 return `
-          const sphereMesh = BABYLON.MeshBuilder.CreateSphere('${name}', { diameter: 2 }, scene);
-          sphereMesh.id = '${uniqueId}';
-          sphereMesh.name = '${name}';
-          sphereMesh.position.set(${x}, ${y}, ${z});
-          objects['${uniqueId}'] = sphereMesh;
-          objects['${name}'] = sphereMesh;
-          // populateObjectSelector call removed
-          \n`;
+const sphereMesh = BABYLON.MeshBuilder.CreateSphere('${name}', { diameter: 2 }, sceneManager.scene);
+sphereMesh.position.set(${x}, ${y}, ${z});
+sceneManager.objects['${name}'] = sphereMesh;
+`;
             };
 
             javascript.javascriptGenerator.forBlock['move_object'] = function (block, generator) {
                 const name = block.getFieldValue('NAME');
-                const x = Blockly.JavaScript.valueToCode(block, 'X', Blockly.JavaScript.ORDER_ATOMIC) || 0;
-                const y = Blockly.JavaScript.valueToCode(block, 'Y', Blockly.JavaScript.ORDER_ATOMIC) || 0;
-                const z = Blockly.JavaScript.valueToCode(block, 'Z', Blockly.JavaScript.ORDER_ATOMIC) || 0;
-                return `if (objects['${name}']) objects['${name}'].position.set(${x}, ${y}, ${z});\n`;
+                const x = generator.valueToCode(block, 'X', generator.ORDER_ATOMIC) || 0;
+                const y = generator.valueToCode(block, 'Y', generator.ORDER_ATOMIC) || 0;
+                const z = generator.valueToCode(block, 'Z', generator.ORDER_ATOMIC) || 0;
+                return `if (sceneManager.objects['${name}']) sceneManager.objects['${name}'].position.set(${x}, ${y}, ${z});\n`;
             };
-
 
             javascript.javascriptGenerator.forBlock['create_light'] = function (block, generator) {
                 const name = block.getFieldValue('NAME');
-                const x = Blockly.JavaScript.valueToCode(block, 'X', Blockly.JavaScript.ORDER_ATOMIC) || 0;
-                const y = Blockly.JavaScript.valueToCode(block, 'Y', Blockly.JavaScript.ORDER_ATOMIC) || 0;
-                const z = Blockly.JavaScript.valueToCode(block, 'Z', Blockly.JavaScript.ORDER_ATOMIC) || 0;
-                return `const ${name} = new BABYLON.PointLight('${name}', new BABYLON.Vector3(${x}, ${y}, ${z}), scene);\n`;
+                const x = generator.valueToCode(block, 'X', generator.ORDER_ATOMIC) || 0;
+                const y = generator.valueToCode(block, 'Y', generator.ORDER_ATOMIC) || 0;
+                const z = generator.valueToCode(block, 'Z', generator.ORDER_ATOMIC) || 0;
+                return `const ${name} = new BABYLON.PointLight('${name}', new BABYLON.Vector3(${x}, ${y}, ${z}), sceneManager.scene);\n`;
             };
 
             javascript.javascriptGenerator.forBlock['change_object_color'] = function (block, generator) {
                 const name = block.getFieldValue('NAME');
                 const color = block.getFieldValue('COLOR');
-                return `if (objects['${name}']) objects['${name}'].material = new BABYLON.StandardMaterial('${name}_material', scene);\n` +
-                    `objects['${name}'].material.diffuseColor = BABYLON.Color3.FromHexString('${color}');\n`;
+                return `
+if (sceneManager.objects['${name}']) {
+    if (!sceneManager.objects['${name}'].material) {
+        sceneManager.objects['${name}'].material = new BABYLON.StandardMaterial('${name}_material', sceneManager.scene);
+    }
+    sceneManager.objects['${name}'].material.diffuseColor = BABYLON.Color3.FromHexString('${color}');
+}
+`;
             };
 
             javascript.javascriptGenerator.forBlock['rotate_object'] = function (block, generator) {
                 const name = block.getFieldValue('NAME');
-                const x = Blockly.JavaScript.valueToCode(block, 'X', Blockly.JavaScript.ORDER_ATOMIC) || 0;
-                const y = Blockly.JavaScript.valueToCode(block, 'Y', Blockly.JavaScript.ORDER_ATOMIC) || 0;
-                const z = Blockly.JavaScript.valueToCode(block, 'Z', Blockly.JavaScript.ORDER_ATOMIC) || 0;
-                return `if (objects['${name}']) objects['${name}'].rotation = new BABYLON.Vector3(${x} * Math.PI / 180, ${y} * Math.PI / 180, ${z} * Math.PI / 180);\n`;
+                const x = generator.valueToCode(block, 'X', generator.ORDER_ATOMIC) || 0;
+                const y = generator.valueToCode(block, 'Y', generator.ORDER_ATOMIC) || 0;
+                const z = generator.valueToCode(block, 'Z', generator.ORDER_ATOMIC) || 0;
+                return `if (sceneManager.objects['${name}']) sceneManager.objects['${name}'].rotation = new BABYLON.Vector3(${x} * Math.PI / 180, ${y} * Math.PI / 180, ${z} * Math.PI / 180);\n`;
             };
 
             javascript.javascriptGenerator.forBlock['animate_object'] = function (block, generator) {
                 const name = block.getFieldValue('NAME');
-                const x1 = Blockly.JavaScript.valueToCode(block, 'X1', Blockly.JavaScript.ORDER_ATOMIC) || 0;
-                const y1 = Blockly.JavaScript.valueToCode(block, 'Y1', Blockly.JavaScript.ORDER_ATOMIC) || 0;
-                const z1 = Blockly.JavaScript.valueToCode(block, 'Z1', Blockly.JavaScript.ORDER_ATOMIC) || 0;
-                const x2 = Blockly.JavaScript.valueToCode(block, 'X2', Blockly.JavaScript.ORDER_ATOMIC) || 0;
-                const y2 = Blockly.JavaScript.valueToCode(block, 'Y2', Blockly.JavaScript.ORDER_ATOMIC) || 0;
-                const z2 = Blockly.JavaScript.valueToCode(block, 'Z2', Blockly.JavaScript.ORDER_ATOMIC) || 0;
-
+                const x1 = generator.valueToCode(block, 'X1', generator.ORDER_ATOMIC) || 0;
+                const y1 = generator.valueToCode(block, 'Y1', generator.ORDER_ATOMIC) || 0;
+                const z1 = generator.valueToCode(block, 'Z1', generator.ORDER_ATOMIC) || 0;
+                const x2 = generator.valueToCode(block, 'X2', generator.ORDER_ATOMIC) || 0;
+                const y2 = generator.valueToCode(block, 'Y2', generator.ORDER_ATOMIC) || 0;
+                const z2 = generator.valueToCode(block, 'Z2', generator.ORDER_ATOMIC) || 0;
                 return `
-    if (objects['${name}']) {
-      BABYLON.Animation.CreateAndStartAnimation(
+if (sceneManager.objects['${name}']) {
+    BABYLON.Animation.CreateAndStartAnimation(
         '${name}_animation',
-        objects['${name}'],
+        sceneManager.objects['${name}'],
         'position',
         30,
         60,
         new BABYLON.Vector3(${x1}, ${y1}, ${z1}),
         new BABYLON.Vector3(${x2}, ${y2}, ${z2}),
         BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE
-      );
-    }
-    `;
+    );
+}
+`;
             };
 
             javascript.javascriptGenerator.forBlock['enable_physics'] = function (block, generator) {
                 const name = block.getFieldValue('NAME');
-                const mass = Blockly.JavaScript.valueToCode(block, 'MASS', Blockly.JavaScript.ORDER_ATOMIC) || 1;
+                const mass = generator.valueToCode(block, 'MASS', generator.ORDER_ATOMIC) || 1;
                 return `
-        if (objects['${name}']) {
-          objects['${name}'].physicsImpostor = new BABYLON.PhysicsImpostor(
-            objects['${name}'],
-            BABYLON.PhysicsImpostor.BoxImpostor,
-            { mass: ${mass}, restitution: 0.9 },
-            scene
-          );
-        }
-        `;
+if (sceneManager.objects['${name}']) {
+    sceneManager.objects['${name}'].physicsImpostor = new BABYLON.PhysicsImpostor(sceneManager.objects['${name}'], BABYLON.PhysicsImpostor.BoxImpostor, { mass: ${mass}, restitution: 0.9 }, sceneManager.scene);
+}
+`;
             };
 
             javascript.javascriptGenerator.forBlock['apply_force'] = function (block, generator) {
                 const name = block.getFieldValue('NAME');
-                const fx = Blockly.JavaScript.valueToCode(block, 'FX', Blockly.JavaScript.ORDER_ATOMIC) || 0;
-                const fy = Blockly.JavaScript.valueToCode(block, 'FY', Blockly.JavaScript.ORDER_ATOMIC) || 0;
-                const fz = Blockly.JavaScript.valueToCode(block, 'FZ', Blockly.JavaScript.ORDER_ATOMIC) || 0;
-                const px = Blockly.JavaScript.valueToCode(block, 'PX', Blockly.JavaScript.ORDER_ATOMIC) || 0;
-                const py = Blockly.JavaScript.valueToCode(block, 'PY', Blockly.JavaScript.ORDER_ATOMIC) || 0;
-                const pz = Blockly.JavaScript.valueToCode(block, 'PZ', Blockly.JavaScript.ORDER_ATOMIC) || 0;
-
+                const fx = generator.valueToCode(block, 'FX', generator.ORDER_ATOMIC) || 0;
+                const fy = generator.valueToCode(block, 'FY', generator.ORDER_ATOMIC) || 0;
+                const fz = generator.valueToCode(block, 'FZ', generator.ORDER_ATOMIC) || 0;
+                const px = generator.valueToCode(block, 'PX', generator.ORDER_ATOMIC) || 0;
+                const py = generator.valueToCode(block, 'PY', generator.ORDER_ATOMIC) || 0;
+                const pz = generator.valueToCode(block, 'PZ', generator.ORDER_ATOMIC) || 0;
                 return `
-        if (objects['${name}'] && objects['${name}'].physicsImpostor) {
-          objects['${name}'].physicsImpostor.applyForce(
-            new BABYLON.Vector3(${fx}, ${fy}, ${fz}),
-            new BABYLON.Vector3(${px}, ${py}, ${pz})
-          );
-        }
-        `;
+if (sceneManager.objects['${name}'] && sceneManager.objects['${name}'].physicsImpostor) {
+    sceneManager.objects['${name}'].physicsImpostor.applyForce(new BABYLON.Vector3(${fx}, ${fy}, ${fz}), new BABYLON.Vector3(${px}, ${py}, ${pz}));
+}
+`;
             };
 
             javascript.javascriptGenerator.forBlock['set_gravity'] = function (block, generator) {
-                const gx = Blockly.JavaScript.valueToCode(block, 'GX', Blockly.JavaScript.ORDER_ATOMIC) || 0;
-                const gy = Blockly.JavaScript.valueToCode(block, 'GY', Blockly.JavaScript.ORDER_ATOMIC) || -9.8;
-                const gz = Blockly.JavaScript.valueToCode(block, 'GZ', Blockly.JavaScript.ORDER_ATOMIC) || 0;
-
-                return `scene.gravity = new BABYLON.Vector3(${gx}, ${gy}, ${gz});\n`;
+                const gx = generator.valueToCode(block, 'GX', generator.ORDER_ATOMIC) || 0;
+                const gy = generator.valueToCode(block, 'GY', generator.ORDER_ATOMIC) || -9.8;
+                const gz = generator.valueToCode(block, 'GZ', generator.ORDER_ATOMIC) || 0;
+                return `sceneManager.scene.gravity = new BABYLON.Vector3(${gx}, ${gy}, ${gz});\n`;
             };
 
             javascript.javascriptGenerator.forBlock['set_physics_impostor'] = function (block, generator) {
                 const name = block.getFieldValue('NAME');
                 const impostor = block.getFieldValue('IMPOSTOR');
-
                 return `
-        if (objects['${name}']) {
-          objects['${name}'].physicsImpostor = new BABYLON.PhysicsImpostor(
-            objects['${name}'],
-            ${impostor},
-            { mass: 1, restitution: 0.9 },
-            scene
-          );
-        }
-        `;
+if (sceneManager.objects['${name}']) {
+    sceneManager.objects['${name}'].physicsImpostor = new BABYLON.PhysicsImpostor(sceneManager.objects['${name}'], ${impostor}, { mass: 1, restitution: 0.9 }, sceneManager.scene);
+}
+`;
             };
 
         }
@@ -1927,30 +1867,6 @@ if (thisMesh) {
         function generateCode() {
             return javascript.javascriptGenerator.workspaceToCode(workspace);
         }
-
-        function clearScene(currentScene) {
-            while (currentScene.meshes.length) {
-                var mesh = currentScene.meshes[0];
-                console.log('Disposing mesh:', mesh.name, 'ID:', mesh.id);
-                // if (mesh.metadata) { // Removed old metadata clearing
-                //     mesh.metadata.scriptType = null;
-                //     mesh.metadata.scriptContent = null;
-                //     mesh.metadata.scriptAttached = false;
-                //     mesh.metadata.blocklyFrameLoop = null;
-                // }
-                mesh.dispose();
-            }
-
-            while (currentScene.materials.length) {
-                var material = currentScene.materials[0];
-                console.log(material.name);
-                material.dispose();
-            }
-
-            Object.keys(objects).forEach(key => delete objects[key]);
-            Object.keys(materials).forEach(key => delete materials[key]);
-        }
-
 
         // Resize canvas to fit its container
         function resizeCanvas() {
@@ -2040,29 +1956,23 @@ if (thisMesh) {
             doRun();
         }
 
-        function doRun() {
+        async function doRun() {
             let codeToRun = '';
             if (currentView === 'blockly') {
-                codeToRun = generateCode(); // Get code from Blockly workspace
-                console.log("Running code from Blockly workspace");
-            } else if (currentView === 'javascript') {
-                if (monacoEditorInstance) {
-                    codeToRun = monacoEditorInstance.getValue(); // Get code from Monaco editor
-                    console.log("Running code from JavaScript editor (Monaco)");
-                } else {
-                    console.error("Monaco editor instance not available. Cannot run JS code.");
-                    return;
-                }
+                codeToRun = generateCode();
+            } else if (currentView === 'javascript' && monacoEditorInstance) {
+                codeToRun = monacoEditorInstance.getValue();
             } else {
-                console.error("Unknown view selected. Cannot run code.");
+                console.error("No valid code source found.");
                 return;
             }
 
-            clearScene(scene);
-            window.sceneSpecificPerFrameFunctions = []; // Clear any existing per-frame functions
+            sceneManager.clear();
 
             try {
-                eval(codeToRun); // This will populate window.sceneSpecificPerFrameFunctions
+                const AsyncFunction = Object.getPrototypeOf(async function(){}).constructor;
+                const userGeneratedCode = new AsyncFunction('sceneManager', codeToRun);
+                await userGeneratedCode(sceneManager);
             } catch (error) {
                 console.error('Error executing code:', error);
             }
@@ -2073,18 +1983,9 @@ if (thisMesh) {
         }
         Blockly.Extensions.register('set_max_display_length', helper);
 
-        const objects = {};
-        const materials = {};
-        window.sceneSpecificPerFrameFunctions = []; // Initialize global array for per-frame functions
-
         const canvas = document.getElementById('gameCanvas');
-        const engine = new BABYLON.Engine(canvas, true);
-        const scene = new BABYLON.Scene(engine);
-        const camera = new BABYLON.ArcRotateCamera('Camera', Math.PI / 2, Math.PI / 4, 10, BABYLON.Vector3.Zero(), scene);
-        camera.attachControl(canvas, true);
-        const light = new BABYLON.HemisphericLight('light', new BABYLON.Vector3(1, 1, 0), scene);
-        const physicsPlugin = new BABYLON.CannonJSPlugin();
-        scene.enablePhysics(new BABYLON.Vector3(0, -9.8, 0), physicsPlugin);
+        let sceneManager = new BabylonSceneManager(canvas);
+
 
         document.getElementById('runButton').addEventListener('click', () => {
             doRun();
@@ -2098,7 +1999,7 @@ if (thisMesh) {
 
         let lastTime = performance.now(); // For deltaTime calculation
 
-        engine.runRenderLoop(() => {
+        sceneManager.engine.runRenderLoop(() => {
             const currentTime = performance.now();
             const deltaTime = currentTime - lastTime; // deltaTime in milliseconds
             lastTime = currentTime;
@@ -2121,7 +2022,7 @@ if (thisMesh) {
                     }
                 });
             }
-            scene.render();
+            sceneManager.scene.render();
         });
 
         window.addEventListener('resize', resizeCanvas);
