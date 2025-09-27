@@ -1590,15 +1590,10 @@ if (thisMesh) {
 
 
             javascript.javascriptGenerator.forBlock['point_camera_at_mesh'] = function (block, generator) {
-                const cameraVar = Blockly.JavaScript.nameDB_.getName(block.getFieldValue('CAMERA'), Blockly.Variables.NAME_TYPE);
-                const meshVar = Blockly.JavaScript.nameDB_.getName(block.getFieldValue('MESH'), Blockly.Variables.NAME_TYPE);
+                const cameraVar = generator.nameDB_.getName(block.getFieldValue('CAMERA'), Blockly.Variables.NAME_TYPE);
+                const meshVar = generator.nameDB_.getName(block.getFieldValue('MESH'), Blockly.Variables.NAME_TYPE);
 
-                const code = `
-
-
-      camera.setTarget(scene.meshes[0].position);\n
-      `;
-                return code;
+                return `${cameraVar}.setTarget(${meshVar});\n`;
             };
 
             javascript.javascriptGenerator.forBlock['save_3d_model_with_position'] = function (block, generator) {
@@ -1978,37 +1973,64 @@ if (thisMesh) {
                     "languageVersion": 0,
                     "blocks": [
                         {
-                            "type": "import_3d_file_url",
-                            "id": "-xy:B4jNLPcdjK9qYqjf",
+                            "type": "create_ground",
+                            "id": "default_platform",
                             "x": 26,
                             "y": 10,
                             "fields": {
-                                "MODEL_URL": "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/main/2.0/Duck/glTF-Binary/Duck.glb",
-                                "MODEL_VAR": {
-                                    "id": "Tw=U+h6sN{r/zUez!;j8"
-                                }
+                                "NAME": "platform"
                             },
                             "inputs": {
-                                "ON_SUCCESS": {
+                                "WIDTH": {
                                     "block": {
-                                        "type": "create_camera",
-                                        "id": "P@8M:RocH3uoSQ04_F14",
+                                        "type": "math_number",
                                         "fields": {
-                                            "NAME": "camera",
-                                            "MODEL_VAR": {
-                                                "id": "EZe?g.{eh_}M^PAF=wxy"
-                                            }
-                                        },
-                                        "next": {
+                                            "NUM": 10
+                                        }
+                                    }
+                                },
+                                "HEIGHT": {
+                                    "block": {
+                                        "type": "math_number",
+                                        "fields": {
+                                            "NUM": 10
+                                        }
+                                    }
+                                }
+                            },
+                            "next": {
+                                "block": {
+                                    "type": "import_3d_file_url",
+                                    "id": "-xy:B4jNLPcdjK9qYqjf",
+                                    "fields": {
+                                        "MODEL_URL": "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/main/2.0/Duck/glTF-Binary/Duck.glb",
+                                        "MODEL_VAR": {
+                                            "id": "Tw=U+h6sN{r/zUez!;j8"
+                                        }
+                                    },
+                                    "inputs": {
+                                        "ON_SUCCESS": {
                                             "block": {
-                                                "type": "point_camera_at_mesh",
-                                                "id": "E{8BD5:R^4;nqCvlCbL)",
+                                                "type": "create_camera",
+                                                "id": "P@8M:RocH3uoSQ04_F14",
                                                 "fields": {
-                                                    "CAMERA": {
+                                                    "NAME": "camera",
+                                                    "MODEL_VAR": {
                                                         "id": "EZe?g.{eh_}M^PAF=wxy"
-                                                    },
-                                                    "MESH": {
-                                                        "id": "Tw=U+h6sN{r/zUez!;j8"
+                                                    }
+                                                },
+                                                "next": {
+                                                    "block": {
+                                                        "type": "point_camera_at_mesh",
+                                                        "id": "E{8BD5:R^4;nqCvlCbL)",
+                                                        "fields": {
+                                                            "CAMERA": {
+                                                                "id": "EZe?g.{eh_}M^PAF=wxy"
+                                                            },
+                                                            "MESH": {
+                                                                "id": "Tw=U+h6sN{r/zUez!;j8"
+                                                            }
+                                                        }
                                                     }
                                                 }
                                             }
