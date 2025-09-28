@@ -2038,7 +2038,21 @@ ${modelVarName}.attachControl(sceneManager.canvas, true);\n`;
                 return `
 let camera = sceneManager.scene.activeCamera;
 if (camera) {
-    camera.position = new BABYLON.Vector3(10, 10, 10);
+    camera.mode = BABYLON.Camera.ORTHOGRAPHIC_CAMERA;
+
+    // Position the camera for a typical isometric view
+    camera.alpha = BABYLON.Tools.ToRadians(45); // Horizontal angle
+    camera.beta = BABYLON.Tools.ToRadians(45); // Vertical angle
+    camera.radius = 20; // Distance from the target
+
+    // Set the orthographic scaling to control the zoom
+    const aspectRatio = sceneManager.engine.getRenderingCanvas().width / sceneManager.engine.getRenderingCanvas().height;
+    const orthoSize = 10;
+    camera.orthoLeft = -orthoSize * aspectRatio;
+    camera.orthoRight = orthoSize * aspectRatio;
+    camera.orthoBottom = -orthoSize;
+    camera.orthoTop = orthoSize;   
+    
     camera.setTarget(BABYLON.Vector3.Zero());
 }
 `;
