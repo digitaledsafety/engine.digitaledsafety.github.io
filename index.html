@@ -130,6 +130,51 @@
                 height: 50%;
             }
         }
+
+    /* Digital Education Safety Theme for Blockly */
+    .digital-education-safety-theme .blocklyFlyout {
+        background-color: #f5f5f5;
+    }
+    .digital-education-safety-theme .blocklyToolboxDiv {
+        background-color: #ebebeb;
+    }
+    .digital-education-safety-theme .blocklyMainBackground {
+        fill: #ffffff;
+    }
+    .digital-education-safety-theme .blocklyScrollbarHandle {
+        fill: #cccccc;
+    }
+    .digital-education-safety-theme .blocklyText {
+        font-family: Arial, sans-serif !important;
+        font-size: 12pt !important;
+        font-weight: normal !important;
+    }
+
+    /* Block category styles */
+    .digital-education-safety-theme .logic_category .blocklyPath {
+        fill: #f3a9a8;
+        stroke: #d38988;
+    }
+    .digital-education-safety-theme .loop_category .blocklyPath {
+        fill: #5BA55B;
+        stroke: #4B954B;
+    }
+    .digital-education-safety-theme .math_category .blocklyPath {
+        fill: #A55B80;
+        stroke: #954B70;
+    }
+    .digital-education-safety-theme .list_category .blocklyPath {
+        fill: #745BA5;
+        stroke: #644B95;
+    }
+    .digital-education-safety-theme .variable_category .blocklyPath {
+        fill: #A55B5B;
+        stroke: #954B4B;
+    }
+    .digital-education-safety-theme .procedure_category .blocklyPath {
+        fill: #8A5BA5;
+        stroke: #7A4B95;
+    }
     </style>
 </head>
 
@@ -152,7 +197,7 @@
                 <button id="showBlocksButton" class="btn" style="background-color: #6c757d;">Show Blocks</button>
                 <button id="showJsButton" class="btn" style="background-color: #6c757d;">Show JavaScript</button>
             </div>
-            <div id="blocklyDiv" class="blockly-workspace"></div>
+            <div id="blocklyDiv" class="blockly-workspace digital-education-safety-theme"></div>
             <div id="monacoEditorContainer" class="editor-container" style="height: 80%; min-height: 300px; border: 1px solid #ddd; margin-bottom: 10px; display: none;">
                 <!-- Monaco Editor will be initialized here by script.js -->
             </div>
