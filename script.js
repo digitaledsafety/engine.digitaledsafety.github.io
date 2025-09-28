@@ -1070,9 +1070,44 @@ class BabylonSceneManager {
     }
 }
 
+// Define a custom theme for Digital Education Safety
+Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-education-safety', {
+    'base': Blockly.Themes.Classic,
+    'categoryStyles': {
+        'logic_category': { 'colour': '#4C97FF' },
+        'loop_category': { 'colour': '#5BA55B' },
+        'math_category': { 'colour': '#A55B80' },
+        'text_category': { 'colour': '#5B80A5' },
+        'list_category': { 'colour': '#745BA5' },
+        'colour_category': { 'colour': '#A5745B' },
+        'variable_category': { 'colour': '#A55B5B' },
+        'procedure_category': { 'colour': '#8A5BA5' }
+    },
+    'blockStyles': {
+        'logic_blocks': { 'colourPrimary': '#4C97FF', 'colourSecondary': '#6CA7FF', 'colourTertiary': '#3C87EF' },
+        'loop_blocks': { 'colourPrimary': '#5BA55B', 'colourSecondary': '#7BB57B', 'colourTertiary': '#4B954B' },
+        'math_blocks': { 'colourPrimary': '#A55B80', 'colourSecondary': '#B57B90', 'colourTertiary': '#954B70' },
+        'list_blocks': { 'colourPrimary': '#745BA5', 'colourSecondary': '#947BB5', 'colourTertiary': '#644B95' },
+        'variable_blocks': { 'colourPrimary': '#A55B5B', 'colourSecondary': '#B57B7B', 'colourTertiary': '#954B4B' },
+        'procedure_blocks': { 'colourPrimary': '#8A5BA5', 'colourSecondary': '#A07BB5', 'colourTertiary': '#7A4B95' }
+    },
+    'componentStyles': {
+        'workspaceBackgroundColour': '#F0F0F0',
+        'toolboxBackgroundColour': '#E0E0E0',
+        'toolboxForegroundColour': '#333333',
+        'flyoutBackgroundColour': '#D0D0D0',
+        'flyoutForegroundColour': '#333333',
+        'scrollbarColour': '#B0B0B0',
+        'insertionMarkerColour': '#FFCC00',
+    },
+    'fontStyle': { 'family': 'Arial, sans-serif', 'weight': 'normal', 'size': 12 }
+});
+
 
         const workspace = Blockly.inject('blocklyDiv', {
             toolbox: toolbox,
+            theme: Blockly.Themes.DigitalEducationSafety,
+            renderer: 'thrasos',            
             zoom: {
                 controls: true,
                 wheel: true,
