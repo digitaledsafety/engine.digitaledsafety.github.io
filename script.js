@@ -1118,13 +1118,8 @@ class BabylonSceneManager {
             },
             {
                 "type": "point_camera_at_mesh",
-                "message0": "point camera %1 at mesh %2",
+                "message0": "point camera at mesh %1",
                 "args0": [
-                    {
-                        "type": "field_variable",
-                        "name": "CAMERA",
-                        "variable": "camera"
-                    },
                     {
                         "type": "field_variable",
                         "name": "MESH",
@@ -1275,14 +1270,12 @@ class BabylonSceneManager {
             },
             {
                 type: 'set_isometric_camera',
-                message0: 'Set camera %1 to isometric view',
-                args0: [
-                    { type: 'field_input', name: 'CAMERA', text: 'camera' },
-                ],
+                message0: 'Set camera to isometric view',
+                args0: [],
                 previousStatement: null,
                 nextStatement: null,
                 colour: 160,
-                tooltip: 'Sets the specified camera to an isometric angle pointing at the origin.',
+                tooltip: 'Sets the active camera to an isometric angle pointing at the origin.',
                 helpUrl: '',
             },
             {
@@ -1977,9 +1970,8 @@ ${modelVarName}.attachControl(sceneManager.canvas, true);\n`;
             };
 
             javascript.javascriptGenerator.forBlock['point_camera_at_mesh'] = function (block, generator) {
-                const cameraVar = generator.nameDB_.getName(block.getFieldValue('CAMERA'), Blockly.Variables.NAME_TYPE);
-                const meshVar = generator.nameDB_.getName(block.getFieldValue('MESH'), Blockly.Variables.NAME_TYPE);
-                return `${cameraVar}.setTarget(${meshVar}.position);\n`;
+                 const meshVar = generator.nameDB_.getName(block.getFieldValue('MESH'), Blockly.Variables.NAME_TYPE);
+                return `sceneManager.scene.activeCamera.setTarget(${meshVar}.position);\n`;
             };
 
             javascript.javascriptGenerator.forBlock['save_3d_model_with_position'] = function (block, generator) {
@@ -2043,9 +2035,8 @@ ${modelVarName}.attachControl(sceneManager.canvas, true);\n`;
             };
 
             javascript.javascriptGenerator.forBlock['set_isometric_camera'] = function (block, generator) {
-                const cameraName = block.getFieldValue('CAMERA');
                 return `
-let camera = sceneManager.scene.getCameraByName('${cameraName}');
+let camera = sceneManager.scene.activeCamera;
 if (camera) {
     camera.position = new BABYLON.Vector3(10, 10, 10);
     camera.setTarget(BABYLON.Vector3.Zero());
@@ -2269,40 +2260,45 @@ if (sceneManager.objects['${name}']) {
                     "blocks": [
                         // Setup Scene
                         {
-                            "type": "create_ground", "id": "ground", "x": 50, "y": 50,
-                            "fields": { "NAME": "ground" },
-                            "inputs": {
-                                "WIDTH": { "block": { "type": "math_number", "fields": { "NUM": 20 } } },
-                                "HEIGHT": { "block": { "type": "math_number", "fields": { "NUM": 20 } } }
-                            },
+                            "type": "set_isometric_camera",
                             "next": {
                                 "block": {
-                                    "type": "set_ground_physics", "id": "g_phys",
+                                    "type": "create_ground", "id": "ground", "x": 50, "y": 50,
                                     "fields": { "NAME": "ground" },
+                                    "inputs": {
+                                        "WIDTH": { "block": { "type": "math_number", "fields": { "NUM": 20 } } },
+                                        "HEIGHT": { "block": { "type": "math_number", "fields": { "NUM": 20 } } }
+                                    },
                                     "next": {
                                         "block": {
-                                            "type": "create_box", "id": "p_box",
-                                            "fields": { "NAME": "player" },
-                                            "inputs": {
-                                                "X": { "block": { "type": "math_number", "fields": { "NUM": 0 } } },
-                                                "Y": { "block": { "type": "math_number", "fields": { "NUM": 5 } } },
-                                                "Z": { "block": { "type": "math_number", "fields": { "NUM": 0 } } }
-                                            },
+                                            "type": "set_ground_physics", "id": "g_phys",
+                                            "fields": { "NAME": "ground" },
                                             "next": {
                                                 "block": {
-                                                    "type": "enable_physics", "id": "p_phys",
+                                                    "type": "create_box", "id": "p_box",
                                                     "fields": { "NAME": "player" },
                                                     "inputs": {
-                                                        "MASS": { "block": { "type": "math_number", "fields": { "NUM": 1 } } }
+                                                        "X": { "block": { "type": "math_number", "fields": { "NUM": 0 } } },
+                                                        "Y": { "block": { "type": "math_number", "fields": { "NUM": 5 } } },
+                                                        "Z": { "block": { "type": "math_number", "fields": { "NUM": 0 } } }
                                                     },
                                                     "next": {
                                                         "block": {
-                                                            "type": "set_as_player", "id": "p_set",
-                                                            "inputs": { "OBJECT": { "block": { "type": "text", "fields": { "TEXT": "player" } } } },
+                                                            "type": "enable_physics", "id": "p_phys",
+                                                            "fields": { "NAME": "player" },
+                                                            "inputs": {
+                                                                "MASS": { "block": { "type": "math_number", "fields": { "NUM": 1 } } }
+                                                            },
                                                             "next": {
                                                                 "block": {
-                                                                    "type": "camera_follow", "id": "cam_f",
-                                                                    "inputs": { "OBJECT": { "block": { "type": "text", "fields": { "TEXT": "player" } } } }
+                                                                    "type": "set_as_player", "id": "p_set",
+                                                                    "inputs": { "OBJECT": { "block": { "type": "text", "fields": { "TEXT": "player" } } } },
+                                                                    "next": {
+                                                                        "block": {
+                                                                            "type": "camera_follow", "id": "cam_f",
+                                                                            "inputs": { "OBJECT": { "block": { "type": "text", "fields": { "TEXT": "player" } } } }
+                                                                        }
+                                                                    }
                                                                 }
                                                             }
                                                         }
