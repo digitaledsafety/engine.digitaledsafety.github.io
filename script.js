@@ -100,6 +100,61 @@ var toolbox = {
 
         {
             kind: 'category',
+            name: 'Controller',
+            categorystyle: 'logic_category',
+            contents: [
+                {
+                    kind: 'block',
+                    type: 'on_button_press',
+                },
+            ]
+        },
+        {
+            kind: 'category',
+            name: 'Player',
+            categorystyle: 'logic_category',
+            contents: [
+                {
+                    kind: 'block',
+                    type: 'set_as_player',
+                },
+                {
+                    kind: 'block',
+                    type: 'player_jump',
+                },
+                {
+                    kind: 'block',
+                    type: 'player_move',
+                },
+            ]
+        },
+
+        {
+            kind: 'category',
+            name: 'Camera',
+            categorystyle: 'math_category',
+            contents: [
+                {
+                    kind: 'block',
+                    type: 'create_camera',
+                },
+                {
+                    kind: 'block',
+                    type: 'set_isometric_camera',
+                },
+                {
+                    kind: 'block',
+                    type: 'point_camera_at_mesh'
+                },
+                {
+                    kind: 'block',
+                    type: 'camera_follow',
+                },
+            ]
+        },
+
+        {
+            kind: 'category',
             name: 'Objects',
             categorystyle: 'math_category',
             contents: [
@@ -240,6 +295,21 @@ var toolbox = {
             ]
         },
 
+        {
+            kind: 'category',
+            name: 'Gameplay',
+            categorystyle: 'logic_category',
+            contents: [
+                {
+                    kind: 'block',
+                    type: 'on_collision',
+                },
+                {
+                    kind: 'block',
+                    type: 'destroy_object',
+                },
+            ]
+        },
 
         {
             kind: 'category',
@@ -918,10 +988,30 @@ class BabylonSceneManager {
         this.scene = new BABYLON.Scene(this.engine);
         this.objects = {};
         this.materials = {};
+        this.player = null;
         this.perFrameFunctions = [];
+        this.buttonPressActions = {};
+        this.inputState = { keys: {} };
+        this.inputMap = {
+            ' ': 'A',
+            'ArrowLeft': 'Left',
+            'ArrowRight': 'Right',
+            'ArrowUp': 'Up',
+            'ArrowDown': 'Down'
+        };
 
         this.initScene();
+        this.initInputListeners();
         this.runRenderLoop();
+    }
+
+    initInputListeners() {
+        window.addEventListener('keydown', (event) => {
+            this.inputState.keys[event.key] = true;
+        });
+        window.addEventListener('keyup', (event) => {
+            this.inputState.keys[event.key] = false;
+        });
     }
 
     initScene() {
@@ -938,6 +1028,16 @@ class BabylonSceneManager {
             const currentTime = performance.now();
             const deltaTime = currentTime - lastTime;
             lastTime = currentTime;
+
+            // Handle continuous button presses via input map
+            for (const key in this.inputState.keys) {
+                if (this.inputState.keys[key]) { // If the physical key is pressed
+                    const button = this.inputMap[key]; // Find the logical button
+                    if (button && this.buttonPressActions[button]) {
+                        this.buttonPressActions[button].forEach(action => action());
+                    }
+                }
+            }
 
             this.perFrameFunctions.forEach(task => {
                 if (task.targetMesh && !task.targetMesh.isDisposed() && typeof task.func === 'function') {
@@ -958,7 +1058,10 @@ class BabylonSceneManager {
         this.initScene();
         this.objects = {};
         this.materials = {};
+        this.player = null;
         this.perFrameFunctions = [];
+        this.buttonPressActions = {};
+        this.inputState = { keys: {} }; // Reset state on clear
     }
 
     dispose() {
@@ -1015,13 +1118,8 @@ class BabylonSceneManager {
             },
             {
                 "type": "point_camera_at_mesh",
-                "message0": "point camera %1 at mesh %2",
+                "message0": "point camera at mesh %1",
                 "args0": [
-                    {
-                        "type": "field_variable",
-                        "name": "CAMERA",
-                        "variable": "camera"
-                    },
                     {
                         "type": "field_variable",
                         "name": "MESH",
@@ -1172,14 +1270,12 @@ class BabylonSceneManager {
             },
             {
                 type: 'set_isometric_camera',
-                message0: 'Set camera %1 to isometric view',
-                args0: [
-                    { type: 'field_input', name: 'CAMERA', text: 'camera' },
-                ],
+                message0: 'Set camera to isometric view',
+                args0: [],
                 previousStatement: null,
                 nextStatement: null,
                 colour: 160,
-                tooltip: 'Sets the specified camera to an isometric angle pointing at the origin.',
+                tooltip: 'Sets the active camera to an isometric angle pointing at the origin.',
                 helpUrl: '',
             },
             {
@@ -1516,6 +1612,156 @@ class BabylonSceneManager {
                 "colour": "%{BKY_MATH_HUE}",
                 "tooltip": "Continuously rotates the object. Use inside an 'every frame' block for the target object.",
                 "helpUrl": ""
+            },
+            // Controller Block
+            {
+                "type": "on_button_press",
+                "message0": "on %1 button pressed %2 do %3",
+                "args0": [
+                    {
+                        "type": "field_dropdown",
+                        "name": "BUTTON",
+                        "options": [
+                            ["A", "A"],
+                            ["B", "B"],
+                            ["Left", "Left"],
+                            ["Right", "Right"],
+                            ["Up", "Up"],
+                            ["Down", "Down"]
+                        ]
+                    },
+                    {
+                        "type": "input_dummy"
+                    },
+                    {
+                        "type": "input_statement",
+                        "name": "DO"
+                    }
+                ],
+                "previousStatement": null,
+                "nextStatement": null,
+                "colour": "%{BKY_LOOPS_HUE}",
+                "tooltip": "Executes code when a controller button is pressed.",
+                "helpUrl": ""
+            },
+            {
+                "type": "player_jump",
+                "message0": "make player jump with force %1",
+                "args0": [
+                    {
+                        "type": "input_value",
+                        "name": "FORCE",
+                        "check": "Number"
+                    }
+                ],
+                "previousStatement": null,
+                "nextStatement": null,
+                "colour": "#4C97FF",
+                "tooltip": "Makes the player character jump.",
+                "helpUrl": ""
+            },
+            {
+                "type": "player_move",
+                "message0": "move player with speed %1 in direction %2",
+                "args0": [
+                    {
+                        "type": "input_value",
+                        "name": "SPEED",
+                        "check": "Number"
+                    },
+                    {
+                        "type": "field_dropdown",
+                        "name": "DIRECTION",
+                        "options": [
+                            ["forward", "FORWARD"],
+                            ["backward", "BACKWARD"],
+                            ["left", "LEFT"],
+                            ["right", "RIGHT"]
+                        ]
+                    }
+                ],
+                "previousStatement": null,
+                "nextStatement": null,
+                "colour": "#4C97FF",
+                "tooltip": "Moves the player character in a direction.",
+                "helpUrl": ""
+            },
+            // Gameplay Blocks
+            {
+                "type": "on_collision",
+                "message0": "when %1 collides with %2 %3 do %4",
+                "args0": [
+                    {
+                        "type": "input_value",
+                        "name": "OBJECT1",
+                        "check": "String"
+                    },
+                    {
+                        "type": "input_value",
+                        "name": "OBJECT2",
+                        "check": "String"
+                    },
+                    {
+                        "type": "input_dummy"
+                    },
+                    {
+                        "type": "input_statement",
+                        "name": "DO"
+                    }
+                ],
+                "previousStatement": null,
+                "nextStatement": null,
+                "colour": "#5BA55B",
+                "tooltip": "Executes code when two objects collide.",
+                "helpUrl": ""
+            },
+            {
+                "type": "destroy_object",
+                "message0": "destroy object %1",
+                "args0": [
+                    {
+                        "type": "input_value",
+                        "name": "OBJECT",
+                        "check": "String"
+                    }
+                ],
+                "previousStatement": null,
+                "nextStatement": null,
+                "colour": "#5BA55B",
+                "tooltip": "Destroys the specified object.",
+                "helpUrl": ""
+            },
+            {
+                "type": "set_as_player",
+                "message0": "set %1 as player",
+                "args0": [
+                    {
+                        "type": "input_value",
+                        "name": "OBJECT",
+                        "check": "String"
+                    }
+                ],
+                "previousStatement": null,
+                "nextStatement": null,
+                "colour": "#4C97FF",
+                "tooltip": "Designates the specified object as the player character.",
+                "helpUrl": ""
+            },
+            {
+                "type": "camera_follow",
+                "message0": "make camera follow %1",
+                "args0": [
+                    {
+                        "type": "input_value",
+                        "name": "OBJECT",
+                        "check": "String"
+                    }
+                ],
+                "previousStatement": null,
+                "nextStatement": null,
+                "colour": "#A55B80",
+                "tooltip": "Makes the camera follow the specified object.",
+                "helpUrl": ""
             }
         ]);
 
@@ -1592,6 +1838,121 @@ if (thisMesh) {
             //     // ...
             // };
 
+            // --- Player and Camera Block Generators ---
+            javascript.javascriptGenerator.forBlock['set_as_player'] = function(block, generator) {
+                const objectVar = generator.valueToCode(block, 'OBJECT', generator.ORDER_ATOMIC) || 'null';
+                return `
+let playerMesh = sceneManager.objects[${objectVar}] || sceneManager.scene.getMeshByName(${objectVar}) || sceneManager.scene.getMeshById(${objectVar});
+if (playerMesh) {
+    sceneManager.player = playerMesh;
+}
+`;
+            };
+
+            javascript.javascriptGenerator.forBlock['camera_follow'] = function(block, generator) {
+                const objectVar = generator.valueToCode(block, 'OBJECT', generator.ORDER_ATOMIC) || 'null';
+                return `
+let targetToFollow = sceneManager.objects[${objectVar}] || sceneManager.scene.getMeshByName(${objectVar}) || sceneManager.scene.getMeshById(${objectVar});
+if (targetToFollow && sceneManager.scene.activeCamera) {
+    sceneManager.scene.activeCamera.lockedTarget = targetToFollow;
+}
+`;
+            };
+
+            // --- Gameplay Block Generators ---
+            javascript.javascriptGenerator.forBlock['on_collision'] = function(block, generator) {
+                const obj1 = generator.valueToCode(block, 'OBJECT1', generator.ORDER_ATOMIC) || 'null';
+                const obj2 = generator.valueToCode(block, 'OBJECT2', generator.ORDER_ATOMIC) || 'null';
+                const doCode = generator.statementToCode(block, 'DO');
+
+                return `
+let obj1Mesh = sceneManager.objects[${obj1}] || sceneManager.scene.getMeshByName(${obj1}) || sceneManager.scene.getMeshById(${obj1});
+let obj2Mesh = sceneManager.objects[${obj2}] || sceneManager.scene.getMeshByName(${obj2}) || sceneManager.scene.getMeshById(${obj2});
+
+if (obj1Mesh && obj2Mesh && obj1Mesh.physicsImpostor && obj2Mesh.physicsImpostor) {
+    obj1Mesh.physicsImpostor.onCollideEvent = (main, collided) => {
+        if (collided.object === obj2Mesh) {
+            ${doCode}
+        }
+    };
+}
+`;
+            };
+
+            javascript.javascriptGenerator.forBlock['destroy_object'] = function(block, generator) {
+                const objectVar = generator.valueToCode(block, 'OBJECT', generator.ORDER_ATOMIC) || 'null';
+                return `
+let targetToDestroyName = ${objectVar};
+let targetToDestroy = sceneManager.objects[targetToDestroyName] || sceneManager.scene.getMeshByName(targetToDestroyName) || sceneManager.scene.getMeshById(targetToDestroyName);
+
+if (targetToDestroy) {
+    targetToDestroy.dispose();
+    delete sceneManager.objects[targetToDestroyName];
+}
+`;
+            };
+
+            // --- Controller Block Generator ---
+            javascript.javascriptGenerator.forBlock['on_button_press'] = function(block, generator) {
+                const button = block.getFieldValue('BUTTON');
+                const doCode = generator.statementToCode(block, 'DO');
+
+                return `
+if (!sceneManager.buttonPressActions['${button}']) {
+    sceneManager.buttonPressActions['${button}'] = [];
+}
+sceneManager.buttonPressActions['${button}'].push(() => {
+    ${doCode}
+});
+`;
+            };
+
+            javascript.javascriptGenerator.forBlock['player_jump'] = function(block, generator) {
+                const force = generator.valueToCode(block, 'FORCE', generator.ORDER_ATOMIC) || '5';
+
+                return `
+let jumpTargetMesh = sceneManager.player;
+
+if (jumpTargetMesh && jumpTargetMesh.physicsImpostor) {
+    const verticalVelocity = jumpTargetMesh.physicsImpostor.getLinearVelocity().y;
+    if (Math.abs(verticalVelocity) < 0.1) { // Check if on ground
+        jumpTargetMesh.physicsImpostor.applyImpulse(new BABYLON.Vector3(0, ${force}, 0), jumpTargetMesh.getAbsolutePosition());
+    }
+}
+`;
+            };
+
+            javascript.javascriptGenerator.forBlock['player_move'] = function(block, generator) {
+                const speed = generator.valueToCode(block, 'SPEED', generator.ORDER_ATOMIC) || '1';
+                const direction = block.getFieldValue('DIRECTION');
+
+                let velocityX = 0;
+                let velocityZ = 0;
+
+                switch (direction) {
+                    case 'FORWARD':
+                        velocityZ = speed;
+                        break;
+                    case 'BACKWARD':
+                        velocityZ = `-${speed}`;
+                        break;
+                    case 'LEFT':
+                        velocityX = `-${speed}`;
+                        break;
+                    case 'RIGHT':
+                        velocityX = speed;
+                        break;
+                }
+
+                return `
+let moveTargetMesh = sceneManager.player;
+if (moveTargetMesh && moveTargetMesh.physicsImpostor) {
+    const currentVelocity = moveTargetMesh.physicsImpostor.getLinearVelocity();
+    moveTargetMesh.physicsImpostor.setLinearVelocity(new BABYLON.Vector3(${velocityX}, currentVelocity.y, ${velocityZ}));
+}
+`;
+            };
+
             // --- Existing JavaScript Generators ---
             javascript.javascriptGenerator.forBlock['position_model'] = function (block, generator) {
                 const modelVar = generator.nameDB_.getName(block.getFieldValue('MODEL'), Blockly.Variables.NAME_TYPE);
@@ -1609,9 +1970,8 @@ ${modelVarName}.attachControl(sceneManager.canvas, true);\n`;
             };
 
             javascript.javascriptGenerator.forBlock['point_camera_at_mesh'] = function (block, generator) {
-                const cameraVar = generator.nameDB_.getName(block.getFieldValue('CAMERA'), Blockly.Variables.NAME_TYPE);
-                const meshVar = generator.nameDB_.getName(block.getFieldValue('MESH'), Blockly.Variables.NAME_TYPE);
-                return `${cameraVar}.setTarget(${meshVar}.position);\n`;
+                 const meshVar = generator.nameDB_.getName(block.getFieldValue('MESH'), Blockly.Variables.NAME_TYPE);
+                return `sceneManager.scene.activeCamera.setTarget(${meshVar}.position);\n`;
             };
 
             javascript.javascriptGenerator.forBlock['save_3d_model_with_position'] = function (block, generator) {
@@ -1675,9 +2035,8 @@ ${modelVarName}.attachControl(sceneManager.canvas, true);\n`;
             };
 
             javascript.javascriptGenerator.forBlock['set_isometric_camera'] = function (block, generator) {
-                const cameraName = block.getFieldValue('CAMERA');
                 return `
-let camera = sceneManager.scene.getCameraByName('${cameraName}');
+let camera = sceneManager.scene.activeCamera;
 if (camera) {
     camera.position = new BABYLON.Vector3(10, 10, 10);
     camera.setTarget(BABYLON.Vector3.Zero());
@@ -1709,8 +2068,10 @@ if (camera) {
                 const width = generator.valueToCode(block, 'WIDTH', generator.ORDER_ATOMIC) || 10;
                 const height = generator.valueToCode(block, 'HEIGHT', generator.ORDER_ATOMIC) || 10;
                 return `
-const groundMesh = BABYLON.MeshBuilder.CreateGround('${name}', { width: ${width}, height: ${height} }, sceneManager.scene);
-sceneManager.objects['${name}'] = groundMesh;
+{
+    const groundMesh = BABYLON.MeshBuilder.CreateGround('${name}', { width: ${width}, height: ${height} }, sceneManager.scene);
+    sceneManager.objects['${name}'] = groundMesh;
+}
 `;
             };
 
@@ -1740,9 +2101,11 @@ if (sceneManager.objects['${name}']) {
                 const y = generator.valueToCode(block, 'Y', generator.ORDER_ATOMIC) || 0;
                 const z = generator.valueToCode(block, 'Z', generator.ORDER_ATOMIC) || 0;
                 return `
-const boxMesh = BABYLON.MeshBuilder.CreateBox('${name}', {}, sceneManager.scene);
-boxMesh.position.set(${x}, ${y}, ${z});
-sceneManager.objects['${name}'] = boxMesh;
+{
+    const boxMesh = BABYLON.MeshBuilder.CreateBox('${name}', {}, sceneManager.scene);
+    boxMesh.position.set(${x}, ${y}, ${z});
+    sceneManager.objects['${name}'] = boxMesh;
+}
 `;
             };
 
@@ -1752,9 +2115,11 @@ sceneManager.objects['${name}'] = boxMesh;
                 const y = generator.valueToCode(block, 'Y', generator.ORDER_ATOMIC) || 0;
                 const z = generator.valueToCode(block, 'Z', generator.ORDER_ATOMIC) || 0;
                 return `
-const sphereMesh = BABYLON.MeshBuilder.CreateSphere('${name}', { diameter: 2 }, sceneManager.scene);
-sphereMesh.position.set(${x}, ${y}, ${z});
-sceneManager.objects['${name}'] = sphereMesh;
+{
+    const sphereMesh = BABYLON.MeshBuilder.CreateSphere('${name}', { diameter: 2 }, sceneManager.scene);
+    sphereMesh.position.set(${x}, ${y}, ${z});
+    sceneManager.objects['${name}'] = sphereMesh;
+}
 `;
             };
 
@@ -1771,7 +2136,7 @@ sceneManager.objects['${name}'] = sphereMesh;
                 const x = generator.valueToCode(block, 'X', generator.ORDER_ATOMIC) || 0;
                 const y = generator.valueToCode(block, 'Y', generator.ORDER_ATOMIC) || 0;
                 const z = generator.valueToCode(block, 'Z', generator.ORDER_ATOMIC) || 0;
-                return `const ${name} = new BABYLON.PointLight('${name}', new BABYLON.Vector3(${x}, ${y}, ${z}), sceneManager.scene);\n`;
+                return `{ const light = new BABYLON.PointLight('${name}', new BABYLON.Vector3(${x}, ${y}, ${z}), sceneManager.scene); }\n`;
             };
 
             javascript.javascriptGenerator.forBlock['change_object_color'] = function (block, generator) {
@@ -1893,38 +2258,50 @@ if (sceneManager.objects['${name}']) {
                 "blocks": {
                     "languageVersion": 0,
                     "blocks": [
+                        // Setup Scene
                         {
-                            "type": "import_3d_file_url",
-                            "id": "-xy:B4jNLPcdjK9qYqjf",
-                            "x": 26,
-                            "y": 10,
-                            "fields": {
-                                "MODEL_URL": "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/main/2.0/Duck/glTF-Binary/Duck.glb",
-                                "MODEL_VAR": {
-                                    "id": "Tw=U+h6sN{r/zUez!;j8"
-                                }
-                            },
-                            "inputs": {
-                                "ON_SUCCESS": {
-                                    "block": {
-                                        "type": "create_camera",
-                                        "id": "P@8M:RocH3uoSQ04_F14",
-                                        "fields": {
-                                            "NAME": "camera",
-                                            "MODEL_VAR": {
-                                                "id": "EZe?g.{eh_}M^PAF=wxy"
-                                            }
-                                        },
-                                        "next": {
-                                            "block": {
-                                                "type": "point_camera_at_mesh",
-                                                "id": "E{8BD5:R^4;nqCvlCbL)",
-                                                "fields": {
-                                                    "CAMERA": {
-                                                        "id": "EZe?g.{eh_}M^PAF=wxy"
+                            "type": "set_isometric_camera",
+                            "next": {
+                                "block": {
+                                    "type": "create_ground", "id": "ground", "x": 50, "y": 50,
+                                    "fields": { "NAME": "ground" },
+                                    "inputs": {
+                                        "WIDTH": { "block": { "type": "math_number", "fields": { "NUM": 20 } } },
+                                        "HEIGHT": { "block": { "type": "math_number", "fields": { "NUM": 20 } } }
+                                    },
+                                    "next": {
+                                        "block": {
+                                            "type": "set_ground_physics", "id": "g_phys",
+                                            "fields": { "NAME": "ground" },
+                                            "next": {
+                                                "block": {
+                                                    "type": "create_box", "id": "p_box",
+                                                    "fields": { "NAME": "player" },
+                                                    "inputs": {
+                                                        "X": { "block": { "type": "math_number", "fields": { "NUM": 0 } } },
+                                                        "Y": { "block": { "type": "math_number", "fields": { "NUM": 5 } } },
+                                                        "Z": { "block": { "type": "math_number", "fields": { "NUM": 0 } } }
                                                     },
-                                                    "MESH": {
-                                                        "id": "Tw=U+h6sN{r/zUez!;j8"
+                                                    "next": {
+                                                        "block": {
+                                                            "type": "enable_physics", "id": "p_phys",
+                                                            "fields": { "NAME": "player" },
+                                                            "inputs": {
+                                                                "MASS": { "block": { "type": "math_number", "fields": { "NUM": 1 } } }
+                                                            },
+                                                            "next": {
+                                                                "block": {
+                                                                    "type": "set_as_player", "id": "p_set",
+                                                                    "inputs": { "OBJECT": { "block": { "type": "text", "fields": { "TEXT": "player" } } } },
+                                                                    "next": {
+                                                                        "block": {
+                                                                            "type": "camera_follow", "id": "cam_f",
+                                                                            "inputs": { "OBJECT": { "block": { "type": "text", "fields": { "TEXT": "player" } } } }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
                                                     }
                                                 }
                                             }
@@ -1932,25 +2309,42 @@ if (sceneManager.objects['${name}']) {
                                     }
                                 }
                             }
+                        },
+                        // Controls
+                        {
+                            "type": "on_button_press", "id": "jump_ctl", "x": 50, "y": 350, "fields": { "BUTTON": "A" },
+                            "inputs": { "DO": { "block": { "type": "player_jump", "id": "jump_act", "inputs": { "FORCE": { "block": { "type": "math_number", "fields": { "NUM": 8 } } } } } } }
+                        },
+                        {
+                            "type": "on_button_press", "id": "left_ctl", "x": 50, "y": 450, "fields": { "BUTTON": "Left" },
+                            "inputs": { "DO": { "block": { "type": "player_move", "id": "left_act", "fields": { "DIRECTION": "LEFT" }, "inputs": { "SPEED": { "block": { "type": "math_number", "fields": { "NUM": 5 } } } } } } }
+                        },
+                        {
+                            "type": "on_button_press", "id": "right_ctl", "x": 50, "y": 550, "fields": { "BUTTON": "Right" },
+                            "inputs": { "DO": { "block": { "type": "player_move", "id": "right_act", "fields": { "DIRECTION": "RIGHT" }, "inputs": { "SPEED": { "block": { "type": "math_number", "fields": { "NUM": 5 } } } } } } }
+                        },
+                        // Coin
+                        {
+                            "type": "create_box", "id": "coin", "x": 400, "y": 50,
+                            "fields": { "NAME": "coin" },
+                            "inputs": {
+                                "X": { "block": { "type": "math_number", "fields": { "NUM": 5 } } },
+                                "Y": { "block": { "type": "math_number", "fields": { "NUM": 2 } } },
+                                "Z": { "block": { "type": "math_number", "fields": { "NUM": 0 } } }
+                            },
+                             "next": { "block": { "type": "change_object_color", "id": "c_color", "fields": { "NAME": "coin", "COLOR": "#FFD700" } } }
+                        },
+                        {
+                            "type": "on_collision", "id": "collide", "x": 400, "y": 150,
+                            "inputs": {
+                                "OBJECT1": { "block": { "type": "text", "fields": { "TEXT": "player" } } },
+                                "OBJECT2": { "block": { "type": "text", "fields": { "TEXT": "coin" } } },
+                                "DO": { "block": { "type": "destroy_object", "id": "destroy_c", "inputs": { "OBJECT": { "block": { "type": "text", "fields": { "TEXT": "coin" } } } } } }
+                            }
                         }
                     ]
-                },
-                "variables": [
-                    {
-                        "name": "model",
-                        "id": "Tw=U+h6sN{r/zUez!;j8"
-                    },
-                    {
-                        "name": "camera",
-                        "id": "EZe?g.{eh_}M^PAF=wxy"
-                    },
-                    {
-                        "name": "mesh",
-                        "id": "j;nQCHM[i@HS@uJ1|kNe"
-                    }
-                ]
-            }
-
+                }
+            };
             var workspace = Blockly.getMainWorkspace();
             Blockly.serialization.workspaces.load(state, workspace);
             doRun();
@@ -2088,5 +2482,29 @@ if (sceneManager.objects['${name}']) {
         // Adjust save/load/run if they need to be aware of the current view
         // For now, run will always use Blockly code, save/load workspace.
         // This will be updated in later steps.
+
+        // --- Touch Control Event Listeners ---
+        const touchLeft = document.getElementById('touch-left');
+        const touchRight = document.getElementById('touch-right');
+        const touchJump = document.getElementById('touch-jump');
+
+        const handleTouch = (key, isPressed) => {
+            sceneManager.inputState.keys[key] = isPressed;
+        };
+
+        // Left Button
+        touchLeft.addEventListener('touchstart', (e) => { e.preventDefault(); handleTouch('ArrowLeft', true); }, { passive: false });
+        touchLeft.addEventListener('touchend', (e) => { e.preventDefault(); handleTouch('ArrowLeft', false); }, { passive: false });
+        touchLeft.addEventListener('touchcancel', (e) => { e.preventDefault(); handleTouch('ArrowLeft', false); }, { passive: false });
+
+        // Right Button
+        touchRight.addEventListener('touchstart', (e) => { e.preventDefault(); handleTouch('ArrowRight', true); }, { passive: false });
+        touchRight.addEventListener('touchend', (e) => { e.preventDefault(); handleTouch('ArrowRight', false); }, { passive: false });
+        touchRight.addEventListener('touchcancel', (e) => { e.preventDefault(); handleTouch('ArrowRight', false); }, { passive: false });
+
+        // Jump Button
+        touchJump.addEventListener('touchstart', (e) => { e.preventDefault(); handleTouch(' ', true); }, { passive: false });
+        touchJump.addEventListener('touchend', (e) => { e.preventDefault(); handleTouch(' ', false); }, { passive: false });
+        touchJump.addEventListener('touchcancel', (e) => { e.preventDefault(); handleTouch(' ', false); }, { passive: false });
 
         loadWorkspaceDefault();
