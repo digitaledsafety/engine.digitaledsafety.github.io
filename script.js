@@ -2287,6 +2287,22 @@ if (sceneManager.objects['${name}']) {
             const container = document.querySelector('.canvas-container');
             canvas.width = container.offsetWidth;
             canvas.height = container.offsetHeight;
+            if (sceneManager && sceneManager.engine) {
+                sceneManager.engine.resize();
+            }
+
+            // Adjust orthographic camera parameters if in isometric mode
+            if (sceneManager && sceneManager.scene && sceneManager.scene.activeCamera) {
+                const camera = sceneManager.scene.activeCamera;
+                if (camera.mode === BABYLON.Camera.ORTHOGRAPHIC_CAMERA) {
+                    const aspectRatio = canvas.width / canvas.height;
+                    const orthoSize = 10;
+                    camera.orthoLeft = -orthoSize * aspectRatio;
+                    camera.orthoRight = orthoSize * aspectRatio;
+                    camera.orthoBottom = -orthoSize;
+                    camera.orthoTop = orthoSize;
+                }  
+            } 
         }
 
         function saveWorkspace() {
@@ -2439,6 +2455,36 @@ if (sceneManager.objects['${name}']) {
         document.getElementById('loadButton').addEventListener('click', () => {
             loadWorkspace();
         });
+
+        document.getElementById('fullscreenBtn').addEventListener('click', () => {
+            const canvasContainer = document.querySelector('.canvas-container');
+            if (!document.fullscreenElement && !document.mozFullScreenElement && !document.webkitFullscreenElement && !document.msFullscreenElement) {
+                if (canvasContainer.requestFullscreen) {
+                    canvasContainer.requestFullscreen();
+                } else if (canvasContainer.mozRequestFullScreen) { /* Firefox */
+                    canvasContainer.mozRequestFullScreen();
+                } else if (canvasContainer.webkitRequestFullscreen) { /* Chrome, Safari & Opera */
+                    canvasContainer.webkitRequestFullscreen();
+                } else if (canvasContainer.msRequestFullscreen) { /* IE/Edge */
+                    canvasContainer.msRequestFullscreen();
+                }
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.mozCancelFullScreen) { /* Firefox */
+                    document.mozCancelFullScreen();
+                } else if (document.webkitExitFullscreen) { /* Chrome, Safari and Opera */
+                    document.webkitExitFullscreen();
+                } else if (document.msExitFullscreen) { /* IE/Edge */
+                    document.msExitFullscreen();
+                }
+            }
+        });
+
+        document.addEventListener('fullscreenchange', resizeCanvas);
+        document.addEventListener('webkitfullscreenchange', resizeCanvas);
+        document.addEventListener('mozfullscreenchange', resizeCanvas);
+        document.addEventListener('MSFullscreenChange', resizeCanvas);
 
         let lastTime = performance.now(); // For deltaTime calculation
 
