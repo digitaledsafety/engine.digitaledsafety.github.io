@@ -2287,6 +2287,9 @@ if (sceneManager.objects['${name}']) {
             const container = document.querySelector('.canvas-container');
             canvas.width = container.offsetWidth;
             canvas.height = container.offsetHeight;
+            if (sceneManager && sceneManager.engine) {
+                sceneManager.engine.resize();
+            }
         }
 
         function saveWorkspace() {
@@ -2439,6 +2442,36 @@ if (sceneManager.objects['${name}']) {
         document.getElementById('loadButton').addEventListener('click', () => {
             loadWorkspace();
         });
+
+        document.getElementById('fullscreenBtn').addEventListener('click', () => {
+            const canvasContainer = document.querySelector('.canvas-container');
+            if (!document.fullscreenElement && !document.mozFullScreenElement && !document.webkitFullscreenElement && !document.msFullscreenElement) {
+                if (canvasContainer.requestFullscreen) {
+                    canvasContainer.requestFullscreen();
+                } else if (canvasContainer.mozRequestFullScreen) { /* Firefox */
+                    canvasContainer.mozRequestFullScreen();
+                } else if (canvasContainer.webkitRequestFullscreen) { /* Chrome, Safari & Opera */
+                    canvasContainer.webkitRequestFullscreen();
+                } else if (canvasContainer.msRequestFullscreen) { /* IE/Edge */
+                    canvasContainer.msRequestFullscreen();
+                }
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.mozCancelFullScreen) { /* Firefox */
+                    document.mozCancelFullScreen();
+                } else if (document.webkitExitFullscreen) { /* Chrome, Safari and Opera */
+                    document.webkitExitFullscreen();
+                } else if (document.msExitFullscreen) { /* IE/Edge */
+                    document.msExitFullscreen();
+                }
+            }
+        });
+
+        document.addEventListener('fullscreenchange', resizeCanvas);
+        document.addEventListener('webkitfullscreenchange', resizeCanvas);
+        document.addEventListener('mozfullscreenchange', resizeCanvas);
+        document.addEventListener('MSFullscreenChange', resizeCanvas);
 
         let lastTime = performance.now(); // For deltaTime calculation
 
