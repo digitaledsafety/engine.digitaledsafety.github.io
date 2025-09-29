@@ -2290,6 +2290,19 @@ if (sceneManager.objects['${name}']) {
             if (sceneManager && sceneManager.engine) {
                 sceneManager.engine.resize();
             }
+
+            // Adjust orthographic camera parameters if in isometric mode
+            if (sceneManager && sceneManager.scene && sceneManager.scene.activeCamera) {
+                const camera = sceneManager.scene.activeCamera;
+                if (camera.mode === BABYLON.Camera.ORTHOGRAPHIC_CAMERA) {
+                    const aspectRatio = canvas.width / canvas.height;
+                    const orthoSize = 10;
+                    camera.orthoLeft = -orthoSize * aspectRatio;
+                    camera.orthoRight = orthoSize * aspectRatio;
+                    camera.orthoBottom = -orthoSize;
+                    camera.orthoTop = orthoSize;
+                }  
+            } 
         }
 
         function saveWorkspace() {
