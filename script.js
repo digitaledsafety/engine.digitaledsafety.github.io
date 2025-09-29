@@ -1142,7 +1142,10 @@ class BabylonSceneManager {
     }
 
     setGravity(x, y, z) {
-        this.scene.enablePhysics(new BABYLON.Vector3(x, y, z), new BABYLON.CannonJSPlugin());
+        const physicsEngine = this.scene.getPhysicsEngine();
+        if (physicsEngine) {
+            physicsEngine.setGravity(new BABYLON.Vector3(x, y, z));
+        }
     }
 
     createLight(name, x, y, z) {
@@ -2447,33 +2450,6 @@ if (thisMesh) {
         document.addEventListener('mozfullscreenchange', resizeCanvas);
         document.addEventListener('MSFullscreenChange', resizeCanvas);
 
-        let lastTime = performance.now(); // For deltaTime calculation
-
-        sceneManager.engine.runRenderLoop(() => {
-            const currentTime = performance.now();
-            const deltaTime = currentTime - lastTime; // deltaTime in milliseconds
-            lastTime = currentTime;
-
-            if (window.sceneSpecificPerFrameFunctions && window.sceneSpecificPerFrameFunctions.length > 0) {
-                window.sceneSpecificPerFrameFunctions.forEach(task => {
-                    if (task.targetMesh && !task.targetMesh.isDisposed() && typeof task.func === 'function') {
-                        try {
-                            // Pass the specific mesh and deltaTime to the function
-                            task.func(task.targetMesh, deltaTime);
-                        } catch (e) {
-                            console.error(`Error executing per-frame function ${task.name || 'anonymous'} for mesh ${task.targetMesh.name}:`, e);
-                            // Optional: remove problematic function to prevent repeated errors
-                            // window.sceneSpecificPerFrameFunctions = window.sceneSpecificPerFrameFunctions.filter(f => f !== task);
-                        }
-                    } else if (task.targetMesh && task.targetMesh.isDisposed()) {
-                        // Optional: Clean up functions for disposed meshes
-                        // console.log(`Removing per-frame function for disposed mesh ${task.targetMesh.name}`);
-                        // window.sceneSpecificPerFrameFunctions = window.sceneSpecificPerFrameFunctions.filter(f => f !== task);
-                    }
-                });
-            }
-            sceneManager.scene.render();
-        });
 
         window.addEventListener('resize', resizeCanvas);
         resizeCanvas();
