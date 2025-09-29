@@ -100,6 +100,22 @@ var toolbox = {
 
         {
             kind: 'category',
+            name: 'Audio',
+            categorystyle: 'audio_category',
+            contents: [
+                {
+                    kind: 'block',
+                    type: 'play_sound_url',
+                },
+                {
+                    kind: 'block',
+                    type: 'play_note',
+                },
+            ]
+        },
+
+        {
+            kind: 'category',
             name: 'Controller',
             categorystyle: 'logic_category',
             contents: [
@@ -999,6 +1015,7 @@ class BabylonSceneManager {
             'ArrowUp': 'Up',
             'ArrowDown': 'Down'
         };
+        this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
         this.initScene();
         this.initInputListeners();
@@ -1196,6 +1213,33 @@ class BabylonSceneManager {
         this.buttonPressActions[button].push(callback);
     }
 
+    playSound(url) {
+        // Create a new sound and play it.
+        const sound = new BABYLON.Sound("sound", url, this.scene, null, {
+            loop: false,
+            autoplay: true
+        });
+    }
+
+    playNote(frequency, duration) {
+        if (!this.audioContext) return;
+        const oscillator = this.audioContext.createOscillator();
+        const gainNode = this.audioContext.createGain();
+
+        oscillator.connect(gainNode);
+        gainNode.connect(this.audioContext.destination);
+
+        oscillator.type = 'sine'; // 'sine', 'square', 'sawtooth', 'triangle'
+        oscillator.frequency.value = frequency;
+
+        // Fade out to avoid clicking
+        gainNode.gain.setValueAtTime(1, this.audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, this.audioContext.currentTime + duration);
+
+        oscillator.start(this.audioContext.currentTime);
+        oscillator.stop(this.audioContext.currentTime + duration);
+    }
+
     initInputListeners() {
         window.addEventListener('keydown', (event) => {
             this.inputState.keys[event.key] = true;
@@ -1272,7 +1316,8 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
         'list_category': { 'colour': '#745BA5' },
         'colour_category': { 'colour': '#A5745B' },
         'variable_category': { 'colour': '#A55B5B' },
-        'procedure_category': { 'colour': '#8A5BA5' }
+        'procedure_category': { 'colour': '#8A5BA5' },
+        'audio_category': { 'colour': '#5B80A5' }
     },
     'blockStyles': {
         'logic_blocks': { 'colourPrimary': '#4C97FF', 'colourSecondary': '#6CA7FF', 'colourTertiary': '#3C87EF' },
@@ -1988,6 +2033,51 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                 "colour": "#A55B80",
                 "tooltip": "Makes the camera follow the specified object.",
                 "helpUrl": ""
+            },
+            {
+                "type": "play_sound_url",
+                "message0": "play sound from URL %1",
+                "args0": [
+                    {
+                        "type": "field_input",
+                        "name": "URL",
+                        "text": "https://example.com/sound.mp3"
+                    }
+                ],
+                "previousStatement": null,
+                "nextStatement": null,
+                "colour": "#5B80A5",
+                "tooltip": "Plays a sound from a URL.",
+                "helpUrl": ""
+            },
+            {
+                "type": "play_note",
+                "message0": "play note %1 for %2 seconds",
+                "args0": [
+                    {
+                        "type": "field_dropdown",
+                        "name": "NOTE",
+                        "options": [
+                            ["C4", "261.63"],
+                            ["D4", "293.66"],
+                            ["E4", "329.63"],
+                            ["F4", "349.23"],
+                            ["G4", "392.00"],
+                            ["A4", "440.00"],
+                            ["B4", "493.88"]
+                        ]
+                    },
+                    {
+                        "type": "input_value",
+                        "name": "DURATION",
+                        "check": "Number"
+                    }
+                ],
+                "previousStatement": null,
+                "nextStatement": null,
+                "colour": "#5B80A5",
+                "tooltip": "Plays a musical note for a given duration.",
+                "helpUrl": ""
             }
         ]);
 
@@ -2239,6 +2329,17 @@ if (thisMesh) {
                 return `// Physics impostor is now set via enablePhysics. For '${name}', you can specify type.\n`;
             };
 
+            // --- Audio Block Generators ---
+            javascript.javascriptGenerator.forBlock['play_sound_url'] = function(block, generator) {
+                const url = block.getFieldValue('URL');
+                return `sceneManager.playSound('${url}');\n`;
+            };
+
+            javascript.javascriptGenerator.forBlock['play_note'] = function(block, generator) {
+                const note = block.getFieldValue('NOTE');
+                const duration = generator.valueToCode(block, 'DURATION', generator.ORDER_ATOMIC) || '0.5';
+                return `sceneManager.playNote(${note}, ${duration});\n`;
+            };
         }
 
         // Convert Blockly Code to JavaScript
