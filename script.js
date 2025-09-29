@@ -2300,34 +2300,28 @@ if (thisMesh) {
                                     },
                                     "next": {
                                         "block": {
-                                            "type": "set_ground_physics", "id": "g_phys",
-                                            "fields": { "NAME": "ground" },
+                                            "type": "create_box", "id": "p_box",
+                                            "fields": { "NAME": "player" },
+                                            "inputs": {
+                                                "X": { "block": { "type": "math_number", "fields": { "NUM": 0 } } },
+                                                "Y": { "block": { "type": "math_number", "fields": { "NUM": 5 } } },
+                                                "Z": { "block": { "type": "math_number", "fields": { "NUM": 0 } } }
+                                            },
                                             "next": {
                                                 "block": {
-                                                    "type": "create_box", "id": "p_box",
+                                                    "type": "enable_physics", "id": "p_phys",
                                                     "fields": { "NAME": "player" },
                                                     "inputs": {
-                                                        "X": { "block": { "type": "math_number", "fields": { "NUM": 0 } } },
-                                                        "Y": { "block": { "type": "math_number", "fields": { "NUM": 5 } } },
-                                                        "Z": { "block": { "type": "math_number", "fields": { "NUM": 0 } } }
+                                                        "MASS": { "block": { "type": "math_number", "fields": { "NUM": 1 } } }
                                                     },
                                                     "next": {
                                                         "block": {
-                                                            "type": "enable_physics", "id": "p_phys",
-                                                            "fields": { "NAME": "player" },
-                                                            "inputs": {
-                                                                "MASS": { "block": { "type": "math_number", "fields": { "NUM": 1 } } }
-                                                            },
+                                                            "type": "set_as_player", "id": "p_set",
+                                                            "inputs": { "OBJECT": { "block": { "type": "text", "fields": { "TEXT": "player" } } } },
                                                             "next": {
                                                                 "block": {
-                                                                    "type": "set_as_player", "id": "p_set",
-                                                                    "inputs": { "OBJECT": { "block": { "type": "text", "fields": { "TEXT": "player" } } } },
-                                                                    "next": {
-                                                                        "block": {
-                                                                            "type": "camera_follow", "id": "cam_f",
-                                                                            "inputs": { "OBJECT": { "block": { "type": "text", "fields": { "TEXT": "player" } } } }
-                                                                        }
-                                                                    }
+                                                                    "type": "camera_follow", "id": "cam_f",
+                                                                    "inputs": { "OBJECT": { "block": { "type": "text", "fields": { "TEXT": "player" } } } }
                                                                 }
                                                             }
                                                         }
