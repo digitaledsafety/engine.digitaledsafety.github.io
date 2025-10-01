@@ -123,6 +123,14 @@ var toolbox = {
                     kind: 'block',
                     type: 'on_button_press',
                 },
+                {
+                    kind: 'block',
+                    type: 'get_joystick_direction',
+                },
+                {
+                    kind: 'block',
+                    type: 'get_joystick_force',
+                }
             ]
         },
         {
@@ -1005,21 +1013,111 @@ class BabylonSceneManager {
         this.objects = {};
         this.materials = {};
         this.player = null;
+        this.moveDirection = new BABYLON.Vector3(0, 0, 0);
+        this.playerSpeed = 5;
         this.perFrameFunctions = [];
         this.buttonPressActions = {};
         this.inputState = { keys: {} };
+        this.joystick = null;
+        this.joystick_state = {
+            up: false,
+            down: false,
+            left: false,
+            right: false,
+            pressed: false,
+            angle: 0,
+            force: 0
+        };
         this.inputMap = {
             ' ': 'A',
-            'ArrowLeft': 'Left',
-            'ArrowRight': 'Right',
-            'ArrowUp': 'Up',
-            'ArrowDown': 'Down'
+            'a': 'Left',
+            'd': 'Right',
+            'w': 'Up',
+            's': 'Down'
         };
         this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        this.uiElements = [];
+        this.inactivityTimer = null;
 
         this.initScene();
         this.initInputListeners();
+        this.initJoystick();
+        this.initAutoHide();
         this.runRenderLoop();
+    }
+
+    initJoystick() {
+        const joystickContainer = document.getElementById('joystick-container');
+        if (joystickContainer) {
+            this.joystick = nipplejs.create({
+                zone: joystickContainer,
+                mode: 'static',
+                position: { left: '50%', top: '50%' },
+                color: 'grey',
+                size: 120
+            });
+
+            this.joystick.on('move', (evt, data) => {
+                const angle = data.angle.radian;
+                const force = data.force;
+
+                this.joystick_state.angle = data.angle.degree;
+                this.joystick_state.force = data.force;
+
+                // Reset states
+                this.joystick_state.up = false;
+                this.joystick_state.down = false;
+                this.joystick_state.left = false;
+                this.joystick_state.right = false;
+
+                if (force > 0.5) { // Threshold to prevent accidental movement
+                    if (angle > Math.PI * 0.25 && angle < Math.PI * 0.75) {
+                        this.joystick_state.up = true;
+                    } else if (angle > Math.PI * 1.25 && angle < Math.PI * 1.75) {
+                        this.joystick_state.down = true;
+                    } else if (angle > Math.PI * 0.75 && angle < Math.PI * 1.25) {
+                        this.joystick_state.left = true;
+                    } else if (angle < Math.PI * 0.25 || angle > Math.PI * 1.75) {
+                        this.joystick_state.right = true;
+                    }
+                }
+            });
+
+            this.joystick.on('start', () => {
+                this.joystick_state.pressed = true;
+            });
+
+            this.joystick.on('end', () => {
+                this.joystick_state.up = false;
+                this.joystick_state.down = false;
+                this.joystick_state.left = false;
+                this.joystick_state.right = false;
+                this.joystick_state.pressed = false;
+                this.joystick_state.angle = 0;
+                this.joystick_state.force = 0;
+            });
+        }
+    }
+
+    initAutoHide() {
+        this.uiElements = document.querySelectorAll('.interactive-ui');
+        const canvasContainer = document.querySelector('.canvas-container');
+
+        const resetTimer = () => {
+            this.uiElements.forEach(el => el.classList.remove('hidden'));
+            clearTimeout(this.inactivityTimer);
+            this.inactivityTimer = setTimeout(() => {
+                this.uiElements.forEach(el => el.classList.add('hidden'));
+            }, 3000); // Hide after 3 seconds of inactivity
+        };
+
+        // Initial call to start the timer
+        resetTimer();
+
+        // Reset timer on user interaction
+        canvasContainer.addEventListener('mousemove', resetTimer, false);
+        canvasContainer.addEventListener('touchstart', resetTimer, { passive: true });
+        canvasContainer.addEventListener('click', resetTimer, false);
     }
 
     // High-level API for cleaner code generation
@@ -1128,20 +1226,16 @@ class BabylonSceneManager {
     }
 
     playerMove(direction, speed) {
-        if (this.player && this.player.physicsImpostor) {
-            const currentVelocity = this.player.physicsImpostor.getLinearVelocity();
-            let velocityX = currentVelocity.x;
-            let velocityZ = currentVelocity.z;
-
-            // This logic assumes a camera-relative movement might be desired later,
-            // but for now, it's world-based.
-            switch (direction) {
-                case 'FORWARD': velocityZ = speed; break;
-                case 'BACKWARD': velocityZ = -speed; break;
-                case 'LEFT': velocityX = -speed; break;
-                case 'RIGHT': velocityX = speed; break;
+        if (this.player) {
+            if (speed !== undefined) {
+                this.playerSpeed = speed;
             }
-            this.player.physicsImpostor.setLinearVelocity(new BABYLON.Vector3(velocityX, currentVelocity.y, velocityZ));
+            switch (direction) {
+                case 'FORWARD': this.moveDirection.z += 1; break;
+                case 'BACKWARD': this.moveDirection.z -= 1; break;
+                case 'LEFT': this.moveDirection.x -= 1; break;
+                case 'RIGHT': this.moveDirection.x += 1; break;
+            }
         }
     }
 
@@ -1242,10 +1336,10 @@ class BabylonSceneManager {
 
     initInputListeners() {
         window.addEventListener('keydown', (event) => {
-            this.inputState.keys[event.key] = true;
+            this.inputState.keys[event.key.toLowerCase()] = true;
         });
         window.addEventListener('keyup', (event) => {
-            this.inputState.keys[event.key] = false;
+            this.inputState.keys[event.key.toLowerCase()] = false;
         });
     }
 
@@ -1264,6 +1358,9 @@ class BabylonSceneManager {
             const deltaTime = currentTime - lastTime;
             lastTime = currentTime;
 
+            // Reset movement direction at the start of the frame
+            this.moveDirection.set(0, 0, 0);
+
             // Handle continuous button presses via input map
             for (const key in this.inputState.keys) {
                 if (this.inputState.keys[key]) { // If the physical key is pressed
@@ -1272,6 +1369,39 @@ class BabylonSceneManager {
                         this.buttonPressActions[button].forEach(action => action());
                     }
                 }
+            }
+
+            // Handle joystick state
+            if (this.joystick_state.left && this.buttonPressActions['Left']) {
+                this.buttonPressActions['Left'].forEach(action => action());
+            }
+            if (this.joystick_state.right && this.buttonPressActions['Right']) {
+                this.buttonPressActions['Right'].forEach(action => action());
+            }
+            if (this.joystick_state.up && this.buttonPressActions['Up']) {
+                this.buttonPressActions['Up'].forEach(action => action());
+            }
+            if (this.joystick_state.down && this.buttonPressActions['Down']) {
+                this.buttonPressActions['Down'].forEach(action => action());
+            }
+
+            // Apply calculated movement
+            if (this.player && this.player.physicsImpostor) {
+                const currentVelocity = this.player.physicsImpostor.getLinearVelocity();
+                let newVelocity = new BABYLON.Vector3(0, currentVelocity.y, 0);
+
+                if (this.moveDirection.lengthSquared() > 0) {
+                    // Normalize to prevent faster diagonal movement and apply speed
+                    const normalizedMove = this.moveDirection.normalize().scale(this.playerSpeed);
+                    newVelocity.x = normalizedMove.x;
+                    newVelocity.z = normalizedMove.z;
+                } else {
+                    // If no input, stop horizontal movement
+                    newVelocity.x = 0;
+                    newVelocity.z = 0;
+                }
+
+                this.player.physicsImpostor.setLinearVelocity(newVelocity);
             }
 
             this.perFrameFunctions.forEach(task => {
@@ -1916,6 +2046,22 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                 "helpUrl": ""
             },
             {
+                "type": "get_joystick_direction",
+                "message0": "joystick direction",
+                "output": "Number",
+                "colour": "%{BKY_LOGIC_HUE}",
+                "tooltip": "Gets the current direction of the joystick in degrees.",
+                "helpUrl": ""
+            },
+            {
+                "type": "get_joystick_force",
+                "message0": "joystick force",
+                "output": "Number",
+                "colour": "%{BKY_LOGIC_HUE}",
+                "tooltip": "Gets the current force of the joystick (0 to 1).",
+                "helpUrl": ""
+            },
+            {
                 "type": "player_jump",
                 "message0": "make player jump with force %1",
                 "args0": [
@@ -2148,6 +2294,14 @@ if (thisMesh) {
                 const doCode = generator.statementToCode(block, 'DO');
                 const callback = `function() {\n${doCode}\n}`;
                 return `sceneManager.onButtonPress('${button}', ${callback});\n`;
+            };
+
+            javascript.javascriptGenerator.forBlock['get_joystick_direction'] = function(block, generator) {
+                return ['sceneManager.joystick_state.angle', generator.ORDER_ATOMIC];
+            };
+
+            javascript.javascriptGenerator.forBlock['get_joystick_force'] = function(block, generator) {
+                return ['sceneManager.joystick_state.force', generator.ORDER_ATOMIC];
             };
 
             javascript.javascriptGenerator.forBlock['player_jump'] = function(block, generator) {
@@ -2447,6 +2601,14 @@ if (thisMesh) {
                             "type": "on_button_press", "id": "right_ctl", "x": 50, "y": 550, "fields": { "BUTTON": "Right" },
                             "inputs": { "DO": { "block": { "type": "player_move", "id": "right_act", "fields": { "DIRECTION": "RIGHT" }, "inputs": { "SPEED": { "block": { "type": "math_number", "fields": { "NUM": 5 } } } } } } }
                         },
+                        {
+                            "type": "on_button_press", "id": "up_ctl", "x": 50, "y": 650, "fields": { "BUTTON": "Up" },
+                            "inputs": { "DO": { "block": { "type": "player_move", "id": "up_act", "fields": { "DIRECTION": "FORWARD" }, "inputs": { "SPEED": { "block": { "type": "math_number", "fields": { "NUM": 5 } } } } } } }
+                        },
+                        {
+                            "type": "on_button_press", "id": "down_ctl", "x": 50, "y": 750, "fields": { "BUTTON": "Down" },
+                            "inputs": { "DO": { "block": { "type": "player_move", "id": "down_act", "fields": { "DIRECTION": "BACKWARD" }, "inputs": { "SPEED": { "block": { "type": "math_number", "fields": { "NUM": 5 } } } } } } }
+                        },
                         // Coin
                         {
                             "type": "create_box", "id": "coin", "x": 400, "y": 50,
@@ -2627,23 +2789,11 @@ if (thisMesh) {
         // This will be updated in later steps.
 
         // --- Touch Control Event Listeners ---
-        const touchLeft = document.getElementById('touch-left');
-        const touchRight = document.getElementById('touch-right');
         const touchJump = document.getElementById('touch-jump');
 
         const handleTouch = (key, isPressed) => {
             sceneManager.inputState.keys[key] = isPressed;
         };
-
-        // Left Button
-        touchLeft.addEventListener('touchstart', (e) => { e.preventDefault(); handleTouch('ArrowLeft', true); }, { passive: false });
-        touchLeft.addEventListener('touchend', (e) => { e.preventDefault(); handleTouch('ArrowLeft', false); }, { passive: false });
-        touchLeft.addEventListener('touchcancel', (e) => { e.preventDefault(); handleTouch('ArrowLeft', false); }, { passive: false });
-
-        // Right Button
-        touchRight.addEventListener('touchstart', (e) => { e.preventDefault(); handleTouch('ArrowRight', true); }, { passive: false });
-        touchRight.addEventListener('touchend', (e) => { e.preventDefault(); handleTouch('ArrowRight', false); }, { passive: false });
-        touchRight.addEventListener('touchcancel', (e) => { e.preventDefault(); handleTouch('ArrowRight', false); }, { passive: false });
 
         // Jump Button
         touchJump.addEventListener('touchstart', (e) => { e.preventDefault(); handleTouch(' ', true); }, { passive: false });
