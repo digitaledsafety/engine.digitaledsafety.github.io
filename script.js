@@ -1034,10 +1034,13 @@ class BabylonSceneManager {
             'ArrowDown': 'Down'
         };
         this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        this.uiElements = [];
+        this.inactivityTimer = null;
 
         this.initScene();
         this.initInputListeners();
         this.initJoystick();
+        this.initAutoHide();
         this.runRenderLoop();
     }
 
@@ -1092,6 +1095,27 @@ class BabylonSceneManager {
                 this.joystick_state.force = 0;
             });
         }
+    }
+
+    initAutoHide() {
+        this.uiElements = document.querySelectorAll('.interactive-ui');
+        const canvasContainer = document.querySelector('.canvas-container');
+
+        const resetTimer = () => {
+            this.uiElements.forEach(el => el.classList.remove('hidden'));
+            clearTimeout(this.inactivityTimer);
+            this.inactivityTimer = setTimeout(() => {
+                this.uiElements.forEach(el => el.classList.add('hidden'));
+            }, 3000); // Hide after 3 seconds of inactivity
+        };
+
+        // Initial call to start the timer
+        resetTimer();
+
+        // Reset timer on user interaction
+        canvasContainer.addEventListener('mousemove', resetTimer, false);
+        canvasContainer.addEventListener('touchstart', resetTimer, { passive: true });
+        canvasContainer.addEventListener('click', resetTimer, false);
     }
 
     // High-level API for cleaner code generation
