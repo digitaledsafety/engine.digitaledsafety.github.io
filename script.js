@@ -123,6 +123,14 @@ var toolbox = {
                     kind: 'block',
                     type: 'on_button_press',
                 },
+                {
+                    kind: 'block',
+                    type: 'get_joystick_direction',
+                },
+                {
+                    kind: 'block',
+                    type: 'get_joystick_force',
+                }
             ]
         },
         {
@@ -1008,6 +1016,16 @@ class BabylonSceneManager {
         this.perFrameFunctions = [];
         this.buttonPressActions = {};
         this.inputState = { keys: {} };
+        this.joystick = null;
+        this.joystick_state = {
+            up: false,
+            down: false,
+            left: false,
+            right: false,
+            pressed: false,
+            angle: 0,
+            force: 0
+        };
         this.inputMap = {
             ' ': 'A',
             'ArrowLeft': 'Left',
@@ -1019,7 +1037,61 @@ class BabylonSceneManager {
 
         this.initScene();
         this.initInputListeners();
+        this.initJoystick();
         this.runRenderLoop();
+    }
+
+    initJoystick() {
+        const joystickContainer = document.getElementById('joystick-container');
+        if (joystickContainer) {
+            this.joystick = nipplejs.create({
+                zone: joystickContainer,
+                mode: 'static',
+                position: { left: '50%', top: '50%' },
+                color: 'grey',
+                size: 120
+            });
+
+            this.joystick.on('move', (evt, data) => {
+                const angle = data.angle.radian;
+                const force = data.force;
+
+                this.joystick_state.angle = data.angle.degree;
+                this.joystick_state.force = data.force;
+
+                // Reset states
+                this.joystick_state.up = false;
+                this.joystick_state.down = false;
+                this.joystick_state.left = false;
+                this.joystick_state.right = false;
+
+                if (force > 0.5) { // Threshold to prevent accidental movement
+                    if (angle > Math.PI * 0.25 && angle < Math.PI * 0.75) {
+                        this.joystick_state.up = true;
+                    } else if (angle > Math.PI * 1.25 && angle < Math.PI * 1.75) {
+                        this.joystick_state.down = true;
+                    } else if (angle > Math.PI * 0.75 && angle < Math.PI * 1.25) {
+                        this.joystick_state.left = true;
+                    } else if (angle < Math.PI * 0.25 || angle > Math.PI * 1.75) {
+                        this.joystick_state.right = true;
+                    }
+                }
+            });
+
+            this.joystick.on('start', () => {
+                this.joystick_state.pressed = true;
+            });
+
+            this.joystick.on('end', () => {
+                this.joystick_state.up = false;
+                this.joystick_state.down = false;
+                this.joystick_state.left = false;
+                this.joystick_state.right = false;
+                this.joystick_state.pressed = false;
+                this.joystick_state.angle = 0;
+                this.joystick_state.force = 0;
+            });
+        }
     }
 
     // High-level API for cleaner code generation
@@ -1272,6 +1344,14 @@ class BabylonSceneManager {
                         this.buttonPressActions[button].forEach(action => action());
                     }
                 }
+            }
+
+            // Handle joystick state
+            if (this.joystick_state.left && this.buttonPressActions['Left']) {
+                this.buttonPressActions['Left'].forEach(action => action());
+            }
+            if (this.joystick_state.right && this.buttonPressActions['Right']) {
+                this.buttonPressActions['Right'].forEach(action => action());
             }
 
             this.perFrameFunctions.forEach(task => {
@@ -1916,6 +1996,22 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                 "helpUrl": ""
             },
             {
+                "type": "get_joystick_direction",
+                "message0": "joystick direction",
+                "output": "Number",
+                "colour": "%{BKY_LOGIC_HUE}",
+                "tooltip": "Gets the current direction of the joystick in degrees.",
+                "helpUrl": ""
+            },
+            {
+                "type": "get_joystick_force",
+                "message0": "joystick force",
+                "output": "Number",
+                "colour": "%{BKY_LOGIC_HUE}",
+                "tooltip": "Gets the current force of the joystick (0 to 1).",
+                "helpUrl": ""
+            },
+            {
                 "type": "player_jump",
                 "message0": "make player jump with force %1",
                 "args0": [
@@ -2148,6 +2244,14 @@ if (thisMesh) {
                 const doCode = generator.statementToCode(block, 'DO');
                 const callback = `function() {\n${doCode}\n}`;
                 return `sceneManager.onButtonPress('${button}', ${callback});\n`;
+            };
+
+            javascript.javascriptGenerator.forBlock['get_joystick_direction'] = function(block, generator) {
+                return ['sceneManager.joystick_state.angle', generator.ORDER_ATOMIC];
+            };
+
+            javascript.javascriptGenerator.forBlock['get_joystick_force'] = function(block, generator) {
+                return ['sceneManager.joystick_state.force', generator.ORDER_ATOMIC];
             };
 
             javascript.javascriptGenerator.forBlock['player_jump'] = function(block, generator) {
@@ -2611,23 +2715,11 @@ if (thisMesh) {
         // This will be updated in later steps.
 
         // --- Touch Control Event Listeners ---
-        const touchLeft = document.getElementById('touch-left');
-        const touchRight = document.getElementById('touch-right');
         const touchJump = document.getElementById('touch-jump');
 
         const handleTouch = (key, isPressed) => {
             sceneManager.inputState.keys[key] = isPressed;
         };
-
-        // Left Button
-        touchLeft.addEventListener('touchstart', (e) => { e.preventDefault(); handleTouch('ArrowLeft', true); }, { passive: false });
-        touchLeft.addEventListener('touchend', (e) => { e.preventDefault(); handleTouch('ArrowLeft', false); }, { passive: false });
-        touchLeft.addEventListener('touchcancel', (e) => { e.preventDefault(); handleTouch('ArrowLeft', false); }, { passive: false });
-
-        // Right Button
-        touchRight.addEventListener('touchstart', (e) => { e.preventDefault(); handleTouch('ArrowRight', true); }, { passive: false });
-        touchRight.addEventListener('touchend', (e) => { e.preventDefault(); handleTouch('ArrowRight', false); }, { passive: false });
-        touchRight.addEventListener('touchcancel', (e) => { e.preventDefault(); handleTouch('ArrowRight', false); }, { passive: false });
 
         // Jump Button
         touchJump.addEventListener('touchstart', (e) => { e.preventDefault(); handleTouch(' ', true); }, { passive: false });
