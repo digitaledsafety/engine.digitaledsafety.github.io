@@ -1013,6 +1013,8 @@ class BabylonSceneManager {
         this.objects = {};
         this.materials = {};
         this.player = null;
+        this.moveDirection = new BABYLON.Vector3(0, 0, 0);
+        this.playerSpeed = 5;
         this.perFrameFunctions = [];
         this.buttonPressActions = {};
         this.inputState = { keys: {} };
@@ -1224,20 +1226,16 @@ class BabylonSceneManager {
     }
 
     playerMove(direction, speed) {
-        if (this.player && this.player.physicsImpostor) {
-            const currentVelocity = this.player.physicsImpostor.getLinearVelocity();
-            let velocityX = currentVelocity.x;
-            let velocityZ = currentVelocity.z;
-
-            // This logic assumes a camera-relative movement might be desired later,
-            // but for now, it's world-based.
-            switch (direction) {
-                case 'FORWARD': velocityZ = speed; break;
-                case 'BACKWARD': velocityZ = -speed; break;
-                case 'LEFT': velocityX = -speed; break;
-                case 'RIGHT': velocityX = speed; break;
+        if (this.player) {
+            if (speed !== undefined) {
+                this.playerSpeed = speed;
             }
-            this.player.physicsImpostor.setLinearVelocity(new BABYLON.Vector3(velocityX, currentVelocity.y, velocityZ));
+            switch (direction) {
+                case 'FORWARD': this.moveDirection.z += 1; break;
+                case 'BACKWARD': this.moveDirection.z -= 1; break;
+                case 'LEFT': this.moveDirection.x -= 1; break;
+                case 'RIGHT': this.moveDirection.x += 1; break;
+            }
         }
     }
 
@@ -1360,6 +1358,9 @@ class BabylonSceneManager {
             const deltaTime = currentTime - lastTime;
             lastTime = currentTime;
 
+            // Reset movement direction at the start of the frame
+            this.moveDirection.set(0, 0, 0);
+
             // Handle continuous button presses via input map
             for (const key in this.inputState.keys) {
                 if (this.inputState.keys[key]) { // If the physical key is pressed
@@ -1376,6 +1377,31 @@ class BabylonSceneManager {
             }
             if (this.joystick_state.right && this.buttonPressActions['Right']) {
                 this.buttonPressActions['Right'].forEach(action => action());
+            }
+            if (this.joystick_state.up && this.buttonPressActions['Up']) {
+                this.buttonPressActions['Up'].forEach(action => action());
+            }
+            if (this.joystick_state.down && this.buttonPressActions['Down']) {
+                this.buttonPressActions['Down'].forEach(action => action());
+            }
+
+            // Apply calculated movement
+            if (this.player && this.player.physicsImpostor) {
+                const currentVelocity = this.player.physicsImpostor.getLinearVelocity();
+                let newVelocity = new BABYLON.Vector3(0, currentVelocity.y, 0);
+
+                if (this.moveDirection.lengthSquared() > 0) {
+                    // Normalize to prevent faster diagonal movement and apply speed
+                    const normalizedMove = this.moveDirection.normalize().scale(this.playerSpeed);
+                    newVelocity.x = normalizedMove.x;
+                    newVelocity.z = normalizedMove.z;
+                } else {
+                    // If no input, stop horizontal movement
+                    newVelocity.x = 0;
+                    newVelocity.z = 0;
+                }
+
+                this.player.physicsImpostor.setLinearVelocity(newVelocity);
             }
 
             this.perFrameFunctions.forEach(task => {
@@ -2574,6 +2600,14 @@ if (thisMesh) {
                         {
                             "type": "on_button_press", "id": "right_ctl", "x": 50, "y": 550, "fields": { "BUTTON": "Right" },
                             "inputs": { "DO": { "block": { "type": "player_move", "id": "right_act", "fields": { "DIRECTION": "RIGHT" }, "inputs": { "SPEED": { "block": { "type": "math_number", "fields": { "NUM": 5 } } } } } } }
+                        },
+                        {
+                            "type": "on_button_press", "id": "up_ctl", "x": 50, "y": 650, "fields": { "BUTTON": "Up" },
+                            "inputs": { "DO": { "block": { "type": "player_move", "id": "up_act", "fields": { "DIRECTION": "FORWARD" }, "inputs": { "SPEED": { "block": { "type": "math_number", "fields": { "NUM": 5 } } } } } } }
+                        },
+                        {
+                            "type": "on_button_press", "id": "down_ctl", "x": 50, "y": 750, "fields": { "BUTTON": "Down" },
+                            "inputs": { "DO": { "block": { "type": "player_move", "id": "down_act", "fields": { "DIRECTION": "BACKWARD" }, "inputs": { "SPEED": { "block": { "type": "math_number", "fields": { "NUM": 5 } } } } } } }
                         },
                         // Coin
                         {
