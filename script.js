@@ -146,10 +146,6 @@ var toolbox = {
                     kind: 'block',
                     type: 'player_jump',
                 },
-                {
-                    kind: 'block',
-                    type: 'player_move',
-                },
             ]
         },
 
@@ -1361,31 +1357,20 @@ class BabylonSceneManager {
             // Reset movement direction at the start of the frame
             this.moveDirection.set(0, 0, 0);
 
-            // Handle continuous button presses via input map
-            for (const key in this.inputState.keys) {
-                if (this.inputState.keys[key]) { // If the physical key is pressed
-                    const button = this.inputMap[key]; // Find the logical button
-                    if (button && this.buttonPressActions[button]) {
-                        this.buttonPressActions[button].forEach(action => action());
-                    }
-                }
-            }
+            // --- Handle Continuous Movement ---
+            // Keyboard
+            if (this.inputState.keys['w']) { this.moveDirection.z += 1; }
+            if (this.inputState.keys['s']) { this.moveDirection.z -= 1; }
+            if (this.inputState.keys['a']) { this.moveDirection.x -= 1; }
+            if (this.inputState.keys['d']) { this.moveDirection.x += 1; }
 
-            // Handle joystick state
-            if (this.joystick_state.left && this.buttonPressActions['Left']) {
-                this.buttonPressActions['Left'].forEach(action => action());
-            }
-            if (this.joystick_state.right && this.buttonPressActions['Right']) {
-                this.buttonPressActions['Right'].forEach(action => action());
-            }
-            if (this.joystick_state.up && this.buttonPressActions['Up']) {
-                this.buttonPressActions['Up'].forEach(action => action());
-            }
-            if (this.joystick_state.down && this.buttonPressActions['Down']) {
-                this.buttonPressActions['Down'].forEach(action => action());
-            }
+            // Joystick
+            if (this.joystick_state.up) { this.moveDirection.z += 1; }
+            if (this.joystick_state.down) { this.moveDirection.z -= 1; }
+            if (this.joystick_state.left) { this.moveDirection.x -= 1; }
+            if (this.joystick_state.right) { this.moveDirection.x += 1; }
 
-            // Apply calculated movement
+            // Apply movement
             if (this.player && this.player.physicsImpostor) {
                 const currentVelocity = this.player.physicsImpostor.getLinearVelocity();
                 let newVelocity = new BABYLON.Vector3(0, currentVelocity.y, 0);
@@ -1395,13 +1380,19 @@ class BabylonSceneManager {
                     const normalizedMove = this.moveDirection.normalize().scale(this.playerSpeed);
                     newVelocity.x = normalizedMove.x;
                     newVelocity.z = normalizedMove.z;
-                } else {
-                    // If no input, stop horizontal movement
-                    newVelocity.x = 0;
-                    newVelocity.z = 0;
                 }
 
                 this.player.physicsImpostor.setLinearVelocity(newVelocity);
+            }
+
+            // --- Handle Discrete Actions (from Blockly) ---
+            for (const key in this.inputState.keys) {
+                if (this.inputState.keys[key]) {
+                    const button = this.inputMap[key];
+                    if (button && !['Left', 'Right', 'Up', 'Down'].includes(button) && this.buttonPressActions[button]) {
+                        this.buttonPressActions[button].forEach(action => action());
+                    }
+                }
             }
 
             this.perFrameFunctions.forEach(task => {
@@ -2077,32 +2068,6 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                 "tooltip": "Makes the player character jump.",
                 "helpUrl": ""
             },
-            {
-                "type": "player_move",
-                "message0": "move player with speed %1 in direction %2",
-                "args0": [
-                    {
-                        "type": "input_value",
-                        "name": "SPEED",
-                        "check": "Number"
-                    },
-                    {
-                        "type": "field_dropdown",
-                        "name": "DIRECTION",
-                        "options": [
-                            ["forward", "FORWARD"],
-                            ["backward", "BACKWARD"],
-                            ["left", "LEFT"],
-                            ["right", "RIGHT"]
-                        ]
-                    }
-                ],
-                "previousStatement": null,
-                "nextStatement": null,
-                "colour": "#4C97FF",
-                "tooltip": "Moves the player character in a direction.",
-                "helpUrl": ""
-            },
             // Gameplay Blocks
             {
                 "type": "on_collision",
@@ -2307,12 +2272,6 @@ if (thisMesh) {
             javascript.javascriptGenerator.forBlock['player_jump'] = function(block, generator) {
                 const force = generator.valueToCode(block, 'FORCE', generator.ORDER_ATOMIC) || '5';
                 return `sceneManager.playerJump(${force});\n`;
-            };
-
-            javascript.javascriptGenerator.forBlock['player_move'] = function(block, generator) {
-                const speed = generator.valueToCode(block, 'SPEED', generator.ORDER_ATOMIC) || '1';
-                const direction = block.getFieldValue('DIRECTION');
-                return `sceneManager.playerMove('${direction}', ${speed});\n`;
             };
 
             // --- Simplified JavaScript Generators ---
@@ -2593,22 +2552,6 @@ if (thisMesh) {
                             "type": "on_button_press", "id": "jump_ctl", "x": 50, "y": 350, "fields": { "BUTTON": "A" },
                             "inputs": { "DO": { "block": { "type": "player_jump", "id": "jump_act", "inputs": { "FORCE": { "block": { "type": "math_number", "fields": { "NUM": 8 } } } } } } }
                         },
-                        {
-                            "type": "on_button_press", "id": "left_ctl", "x": 50, "y": 450, "fields": { "BUTTON": "Left" },
-                            "inputs": { "DO": { "block": { "type": "player_move", "id": "left_act", "fields": { "DIRECTION": "LEFT" }, "inputs": { "SPEED": { "block": { "type": "math_number", "fields": { "NUM": 5 } } } } } } }
-                        },
-                        {
-                            "type": "on_button_press", "id": "right_ctl", "x": 50, "y": 550, "fields": { "BUTTON": "Right" },
-                            "inputs": { "DO": { "block": { "type": "player_move", "id": "right_act", "fields": { "DIRECTION": "RIGHT" }, "inputs": { "SPEED": { "block": { "type": "math_number", "fields": { "NUM": 5 } } } } } } }
-                        },
-                        {
-                            "type": "on_button_press", "id": "up_ctl", "x": 50, "y": 650, "fields": { "BUTTON": "Up" },
-                            "inputs": { "DO": { "block": { "type": "player_move", "id": "up_act", "fields": { "DIRECTION": "FORWARD" }, "inputs": { "SPEED": { "block": { "type": "math_number", "fields": { "NUM": 5 } } } } } } }
-                        },
-                        {
-                            "type": "on_button_press", "id": "down_ctl", "x": 50, "y": 750, "fields": { "BUTTON": "Down" },
-                            "inputs": { "DO": { "block": { "type": "player_move", "id": "down_act", "fields": { "DIRECTION": "BACKWARD" }, "inputs": { "SPEED": { "block": { "type": "math_number", "fields": { "NUM": 5 } } } } } } }
-                        },
                         // Coin
                         {
                             "type": "create_box", "id": "coin", "x": 400, "y": 50,
@@ -2675,22 +2618,6 @@ if (thisMesh) {
         });
         document.getElementById('loadButton').addEventListener('click', () => {
             loadWorkspace();
-        });
-
-        document.getElementById('shareButton').addEventListener('click', () => {
-            const workspace = Blockly.getMainWorkspace();
-            const state = Blockly.serialization.workspaces.save(workspace);
-            const jsonState = JSON.stringify(state);
-            const base64State = btoa(jsonState);
-            const url = new URL(window.location.href);
-            url.searchParams.set('project', base64State);
-            console.log('Shareable URL:', url.href);
-            navigator.clipboard.writeText(url.href).then(() => {
-                alert('Shareable link copied to clipboard!');
-            }, (err) => {
-                console.error('Could not copy text: ', err);
-                alert('Failed to copy link. Please copy it manually from the console.');
-            });
         });
 
         document.getElementById('fullscreenBtn').addEventListener('click', () => {
@@ -2800,25 +2727,4 @@ if (thisMesh) {
         touchJump.addEventListener('touchend', (e) => { e.preventDefault(); handleTouch(' ', false); }, { passive: false });
         touchJump.addEventListener('touchcancel', (e) => { e.preventDefault(); handleTouch(' ', false); }, { passive: false });
 
-        function loadProjectFromUrl() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const projectData = urlParams.get('project');
-
-            if (projectData) {
-                try {
-                    const decodedState = atob(projectData);
-                    const jsonState = JSON.parse(decodedState);
-                    const workspace = Blockly.getMainWorkspace();
-                    Blockly.serialization.workspaces.load(jsonState, workspace);
-                    doRun();
-                } catch (e) {
-                    console.error("Failed to load project from URL:", e);
-                    alert("Could not load project from URL. Loading default project instead.");
-                    loadWorkspaceDefault();
-                }
-            } else {
-                loadWorkspaceDefault();
-            }
-        }
-
-        loadProjectFromUrl();
+        loadWorkspaceDefault();
