@@ -1030,10 +1030,10 @@ class BabylonSceneManager {
         };
         this.inputMap = {
             ' ': 'A',
-            'ArrowLeft': 'Left',
-            'ArrowRight': 'Right',
-            'ArrowUp': 'Up',
-            'ArrowDown': 'Down'
+            'a': 'Left',
+            'd': 'Right',
+            'w': 'Up',
+            's': 'Down'
         };
         this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
         this.uiElements = [];
@@ -1336,10 +1336,10 @@ class BabylonSceneManager {
 
     initInputListeners() {
         window.addEventListener('keydown', (event) => {
-            this.inputState.keys[event.key] = true;
+            this.inputState.keys[event.key.toLowerCase()] = true;
         });
         window.addEventListener('keyup', (event) => {
-            this.inputState.keys[event.key] = false;
+            this.inputState.keys[event.key.toLowerCase()] = false;
         });
     }
 
