@@ -2619,6 +2619,22 @@ if (thisMesh) {
             loadWorkspace();
         });
 
+        document.getElementById('shareButton').addEventListener('click', () => {
+            const workspace = Blockly.getMainWorkspace();
+            const state = Blockly.serialization.workspaces.save(workspace);
+            const jsonState = JSON.stringify(state);
+            const base64State = btoa(jsonState);
+            const url = new URL(window.location.href);
+            url.searchParams.set('project', base64State);
+            console.log('Shareable URL:', url.href);
+            navigator.clipboard.writeText(url.href).then(() => {
+                alert('Shareable link copied to clipboard!');
+            }, (err) => {
+                console.error('Could not copy text: ', err);
+                alert('Failed to copy link. Please copy it manually from the console.');
+            });
+        });
+
         document.getElementById('fullscreenBtn').addEventListener('click', () => {
             const canvasContainer = document.querySelector('.canvas-container');
             if (!document.fullscreenElement && !document.mozFullScreenElement && !document.webkitFullscreenElement && !document.msFullscreenElement) {
@@ -2726,4 +2742,25 @@ if (thisMesh) {
         touchJump.addEventListener('touchend', (e) => { e.preventDefault(); handleTouch(' ', false); }, { passive: false });
         touchJump.addEventListener('touchcancel', (e) => { e.preventDefault(); handleTouch(' ', false); }, { passive: false });
 
-        loadWorkspaceDefault();
+        function loadProjectFromUrl() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const projectData = urlParams.get('project');
+
+            if (projectData) {
+                try {
+                    const decodedState = atob(projectData);
+                    const jsonState = JSON.parse(decodedState);
+                    const workspace = Blockly.getMainWorkspace();
+                    Blockly.serialization.workspaces.load(jsonState, workspace);
+                    doRun();
+                } catch (e) {
+                    console.error("Failed to load project from URL:", e);
+                    alert("Could not load project from URL. Loading default project instead.");
+                    loadWorkspaceDefault();
+                }
+            } else {
+                loadWorkspaceDefault();
+            }
+        }
+
+        loadProjectFromUrl();
