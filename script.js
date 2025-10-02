@@ -1186,11 +1186,12 @@ class BabylonSceneManager {
         let obj2Mesh = this.objects[object2_name];
 
         if (obj1Mesh && obj2Mesh && obj1Mesh.physicsImpostor && obj2Mesh.physicsImpostor) {
-            obj1Mesh.physicsImpostor.onCollideEvent = (main, collided) => {
+            obj1Mesh.physicsImpostor.registerOnPhysicsCollide(obj2Mesh.physicsImpostor, (main, collided) => {
+                // Check if the collided object is the one we are interested in                
                 if (collided.object === obj2Mesh) {
                     callback();
                 }
-            };
+            });
         }
     }
 
@@ -2618,7 +2619,20 @@ if (thisMesh) {
                                 "Y": { "block": { "type": "math_number", "fields": { "NUM": 2 } } },
                                 "Z": { "block": { "type": "math_number", "fields": { "NUM": 0 } } }
                             },
-                             "next": { "block": { "type": "change_object_color", "id": "c_color", "fields": { "NAME": "coin", "COLOR": "#FFD700" } } }
+                             "next": {
+                                 "block": {
+                                     "type": "change_object_color", "id": "c_color", "fields": { "NAME": "coin", "COLOR": "#FFD700" },
+                                     "next": {
+                                         "block": {
+                                             "type": "enable_physics", "id": "c_phys",
+                                             "fields": { "NAME": "coin" },
+                                             "inputs": {
+                                                 "MASS": { "block": { "type": "math_number", "fields": { "NUM": 0 } } }
+                                             }
+                                         }
+                                     }
+                                 }
+                             }                             
                         },
                         {
                             "type": "on_collision", "id": "collide", "x": 400, "y": 150,
