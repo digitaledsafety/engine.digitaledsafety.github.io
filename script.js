@@ -116,6 +116,19 @@ var toolbox = {
 
         {
             kind: 'category',
+            name: 'Game Variables',
+            categorystyle: 'variable_category',
+            contents: [
+                { kind: 'block', type: 'set_game_variable' },
+                { kind: 'block', type: 'change_game_variable_by' },
+                { kind: 'block', type: 'get_game_variable' },
+                { kind: 'block', type: 'show_variable_monitor' },
+                { kind: 'block', type: 'hide_variable_monitor' },
+            ]
+        },
+
+        {
+            kind: 'category',
             name: 'Controller',
             categorystyle: 'logic_category',
             contents: [
@@ -1038,6 +1051,9 @@ class BabylonSceneManager {
         this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
         this.uiElements = [];
         this.inactivityTimer = null;
+        this.gameVariables = {};
+        this.variableMonitors = {};
+        this.variableMonitorsContainer = document.getElementById('variable-monitors-container');
 
         this.initScene();
         this.initInputListeners();
@@ -1294,6 +1310,42 @@ class BabylonSceneManager {
         }
     }
 
+    // --- Game Variable Methods ---
+    setGameVariable(name, value) {
+        this.gameVariables[name] = value;
+        if (this.variableMonitors[name]) {
+            this.variableMonitors[name].querySelector('.value').textContent = value;
+        }
+    }
+
+    changeGameVariable(name, delta) {
+        if (typeof this.gameVariables[name] !== 'number') {
+            this.gameVariables[name] = 0;
+        }
+        this.setGameVariable(name, this.gameVariables[name] + delta);
+    }
+
+    getGameVariable(name) {
+        return this.gameVariables[name] || 0;
+    }
+
+    showVariableMonitor(name) {
+        if (!this.variableMonitors[name] && this.variableMonitorsContainer) {
+            const monitor = document.createElement('div');
+            monitor.className = 'variable-monitor';
+            monitor.innerHTML = `<span class="name">${name}:</span> <span class="value">${this.getGameVariable(name)}</span>`;
+            this.variableMonitorsContainer.appendChild(monitor);
+            this.variableMonitors[name] = monitor;
+        }
+    }
+
+    hideVariableMonitor(name) {
+        if (this.variableMonitors[name]) {
+            this.variableMonitors[name].remove();
+            delete this.variableMonitors[name];
+        }
+    }
+
     destroyObject(name) {
         if (this.objects[name]) {
             this.objects[name].dispose();
@@ -1428,6 +1480,13 @@ class BabylonSceneManager {
         this.perFrameFunctions = [];
         this.buttonPressActions = {};
         this.inputState = { keys: {} }; // Reset state on clear
+
+        // Clear game variables and monitors
+        this.gameVariables = {};
+        if (this.variableMonitorsContainer) {
+            this.variableMonitorsContainer.innerHTML = '';
+        }
+        this.variableMonitors = {};
     }
 
     dispose() {
@@ -2149,6 +2208,63 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                 "tooltip": "Destroys the specified object.",
                 "helpUrl": ""
             },
+        // --- Game Variable Blocks ---
+        {
+            "type": "set_game_variable",
+            "message0": "set %1 to %2",
+            "args0": [
+                {"type": "field_input", "name": "VAR_NAME", "text": "variable_name"},
+                {"type": "input_value", "name": "VALUE"}
+            ],
+            "previousStatement": null,
+            "nextStatement": null,
+            "colour": "%{BKY_VARIABLE_HUE}",
+            "tooltip": "Sets a game variable to a specific value."
+        },
+        {
+            "type": "change_game_variable_by",
+            "message0": "change %1 by %2",
+            "args0": [
+                {"type": "field_input", "name": "VAR_NAME", "text": "variable_name"},
+                {"type": "input_value", "name": "DELTA", "check": "Number"}
+            ],
+            "previousStatement": null,
+            "nextStatement": null,
+            "colour": "%{BKY_VARIABLE_HUE}",
+            "tooltip": "Changes a game variable by a certain amount."
+        },
+        {
+            "type": "get_game_variable",
+            "message0": "%1",
+            "args0": [
+                {"type": "field_input", "name": "VAR_NAME", "text": "variable_name"}
+            ],
+            "output": null,
+            "colour": "%{BKY_VARIABLE_HUE}",
+            "tooltip": "Gets the value of a game variable."
+        },
+        {
+            "type": "show_variable_monitor",
+            "message0": "show variable %1",
+            "args0": [
+                {"type": "field_input", "name": "VAR_NAME", "text": "variable_name"}
+            ],
+            "previousStatement": null,
+            "nextStatement": null,
+            "colour": "%{BKY_VARIABLE_HUE}",
+            "tooltip": "Shows a variable monitor on the screen."
+        },
+        {
+            "type": "hide_variable_monitor",
+            "message0": "hide variable %1",
+            "args0": [
+                {"type": "field_input", "name": "VAR_NAME", "text": "variable_name"}
+            ],
+            "previousStatement": null,
+            "nextStatement": null,
+            "colour": "%{BKY_VARIABLE_HUE}",
+            "tooltip": "Hides a variable monitor from the screen."
+        },
             {
                 "type": "set_as_player",
                 "message0": "set %1 as player",
@@ -2287,6 +2403,34 @@ if (thisMesh) {
             javascript.javascriptGenerator.forBlock['destroy_object'] = function(block, generator) {
                 const objectName = generator.valueToCode(block, 'OBJECT', generator.ORDER_ATOMIC) || 'null';
                 return `sceneManager.destroyObject(${objectName});\n`;
+            };
+
+            // --- Game Variable Block Generators ---
+            javascript.javascriptGenerator.forBlock['set_game_variable'] = function(block, generator) {
+                const varName = block.getFieldValue('VAR_NAME');
+                const value = generator.valueToCode(block, 'VALUE', generator.ORDER_ATOMIC) || '0';
+                return `sceneManager.setGameVariable('${varName}', ${value});\n`;
+            };
+
+            javascript.javascriptGenerator.forBlock['change_game_variable_by'] = function(block, generator) {
+                const varName = block.getFieldValue('VAR_NAME');
+                const delta = generator.valueToCode(block, 'DELTA', generator.ORDER_ATOMIC) || '0';
+                return `sceneManager.changeGameVariable('${varName}', ${delta});\n`;
+            };
+
+            javascript.javascriptGenerator.forBlock['get_game_variable'] = function(block, generator) {
+                const varName = block.getFieldValue('VAR_NAME');
+                return [`sceneManager.getGameVariable('${varName}')`, generator.ORDER_ATOMIC];
+            };
+
+            javascript.javascriptGenerator.forBlock['show_variable_monitor'] = function(block, generator) {
+                const varName = block.getFieldValue('VAR_NAME');
+                return `sceneManager.showVariableMonitor('${varName}');\n`;
+            };
+
+            javascript.javascriptGenerator.forBlock['hide_variable_monitor'] = function(block, generator) {
+                const varName = block.getFieldValue('VAR_NAME');
+                return `sceneManager.hideVariableMonitor('${varName}');\n`;
             };
 
             // --- Controller Block Generator ---
@@ -2634,12 +2778,43 @@ if (thisMesh) {
                                  }
                              }
                         },
+                        // Score variable setup
                         {
-                            "type": "on_collision", "id": "collide", "x": 400, "y": 150,
+                            "type": "set_game_variable", "x": 50, "y": 850,
+                            "fields": { "VAR_NAME": "score" },
                             "inputs": {
-                                "OBJECT1": { "block": { "type": "text", "fields": { "TEXT": "player" } } },
-                                "OBJECT2": { "block": { "type": "text", "fields": { "TEXT": "coin" } } },
-                                "DO": { "block": { "type": "destroy_object", "id": "destroy_c", "inputs": { "OBJECT": { "block": { "type": "text", "fields": { "TEXT": "coin" } } } } } }
+                                "VALUE": { "block": { "type": "math_number", "fields": { "NUM": 0 } } }
+                            },
+                            "next": {
+                                "block": {
+                                    "type": "show_variable_monitor",
+                                    "fields": { "VAR_NAME": "score" }
+                                }
+                            }
+                        },
+                        // Collision logic
+                        {
+                            "type": "on_collision", "x": 400, "y": 150,
+                            "inputs": {
+                                "OBJECT1": { "block": { "type": "select_object", "fields": { "OBJECT_NAME": "player" } } },
+                                "OBJECT2": { "block": { "type": "select_object", "fields": { "OBJECT_NAME": "coin" } } },
+                                "DO": {
+                                    "block": {
+                                        "type": "change_game_variable_by",
+                                        "fields": { "VAR_NAME": "score" },
+                                        "inputs": {
+                                            "DELTA": { "block": { "type": "math_number", "fields": { "NUM": 1 } } }
+                                        },
+                                        "next": {
+                                            "block": {
+                                                "type": "destroy_object",
+                                                "inputs": {
+                                                    "OBJECT": { "block": { "type": "select_object", "fields": { "OBJECT_NAME": "coin" } } }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
                     ]

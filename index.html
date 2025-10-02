@@ -141,6 +141,26 @@
             pointer-events: none;
         }
 
+        #variable-monitors-container {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .variable-monitor {
+            background-color: rgba(0,0,0,0.5);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 16px;
+            display: flex;
+            gap: 10px;
+        }
+
         /* Show and arrange for Mobile */
         @media (max-width: 768px) {
             #joystick-container, #jump-button-container {
@@ -166,6 +186,7 @@
     <div class="container">
         <div class="canvas-container">
             <canvas id="gameCanvas"></canvas>
+            <div id="variable-monitors-container"></div>
             <button id="fullscreenBtn" class="btn-fullscreen interactive-ui">⛶</button>
             <div id="joystick-container" class="interactive-ui"></div>
             <div id="jump-button-container" class="interactive-ui">
