@@ -403,6 +403,21 @@ var toolbox = {
         },
         {
             kind: 'category',
+            name: 'Text',
+            categorystyle: 'text_category',
+            contents: [
+                {
+                    kind: 'block',
+                    type: 'text',
+                },
+                {
+                    kind: 'block',
+                    type: 'text_join',
+                },
+            ],
+        },
+        {
+            kind: 'category',
             name: 'Math',
             categorystyle: 'math_category',
             contents: [
