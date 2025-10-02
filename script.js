@@ -1699,7 +1699,7 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                 type: 'create_box',
                 message0: 'Create box named %1 at x %2 y %3 z %4',
                 args0: [
-                    { type: 'field_input', name: 'NAME', text: 'box' },
+                    { type: 'input_value', name: 'NAME', check: 'String' },
                     { type: 'input_value', name: 'X', check: 'Number' },
                     { type: 'input_value', name: 'Y', check: 'Number' },
                     { type: 'input_value', name: 'Z', check: 'Number' },
@@ -1713,7 +1713,7 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                 type: 'create_sphere',
                 message0: 'Create sphere named %1 at x %2 y %3 z %4',
                 args0: [
-                    { type: 'field_input', name: 'NAME', text: 'sphere' },
+                    { type: 'input_value', name: 'NAME', check: 'String' },
                     { type: 'input_value', name: 'X', check: 'Number' },
                     { type: 'input_value', name: 'Y', check: 'Number' },
                     { type: 'input_value', name: 'Z', check: 'Number' },
@@ -1727,7 +1727,7 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                 type: 'move_object',
                 message0: 'Move object %1 to x %2 y %3 z %4',
                 args0: [
-                    { type: 'field_input', name: 'NAME', text: 'object' },
+                    { type: 'input_value', name: 'NAME', check: 'String' },
                     { type: 'input_value', name: 'X', check: 'Number' },
                     { type: 'input_value', name: 'Y', check: 'Number' },
                     { type: 'input_value', name: 'Z', check: 'Number' },
@@ -1755,7 +1755,7 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                 type: 'change_object_color',
                 message0: 'Change color of %1 to %2',
                 args0: [
-                    { type: 'field_input', name: 'NAME', text: 'object' },
+                    { type: 'input_value', name: 'NAME', check: 'String' },
                     { type: 'field_colour', name: 'COLOR', colour: '#ff0000' },
                 ],
                 previousStatement: null,
@@ -1767,7 +1767,7 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                 type: 'rotate_object',
                 message0: 'Rotate %1 by x %2 y %3 z %4 degrees',
                 args0: [
-                    { type: 'field_input', name: 'NAME', text: 'object' },
+                    { type: 'input_value', name: 'NAME', check: 'String' },
                     { type: 'input_value', name: 'X', check: 'Number' },
                     { type: 'input_value', name: 'Y', check: 'Number' },
                     { type: 'input_value', name: 'Z', check: 'Number' },
@@ -1781,7 +1781,7 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                 type: 'animate_object',
                 message0: 'Animate %1 from x %2 y %3 z %4 to x %5 y %6 z %7',
                 args0: [
-                    { type: 'field_input', name: 'NAME', text: 'object' },
+                    { type: 'input_value', name: 'NAME', check: 'String' },
                     { type: 'input_value', name: 'X1', check: 'Number' },
                     { type: 'input_value', name: 'Y1', check: 'Number' },
                     { type: 'input_value', name: 'Z1', check: 'Number' },
@@ -1798,7 +1798,7 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                 type: 'enable_physics',
                 message0: 'Enable physics on %1 with mass %2',
                 args0: [
-                    { type: 'field_input', name: 'NAME', text: 'object' },
+                    { type: 'input_value', name: 'NAME', check: 'String' },
                     { type: 'input_value', name: 'MASS', check: 'Number' },
                 ],
                 previousStatement: null,
@@ -2411,27 +2411,27 @@ if (thisMesh) {
             };
 
             javascript.javascriptGenerator.forBlock['create_box'] = function (block, generator) {
-                const name = block.getFieldValue('NAME');
+                const name = generator.valueToCode(block, 'NAME', generator.ORDER_ATOMIC) || "'box'";
                 const x = generator.valueToCode(block, 'X', generator.ORDER_ATOMIC) || 0;
                 const y = generator.valueToCode(block, 'Y', generator.ORDER_ATOMIC) || 0;
                 const z = generator.valueToCode(block, 'Z', generator.ORDER_ATOMIC) || 0;
-                return `sceneManager.createBox('${name}', ${x}, ${y}, ${z});\n`;
+                return `sceneManager.createBox(${name}, ${x}, ${y}, ${z});\n`;
             };
 
             javascript.javascriptGenerator.forBlock['create_sphere'] = function (block, generator) {
-                const name = block.getFieldValue('NAME');
+                const name = generator.valueToCode(block, 'NAME', generator.ORDER_ATOMIC) || "'sphere'";
                 const x = generator.valueToCode(block, 'X', generator.ORDER_ATOMIC) || 0;
                 const y = generator.valueToCode(block, 'Y', generator.ORDER_ATOMIC) || 0;
                 const z = generator.valueToCode(block, 'Z', generator.ORDER_ATOMIC) || 0;
-                return `sceneManager.createSphere('${name}', ${x}, ${y}, ${z});\n`;
+                return `sceneManager.createSphere(${name}, ${x}, ${y}, ${z});\n`;
             };
 
             javascript.javascriptGenerator.forBlock['move_object'] = function (block, generator) {
-                const name = block.getFieldValue('NAME');
+                const name = generator.valueToCode(block, 'NAME', generator.ORDER_ATOMIC) || "'object'";
                 const x = generator.valueToCode(block, 'X', generator.ORDER_ATOMIC) || 0;
                 const y = generator.valueToCode(block, 'Y', generator.ORDER_ATOMIC) || 0;
                 const z = generator.valueToCode(block, 'Z', generator.ORDER_ATOMIC) || 0;
-                return `sceneManager.move('${name}', ${x}, ${y}, ${z});\n`;
+                return `sceneManager.move(${name}, ${x}, ${y}, ${z});\n`;
             };
 
             javascript.javascriptGenerator.forBlock['create_light'] = function (block, generator) {
@@ -2443,36 +2443,36 @@ if (thisMesh) {
             };
 
             javascript.javascriptGenerator.forBlock['change_object_color'] = function (block, generator) {
-                const name = block.getFieldValue('NAME');
+                const name = generator.valueToCode(block, 'NAME', generator.ORDER_ATOMIC) || "'object'";
                 const color = block.getFieldValue('COLOR');
-                return `sceneManager.changeColor('${name}', '${color}');\n`;
+                return `sceneManager.changeColor(${name}, '${color}');\n`;
             };
 
             javascript.javascriptGenerator.forBlock['rotate_object'] = function (block, generator) {
-                const name = block.getFieldValue('NAME');
+                const name = generator.valueToCode(block, 'NAME', generator.ORDER_ATOMIC) || "'object'";
                 const x = generator.valueToCode(block, 'X', generator.ORDER_ATOMIC) || 0;
                 const y = generator.valueToCode(block, 'Y', generator.ORDER_ATOMIC) || 0;
                 const z = generator.valueToCode(block, 'Z', generator.ORDER_ATOMIC) || 0;
-                return `sceneManager.rotate('${name}', ${x}, ${y}, ${z});\n`;
+                return `sceneManager.rotate(${name}, ${x}, ${y}, ${z});\n`;
             };
 
             javascript.javascriptGenerator.forBlock['animate_object'] = function (block, generator) {
                  // This block is complex and would require a dedicated helper in the SceneManager.
                  // For now, we'll leave its generation logic but acknowledge it's not fully abstracted.
-                const name = block.getFieldValue('NAME');
+                const name = generator.valueToCode(block, 'NAME', generator.ORDER_ATOMIC) || "'object'";
                 const x1 = generator.valueToCode(block, 'X1', generator.ORDER_ATOMIC) || 0;
                 const y1 = generator.valueToCode(block, 'Y1', generator.ORDER_ATOMIC) || 0;
                 const z1 = generator.valueToCode(block, 'Z1', generator.ORDER_ATOMIC) || 0;
                 const x2 = generator.valueToCode(block, 'X2', generator.ORDER_ATOMIC) || 0;
                 const y2 = generator.valueToCode(block, 'Y2', generator.ORDER_ATOMIC) || 0;
                 const z2 = generator.valueToCode(block, 'Z2', generator.ORDER_ATOMIC) || 0;
-                return `// Animation for '${name}' needs a dedicated helper function.\n`;
+                return `// Animation for ${name} needs a dedicated helper function.\n`;
             };
 
             javascript.javascriptGenerator.forBlock['enable_physics'] = function (block, generator) {
-                const name = block.getFieldValue('NAME');
+                const name = generator.valueToCode(block, 'NAME', generator.ORDER_ATOMIC) || "'object'";
                 const mass = generator.valueToCode(block, 'MASS', generator.ORDER_ATOMIC) || 1;
-                return `sceneManager.enablePhysics('${name}', ${mass});\n`;
+                return `sceneManager.enablePhysics(${name}, ${mass});\n`;
             };
 
             javascript.javascriptGenerator.forBlock['apply_force'] = function (block, generator) {
