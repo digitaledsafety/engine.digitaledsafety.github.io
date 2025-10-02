@@ -321,6 +321,21 @@ var toolbox = {
 
         {
             kind: 'category',
+            name: 'UI',
+            categorystyle: 'text_category',
+            contents: [
+                {
+                    kind: 'block',
+                    type: 'ui_create_text',
+                },
+                {
+                    kind: 'block',
+                    type: 'ui_set_text_property',
+                }
+            ]
+        },
+        {
+            kind: 'category',
             name: 'Gameplay',
             categorystyle: 'logic_category',
             contents: [
@@ -1010,6 +1025,7 @@ class BabylonSceneManager {
         this.canvas = canvas;
         this.engine = new BABYLON.Engine(this.canvas, true);
         this.scene = new BABYLON.Scene(this.engine);
+        this.uiManager = new UIManager(this.scene);
         this.objects = {};
         this.materials = {};
         this.player = null;
@@ -1418,8 +1434,12 @@ class BabylonSceneManager {
     }
 
     clear() {
+        if (this.uiManager) {
+            this.uiManager.clear();
+        }
         this.scene.dispose();
         this.scene = new BABYLON.Scene(this.engine);
+        this.uiManager = new UIManager(this.scene); // Re-initialize with the new scene
         this.initScene();
         this.objects = {};
         this.materials = {};
@@ -2224,6 +2244,44 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                 "colour": "#5B80A5",
                 "tooltip": "Plays a musical note for a given duration.",
                 "helpUrl": ""
+            },
+            // UI Blocks (BABYLON.GUI)
+            {
+                "type": "ui_create_text",
+                "message0": "create UI text with id %1 and text %2",
+                "args0": [
+                    { "type": "field_input", "name": "ID", "text": "myText" },
+                    { "type": "input_value", "name": "TEXT", "check": "String" }
+                ],
+                "previousStatement": null,
+                "nextStatement": null,
+                "colour": "%{BKY_TEXTS_HUE}",
+                "tooltip": "Creates a new text element in the scene's UI.",
+                "helpUrl": ""
+            },
+            {
+                "type": "ui_set_text_property",
+                "message0": "for UI element %1 set %2 to %3",
+                "args0": [
+                    { "type": "field_input", "name": "ID", "text": "myText" },
+                    {
+                        "type": "field_dropdown",
+                        "name": "PROPERTY",
+                        "options": [
+                            ["text", "text"],
+                            ["color", "color"],
+                            ["font size", "fontSize"],
+                            ["left", "left"],
+                            ["top", "top"]
+                        ]
+                    },
+                    { "type": "input_value", "name": "VALUE" }
+                ],
+                "previousStatement": null,
+                "nextStatement": null,
+                "colour": "%{BKY_TEXTS_HUE}",
+                "tooltip": "Sets a property of a UI text element.",
+                "helpUrl": ""
             }
         ]);
 
@@ -2494,6 +2552,20 @@ if (thisMesh) {
                 const duration = generator.valueToCode(block, 'DURATION', generator.ORDER_ATOMIC) || '0.5';
                 return `sceneManager.playNote(${note}, ${duration});\n`;
             };
+
+            // --- UI Block Generators (BABYLON.GUI) ---
+            javascript.javascriptGenerator.forBlock['ui_create_text'] = function(block, generator) {
+                const id = block.getFieldValue('ID');
+                const text = generator.valueToCode(block, 'TEXT', generator.ORDER_ATOMIC) || "''";
+                return `sceneManager.uiManager.createControl('${id}', 'TextBlock', { text: ${text} });\n`;
+            };
+
+            javascript.javascriptGenerator.forBlock['ui_set_text_property'] = function(block, generator) {
+                const id = block.getFieldValue('ID');
+                const property = block.getFieldValue('PROPERTY');
+                const value = generator.valueToCode(block, 'VALUE', generator.ORDER_ATOMIC) || "''";
+                return `sceneManager.uiManager.updateControl('${id}', { '${property}': ${value} });\n`;
+            };
         }
 
         // Convert Blockly Code to JavaScript
@@ -2626,6 +2698,26 @@ if (thisMesh) {
                                 "OBJECT1": { "block": { "type": "text", "fields": { "TEXT": "player" } } },
                                 "OBJECT2": { "block": { "type": "text", "fields": { "TEXT": "coin" } } },
                                 "DO": { "block": { "type": "destroy_object", "id": "destroy_c", "inputs": { "OBJECT": { "block": { "type": "text", "fields": { "TEXT": "coin" } } } } } }
+                            }
+                        },
+                        // UI Demo
+                        {
+                            "type": "ui_create_text", "id": "ui_text", "x": 800, "y": 50,
+                            "fields": { "ID": "welcome_text" },
+                            "inputs": { "TEXT": { "block": { "type": "text", "fields": { "TEXT": "Welcome!" } } } },
+                            "next": {
+                                "block": {
+                                    "type": "ui_set_text_property", "id": "ui_color",
+                                    "fields": { "ID": "welcome_text", "PROPERTY": "color" },
+                                    "inputs": { "VALUE": { "block": { "type": "text", "fields": { "TEXT": "white" } } } },
+                                    "next": {
+                                        "block": {
+                                            "type": "ui_set_text_property", "id": "ui_fontsize",
+                                            "fields": { "ID": "welcome_text", "PROPERTY": "fontSize" },
+                                            "inputs": { "VALUE": { "block": { "type": "math_number", "fields": { "NUM": 48 } } } }
+                                        }
+                                    }
+                                }
                             }
                         }
                     ]
