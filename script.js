@@ -2555,6 +2555,12 @@ if (thisMesh) {
 
         function loadWorkspaceDefault() {
             let state = {
+                "variables": [
+                    {
+                        "name": "i",
+                        "id": "i_var"
+                    }
+                ],
                 "blocks": {
                     "languageVersion": 0,
                     "blocks": [
@@ -2572,8 +2578,8 @@ if (thisMesh) {
                                     "next": {
                                         "block": {
                                             "type": "create_box", "id": "p_box",
-                                            "fields": { "NAME": "player" },
                                             "inputs": {
+                                                "NAME": { "block": { "type": "text", "fields": { "TEXT": "player" } } },
                                                 "X": { "block": { "type": "math_number", "fields": { "NUM": 0 } } },
                                                 "Y": { "block": { "type": "math_number", "fields": { "NUM": 5 } } },
                                                 "Z": { "block": { "type": "math_number", "fields": { "NUM": 0 } } }
@@ -2581,8 +2587,8 @@ if (thisMesh) {
                                             "next": {
                                                 "block": {
                                                     "type": "enable_physics", "id": "p_phys",
-                                                    "fields": { "NAME": "player" },
                                                     "inputs": {
+                                                        "NAME": { "block": { "type": "text", "fields": { "TEXT": "player" } } },
                                                         "MASS": { "block": { "type": "math_number", "fields": { "NUM": 1 } } }
                                                     },
                                                     "next": {
@@ -2628,20 +2634,24 @@ if (thisMesh) {
                         // Coin
                         {
                             "type": "create_box", "id": "coin", "x": 400, "y": 50,
-                            "fields": { "NAME": "coin" },
                             "inputs": {
+                                "NAME": { "block": { "type": "text", "fields": { "TEXT": "coin" } } },
                                 "X": { "block": { "type": "math_number", "fields": { "NUM": 5 } } },
                                 "Y": { "block": { "type": "math_number", "fields": { "NUM": 2 } } },
                                 "Z": { "block": { "type": "math_number", "fields": { "NUM": 0 } } }
                             },
                              "next": {
                                  "block": {
-                                     "type": "change_object_color", "id": "c_color", "fields": { "NAME": "coin", "COLOR": "#FFD700" },
+                                     "type": "change_object_color", "id": "c_color",
+                                     "inputs": {
+                                         "NAME": { "block": { "type": "text", "fields": { "TEXT": "coin" } } }
+                                     },
+                                     "fields": { "COLOR": "#FFD700" },
                                      "next": {
                                          "block": {
                                              "type": "enable_physics", "id": "c_phys",
-                                             "fields": { "NAME": "coin" },
                                              "inputs": {
+                                                 "NAME": { "block": { "type": "text", "fields": { "TEXT": "coin" } } },
                                                  "MASS": { "block": { "type": "math_number", "fields": { "NUM": 0 } } }
                                              }
                                          }
@@ -2655,6 +2665,48 @@ if (thisMesh) {
                                 "OBJECT1": { "block": { "type": "text", "fields": { "TEXT": "player" } } },
                                 "OBJECT2": { "block": { "type": "text", "fields": { "TEXT": "coin" } } },
                                 "DO": { "block": { "type": "destroy_object", "id": "destroy_c", "inputs": { "OBJECT": { "block": { "type": "text", "fields": { "TEXT": "coin" } } } } } }
+                            }
+                        },
+                        // Dynamic Box Creation Example
+                        {
+                            "type": "controls_for",
+                            "id": "dynamic_box_loop",
+                            "x": 400,
+                            "y": 250,
+                            "fields": { "VAR": { "name": "i", "id": "i_var" } },
+                            "inputs": {
+                                "FROM": { "block": { "type": "math_number", "fields": { "NUM": 1 } } },
+                                "TO": { "block": { "type": "math_number", "fields": { "NUM": 3 } } },
+                                "BY": { "block": { "type": "math_number", "fields": { "NUM": 1 } } },
+                                "DO": {
+                                    "block": {
+                                        "type": "create_box",
+                                        "inputs": {
+                                            "NAME": {
+                                                "block": {
+                                                    "type": "text_join",
+                                                    "extraState": { "itemCount": 2 },
+                                                    "inputs": {
+                                                        "ADD0": { "block": { "type": "text", "fields": { "TEXT": "box_" } } },
+                                                        "ADD1": { "block": { "type": "variables_get", "fields": { "VAR": { "name": "i", "id": "i_var" } } } }
+                                                    }
+                                                }
+                                            },
+                                            "X": {
+                                                "block": {
+                                                    "type": "math_arithmetic",
+                                                    "fields": { "OP": "MULTIPLY" },
+                                                    "inputs": {
+                                                        "A": { "block": { "type": "variables_get", "fields": { "VAR": { "name": "i", "id": "i_var" } } } },
+                                                        "B": { "block": { "type": "math_number", "fields": { "NUM": -2 } } }
+                                                    }
+                                                }
+                                            },
+                                            "Y": { "block": { "type": "math_number", "fields": { "NUM": 1 } } },
+                                            "Z": { "block": { "type": "math_number", "fields": { "NUM": 5 } } }
+                                        }
+                                    }
+                                }
                             }
                         }
                     ]
