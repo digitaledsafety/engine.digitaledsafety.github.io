@@ -104,9 +104,6 @@
         }
 
         .btn-toggle-toolbox {
-            position: absolute;
-            top: 15px;
-            right: 15px;
             padding: 6px 10px;
             font-size: 18px;
             z-index: 1001; /* Ensure it's above the Blockly workspace */
@@ -215,8 +212,8 @@
         <div class="controls">
             <div class="top-bar">
                 <div class="main-nav">
-                    <button id="codeViewButton" class="btn btn-nav active">Code</button>
-                    <button id="audioViewButton" class="btn btn-nav">Audio</button>
+                    <button id="codeViewButton" class="btn btn-nav btn-icon active">👩‍💻</button>
+                    <button id="audioViewButton" class="btn btn-nav btn-icon">🎧</button>
                 </div>
                 <div class="action-buttons">
                     <button id="runButton" class="btn btn-run btn-icon" title="Run">▶</button>
@@ -226,12 +223,11 @@
                 </div>
             </div>
             <div id="code-view">
-                <button id="toggleToolboxButton" class="btn btn-toggle-toolbox">☰</button>
+                
                 <div class="editor-toggle-buttons" style="margin-bottom: 10px;">
-
-
+                    <button id="toggleToolboxButton" class="btn btn-toggle-toolbox">☰</button>
                     <button id="showBlocksButton" class="btn" style="background-color: #6c757d;">Show Blocks</button>
-                    <button id="showJsButton" class="btn" style="background-color: #6c757d;">Show JavaScript</button>
+                    <button id="showJsButton" class="btn" style="background-color: #6c757d;">Show JavaScript</button>                                        
                 </div>
                 <div id="blocklyDiv" class="blockly-workspace digital-education-safety-theme"></div>
                 <div id="monacoEditorContainer" class="editor-container"
