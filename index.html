@@ -121,6 +121,23 @@
             background-color: #007bff;
         }
 
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+        }
+
+        .btn-icon {
+            font-size: 18px; /* Adjust icon size */
+            padding: 8px 12px; /* Adjust padding for a better look */
+        }
+
         #joystick-container {
             position: absolute;
             bottom: 40px;
@@ -196,20 +213,29 @@
             </div>
         </div>
         <div class="controls">
-            <div class="main-nav" style="margin-bottom: 10px;">
-                <button id="codeViewButton" class="btn btn-nav active">Code</button>
-                <button id="audioViewButton" class="btn btn-nav">Audio</button>
+            <div class="top-bar">
+                <div class="main-nav">
+                    <button id="codeViewButton" class="btn btn-nav active">Code</button>
+                    <button id="audioViewButton" class="btn btn-nav">Audio</button>
+                </div>
+                <div class="action-buttons">
+                    <button id="runButton" class="btn btn-run btn-icon" title="Run">▶</button>
+                    <button id="saveButton" class="btn btn-icon" title="Save">💾</button>
+                    <button id="loadButton" class="btn btn-icon" title="Load">📂</button>
+                    <button id="shareButton" class="btn btn-icon" title="Share">🔗</button>
+                </div>
             </div>
             <div id="code-view">
                 <button id="toggleToolboxButton" class="btn btn-toggle-toolbox">☰</button>
                 <div class="editor-toggle-buttons" style="margin-bottom: 10px;">
-                                
+
 
                     <button id="showBlocksButton" class="btn" style="background-color: #6c757d;">Show Blocks</button>
                     <button id="showJsButton" class="btn" style="background-color: #6c757d;">Show JavaScript</button>
                 </div>
                 <div id="blocklyDiv" class="blockly-workspace digital-education-safety-theme"></div>
-                <div id="monacoEditorContainer" class="editor-container" style="height: 80%; min-height: 300px; border: 1px solid #ddd; margin-bottom: 10px; display: none;">
+                <div id="monacoEditorContainer" class="editor-container"
+                    style="height: 80%; min-height: 300px; border: 1px solid #ddd; margin-bottom: 10px; display: none;">
                     <!-- Monaco Editor will be initialized here by script.js -->
                 </div>
             </div>
@@ -218,10 +244,6 @@
                 <h2>Audio Controls</h2>
                 <p>This is where the audio management interface will be.</p>
             </div>
-            <button id="runButton" class="btn btn-run">Run</button>
-            <button id="saveButton" class="btn">Save</button>
-            <button id="loadButton" class="btn">Load</button>
-            <button id="shareButton" class="btn">Share</button>
         </div>
     </div>
 
