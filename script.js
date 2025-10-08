@@ -2802,6 +2802,33 @@ if (thisMesh) {
         // For now, run will always use Blockly code, save/load workspace.
         // This will be updated in later steps.
 
+        // --- Main View Switching Logic ---
+        const codeViewButton = document.getElementById('codeViewButton');
+        const audioViewButton = document.getElementById('audioViewButton');
+        const codeView = document.getElementById('code-view');
+        const audioView = document.getElementById('audio-view');
+
+        function showCodeView() {
+            codeView.style.display = 'block';
+            audioView.style.display = 'none';
+            codeViewButton.classList.add('active');
+            audioViewButton.classList.remove('active');
+        }
+
+        function showAudioView() {
+            codeView.style.display = 'none';
+            audioView.style.display = 'block';
+            codeViewButton.classList.remove('active');
+            audioViewButton.classList.add('active');
+        }
+
+        codeViewButton.addEventListener('click', showCodeView);
+        audioViewButton.addEventListener('click', showAudioView);
+
+        // Set the initial view
+        showCodeView();
+
+
         // --- Touch Control Event Listeners ---
         const touchJump = document.getElementById('touch-jump');
 

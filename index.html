@@ -102,6 +102,15 @@
             background-color: #0056b3;
         }
 
+        .main-nav .btn-nav {
+            background-color: #6c757d;
+            margin-right: 5px;
+        }
+
+        .main-nav .btn-nav.active {
+            background-color: #007bff;
+        }
+
         #joystick-container {
             position: absolute;
             bottom: 40px;
@@ -173,13 +182,24 @@
             </div>
         </div>
         <div class="controls">
-            <div class="editor-toggle-buttons" style="margin-bottom: 10px;">
-                <button id="showBlocksButton" class="btn" style="background-color: #6c757d;">Show Blocks</button>
-                <button id="showJsButton" class="btn" style="background-color: #6c757d;">Show JavaScript</button>
+            <div class="main-nav" style="margin-bottom: 10px;">
+                <button id="codeViewButton" class="btn btn-nav active">Code</button>
+                <button id="audioViewButton" class="btn btn-nav">Audio</button>
             </div>
-            <div id="blocklyDiv" class="blockly-workspace digital-education-safety-theme"></div>
-            <div id="monacoEditorContainer" class="editor-container" style="height: 80%; min-height: 300px; border: 1px solid #ddd; margin-bottom: 10px; display: none;">
-                <!-- Monaco Editor will be initialized here by script.js -->
+            <div id="code-view">
+                <div class="editor-toggle-buttons" style="margin-bottom: 10px;">
+                    <button id="showBlocksButton" class="btn" style="background-color: #6c757d;">Show Blocks</button>
+                    <button id="showJsButton" class="btn" style="background-color: #6c757d;">Show JavaScript</button>
+                </div>
+                <div id="blocklyDiv" class="blockly-workspace digital-education-safety-theme"></div>
+                <div id="monacoEditorContainer" class="editor-container" style="height: 80%; min-height: 300px; border: 1px solid #ddd; margin-bottom: 10px; display: none;">
+                    <!-- Monaco Editor will be initialized here by script.js -->
+                </div>
+            </div>
+            <div id="audio-view" style="display: none;">
+                <!-- Future audio controls will go here -->
+                <h2>Audio Controls</h2>
+                <p>This is where the audio management interface will be.</p>
             </div>
             <button id="runButton" class="btn btn-run">Run</button>
             <button id="saveButton" class="btn">Save</button>
