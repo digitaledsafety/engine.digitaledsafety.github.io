@@ -2691,6 +2691,12 @@ if (thisMesh) {
             loadWorkspace();
         });
 
+        document.getElementById('toggleToolboxButton').addEventListener('click', () => {
+            const blocklyDiv = document.getElementById('blocklyDiv');
+            blocklyDiv.classList.toggle('toolbox-collapsed');
+            Blockly.svgResize(workspace);
+        });
+
         document.getElementById('shareButton').addEventListener('click', () => {
             const workspace = Blockly.getMainWorkspace();
             const state = Blockly.serialization.workspaces.save(workspace);
