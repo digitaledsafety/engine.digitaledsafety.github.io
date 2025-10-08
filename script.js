@@ -1018,7 +1018,6 @@ class BabylonSceneManager {
         this.perFrameFunctions = [];
         this.buttonPressActions = {};
         this.inputState = { keys: {} };
-        this.joystick = null;
         this.joystick_state = {
             up: false,
             down: false,
@@ -1047,54 +1046,70 @@ class BabylonSceneManager {
     }
 
     initJoystick() {
-        const joystickContainer = document.getElementById('joystick-container');
-        if (joystickContainer) {
-            this.joystick = nipplejs.create({
-                zone: joystickContainer,
-                mode: 'static',
-                position: { left: '50%', top: '50%' },
+        const canvasContainer = document.querySelector('.canvas-container');
+
+        // Only initialize the joystick if the touch UI is likely active (based on CSS media queries).
+        if (canvasContainer && window.matchMedia('(max-width: 768px)').matches) {
+            const manager = nipplejs.create({
+                zone: canvasContainer,
+                mode: 'dynamic',
                 color: 'grey',
-                size: 120
+                size: 120,
             });
 
-            this.joystick.on('move', (evt, data) => {
-                const angle = data.angle.radian;
-                const force = data.force;
+            let activeNipple = null;
 
-                this.joystick_state.angle = data.angle.degree;
-                this.joystick_state.force = data.force;
-
-                // Reset states
-                this.joystick_state.up = false;
-                this.joystick_state.down = false;
-                this.joystick_state.left = false;
-                this.joystick_state.right = false;
-
-                if (force > 0.5) { // Threshold to prevent accidental movement
-                    if (angle > Math.PI * 0.25 && angle < Math.PI * 0.75) {
-                        this.joystick_state.up = true;
-                    } else if (angle > Math.PI * 1.25 && angle < Math.PI * 1.75) {
-                        this.joystick_state.down = true;
-                    } else if (angle > Math.PI * 0.75 && angle < Math.PI * 1.25) {
-                        this.joystick_state.left = true;
-                    } else if (angle < Math.PI * 0.25 || angle > Math.PI * 1.75) {
-                        this.joystick_state.right = true;
-                    }
+            manager.on('added', (evt, nipple) => {
+                // If there's already an active nipple, or if the new one is on the right, destroy it.
+                if (activeNipple || nipple.position.x > canvasContainer.offsetWidth / 2) {
+                    nipple.destroy();
+                    return;
                 }
-            });
 
-            this.joystick.on('start', () => {
-                this.joystick_state.pressed = true;
-            });
+                activeNipple = nipple;
 
-            this.joystick.on('end', () => {
-                this.joystick_state.up = false;
-                this.joystick_state.down = false;
-                this.joystick_state.left = false;
-                this.joystick_state.right = false;
-                this.joystick_state.pressed = false;
-                this.joystick_state.angle = 0;
-                this.joystick_state.force = 0;
+                nipple.on('start', () => {
+                    this.joystick_state.pressed = true;
+                });
+
+                nipple.on('move', (evt, data) => {
+                    const angle = data.angle.radian;
+                    const force = data.force;
+
+                    this.joystick_state.angle = data.angle.degree;
+                    this.joystick_state.force = data.force;
+
+                    // Reset states
+                    this.joystick_state.up = false;
+                    this.joystick_state.down = false;
+                    this.joystick_state.left = false;
+                    this.joystick_state.right = false;
+
+                    if (force > 0.5) { // Threshold to prevent accidental movement
+                        if (angle > Math.PI * 0.25 && angle < Math.PI * 0.75) {
+                            this.joystick_state.up = true;
+                        } else if (angle > Math.PI * 1.25 && angle < Math.PI * 1.75) {
+                            this.joystick_state.down = true;
+                        } else if (angle > Math.PI * 0.75 && angle < Math.PI * 1.25) {
+                            this.joystick_state.left = true;
+                        } else if (angle < Math.PI * 0.25 || angle > Math.PI * 1.75) {
+                            this.joystick_state.right = true;
+                        }
+                    }
+                });
+
+                nipple.on('end', () => {
+                    this.joystick_state.up = false;
+                    this.joystick_state.down = false;
+                    this.joystick_state.left = false;
+                    this.joystick_state.right = false;
+                    this.joystick_state.pressed = false;
+                    this.joystick_state.angle = 0;
+                    this.joystick_state.force = 0;
+
+                    // Release the active nipple lock
+                    activeNipple = null;
+                });
             });
         }
     }

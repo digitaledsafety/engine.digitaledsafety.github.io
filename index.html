@@ -135,15 +135,6 @@
             padding: 8px 12px; /* Adjust padding for a better look */
         }
 
-        #joystick-container {
-            position: absolute;
-            bottom: 40px;
-            left: 40px;
-            width: 120px;
-            height: 120px;
-            z-index: 10;
-            display: none;
-        }
 
         #jump-button-container {
             position: absolute;
@@ -180,7 +171,7 @@
 
         /* Show and arrange for Mobile */
         @media (max-width: 768px) {
-            #joystick-container, #jump-button-container {
+            #jump-button-container {
                 display: block;
             }
             .container {
@@ -204,7 +195,6 @@
         <div class="canvas-container">
             <canvas id="gameCanvas"></canvas>
             <button id="fullscreenBtn" class="btn-fullscreen interactive-ui">⛶</button>
-            <div id="joystick-container" class="interactive-ui"></div>
             <div id="jump-button-container" class="interactive-ui">
                 <button id="touch-jump">⇧</button>
             </div>
