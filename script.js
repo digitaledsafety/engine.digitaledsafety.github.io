@@ -1330,7 +1330,7 @@ class BabylonSceneManager {
             camera.orthoBottom = -orthoSize;
             camera.orthoTop = orthoSize;
             camera.alpha = BABYLON.Tools.ToRadians(45);
-            camera.beta = BABYLON.Tools.ToRadians(35.264); // Classic isometric angle
+            camera.beta = BABYLON.Tools.ToRadians(45); // Classic isometric angle
             camera.radius = 20;
             camera.setTarget(BABYLON.Vector3.Zero());
         }
