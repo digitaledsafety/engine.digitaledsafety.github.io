@@ -2688,7 +2688,7 @@ if (thisMesh) {
 
         // Close the dropdown if the user clicks outside of it
         window.addEventListener('click', function(event) {
-            if (!event.target.matches('.dropbtn') && !event.target.closest('.dropdown-content')) {
+            if (!event.target.matches('.btn-menu-toggle')) {
                 var dropdowns = document.getElementsByClassName("dropdown-content");
                 for (var i = 0; i < dropdowns.length; i++) {
                     var openDropdown = dropdowns[i];

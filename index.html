@@ -126,11 +126,17 @@
         }
 
         .action-buttons {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .dropdown-menu-container {
             position: relative;
             display: inline-block;
         }
 
-        .dropbtn {
+        .btn-menu-toggle {
             background-color: #6c757d;
             color: white;
             padding: 8px 12px;
@@ -254,12 +260,14 @@
                     <button id="audioViewButton" class="btn btn-nav btn-icon">🎧</button>
                 </div>
                 <div class="action-buttons">
-                    <button id="menuButton" class="btn dropbtn btn-icon">⋮</button>
-                    <div id="dropdownMenu" class="dropdown-content">
-                        <button id="runButton" class="btn btn-run btn-icon" title="Run">▶ Run</button>
-                        <button id="saveButton" class="btn btn-icon" title="Save">💾 Save</button>
-                        <button id="loadButton" class="btn btn-icon" title="Load">📂 Load</button>
-                        <button id="shareButton" class="btn btn-icon" title="Share">🔗 Share</button>
+                    <button id="runButton" class="btn btn-run btn-icon" title="Run">▶</button>
+                    <div class="dropdown-menu-container">
+                        <button id="menuButton" class="btn btn-icon btn-menu-toggle" title="More actions">⋮</button>
+                        <div id="dropdownMenu" class="dropdown-content">
+                            <button id="saveButton" class="btn btn-icon" title="Save">💾 Save</button>
+                            <button id="loadButton" class="btn btn-icon" title="Load">📂 Load</button>
+                            <button id="shareButton" class="btn btn-icon" title="Share">🔗 Share</button>
+                        </div>
                     </div>
                 </div>
             </div>
