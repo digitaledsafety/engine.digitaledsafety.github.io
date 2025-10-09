@@ -2700,6 +2700,31 @@ if (thisMesh) {
         let sceneManager = new BabylonSceneManager(canvas);
 
 
+        // --- Dropdown Menu Logic ---
+        document.getElementById('menuButton').addEventListener('click', function() {
+            document.getElementById('dropdownMenu').classList.toggle('show');
+        });
+
+        // Close the dropdown if the user clicks outside of it
+        window.addEventListener('click', function(event) {
+            if (!event.target.matches('.btn-menu-toggle')) {
+                var dropdowns = document.getElementsByClassName("dropdown-content");
+                for (var i = 0; i < dropdowns.length; i++) {
+                    var openDropdown = dropdowns[i];
+                    if (openDropdown.classList.contains('show')) {
+                        openDropdown.classList.remove('show');
+                    }
+                }
+            }
+        });
+
+        // Add event listener to the dropdown container to close the menu on button click
+        document.getElementById('dropdownMenu').addEventListener('click', function(event) {
+            if (event.target.tagName === 'BUTTON') {
+                document.getElementById('dropdownMenu').classList.remove('show');
+            }
+        });
+
         document.getElementById('runButton').addEventListener('click', () => {
             doRun();
         });
