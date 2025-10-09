@@ -1409,10 +1409,31 @@ class BabylonSceneManager {
                 let newVelocity = new BABYLON.Vector3(0, currentVelocity.y, 0);
 
                 if (this.moveDirection.lengthSquared() > 0) {
+                    const camera = this.scene.activeCamera;
+                    let finalMoveDirection;
+
+                    // If we have a camera, adjust movement to be camera-relative
+                    if (camera) {
+                        // Get camera's forward and right vectors on the horizontal plane
+                        const cameraForward = camera.getForwardRay(1).direction;
+                        const forward = new BABYLON.Vector3(cameraForward.x, 0, cameraForward.z).normalize();
+                        const right = new BABYLON.Vector3(forward.z, 0, -forward.x);
+
+                        // Calculate the final move direction based on camera orientation
+                        // Z input moves along the camera's forward, X input moves along its right
+                        finalMoveDirection = forward.scale(this.moveDirection.z).add(right.scale(this.moveDirection.x));
+                    } else {
+                        // Fallback to original behavior if no camera
+                        finalMoveDirection = this.moveDirection.clone();
+                    }
+
                     // Normalize to prevent faster diagonal movement and apply speed
-                    const normalizedMove = this.moveDirection.normalize().scale(this.playerSpeed);
-                    newVelocity.x = normalizedMove.x;
-                    newVelocity.z = normalizedMove.z;
+                    if (finalMoveDirection.lengthSquared() > 0) {
+                        const normalizedMove = finalMoveDirection.normalize().scale(this.playerSpeed);
+                        newVelocity.x = normalizedMove.x;
+                        newVelocity.z = normalizedMove.z;
+                    }
+
                 } else {
                     // If no input, stop horizontal movement
                     newVelocity.x = 0;
@@ -2656,7 +2677,17 @@ if (thisMesh) {
                             "inputs": {
                                 "OBJECT1": { "block": { "type": "text", "fields": { "TEXT": "player" } } },
                                 "OBJECT2": { "block": { "type": "text", "fields": { "TEXT": "coin" } } },
-                                "DO": { "block": { "type": "destroy_object", "id": "destroy_c", "inputs": { "OBJECT": { "block": { "type": "text", "fields": { "TEXT": "coin" } } } } } }
+                                "DO": {
+                                    "block": {
+                                        "type": "move_object", "id": "respawn_c",
+                                        "fields": { "NAME": "coin" },
+                                        "inputs": {
+                                            "X": { "block": { "type": "math_random_int", "inputs": { "FROM": { "block": { "type": "math_number", "fields": { "NUM": -9 } } }, "TO": { "block": { "type": "math_number", "fields": { "NUM": 9 } } } } } },
+                                            "Y": { "block": { "type": "math_number", "fields": { "NUM": 2 } } },
+                                            "Z": { "block": { "type": "math_random_int", "inputs": { "FROM": { "block": { "type": "math_number", "fields": { "NUM": -9 } } }, "TO": { "block": { "type": "math_number", "fields": { "NUM": 9 } } } } } }
+                                        }
+                                    }
+                                }
                             }
                         }
                     ]
