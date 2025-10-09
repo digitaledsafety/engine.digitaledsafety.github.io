@@ -100,6 +100,30 @@ var toolbox = {
 
         {
             kind: 'category',
+            name: 'GUI',
+            categorystyle: 'text_category',
+            contents: [
+                {
+                    kind: 'block',
+                    type: 'gui_create_text_block',
+                },
+                {
+                    kind: 'block',
+                    type: 'gui_set_text',
+                },
+                {
+                    kind: 'block',
+                    type: 'gui_create_input_text',
+                },
+                {
+                    kind: 'block',
+                    type: 'gui_get_input_text',
+                }
+            ]
+        },
+
+        {
+            kind: 'category',
             name: 'Audio',
             categorystyle: 'audio_category',
             contents: [
@@ -1037,6 +1061,7 @@ class BabylonSceneManager {
         this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
         this.uiElements = [];
         this.inactivityTimer = null;
+        this.uiManager = new UIManager(this.scene);
 
         this.initScene();
         this.initInputListeners();
@@ -1457,9 +1482,11 @@ class BabylonSceneManager {
     }
 
     clear() {
+        this.uiManager.clear();
         this.scene.dispose();
         this.scene = new BABYLON.Scene(this.engine);
         this.initScene();
+        this.uiManager = new UIManager(this.scene); // Re-initialize UIManager for the new scene
         this.objects = {};
         this.materials = {};
         this.player = null;
@@ -1469,8 +1496,68 @@ class BabylonSceneManager {
     }
 
     dispose() {
+        this.uiManager.dispose();
         this.scene.dispose();
         this.engine.dispose();
+    }
+}
+
+class UIManager {
+    constructor(scene) {
+        this.scene = scene;
+        this.advancedTexture = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI", true, this.scene);
+        this.controls = {};
+    }
+
+    createText(name, text, options = {}) {
+        const textBlock = new BABYLON.GUI.TextBlock(name, text);
+        textBlock.color = options.color || "white";
+        textBlock.fontSize = options.fontSize || 24;
+        textBlock.top = options.top || "0px";
+        textBlock.left = options.left || "0px";
+        this.advancedTexture.addControl(textBlock);
+        this.controls[name] = textBlock;
+        return textBlock;
+    }
+
+    setText(name, text) {
+        if (this.controls[name] && this.controls[name].text !== undefined) {
+            this.controls[name].text = text;
+        }
+    }
+
+    createInput(name, options = {}) {
+        const inputText = new BABYLON.GUI.InputText(name);
+        inputText.width = options.width || "200px";
+        inputText.height = options.height || "40px";
+        inputText.color = options.color || "white";
+        inputText.background = options.background || "grey";
+        inputText.top = options.top || "0px";
+        inputText.left = options.left || "0px";
+        this.advancedTexture.addControl(inputText);
+        this.controls[name] = inputText;
+        return inputText;
+    }
+
+    getInputText(name) {
+        if (this.controls[name] && this.controls[name].text !== undefined) {
+            return this.controls[name].text;
+        }
+        return "";
+    }
+
+    clear() {
+        // Dispose all controls
+        for (const name in this.controls) {
+            this.controls[name].dispose();
+        }
+        this.controls = {};
+        // The advancedTexture itself doesn't need to be cleared of controls one-by-one if it's going to be disposed
+    }
+
+    dispose() {
+        this.clear();
+        this.advancedTexture.dispose();
     }
 }
 
@@ -1779,7 +1866,7 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                 message0: 'Change color of %1 to %2',
                 args0: [
                     { type: 'field_input', name: 'NAME', text: 'object' },
-                    { type: 'field_colour', name: 'COLOR', colour: '#ff0000' },
+                    { type: 'field_input', name: 'COLOR', text: '#ff0000' },
                 ],
                 previousStatement: null,
                 nextStatement: null,
@@ -2263,6 +2350,56 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                 "colour": "#5B80A5",
                 "tooltip": "Plays a musical note for a given duration.",
                 "helpUrl": ""
+            },
+            // GUI Blocks
+            {
+                "type": "gui_create_text_block",
+                "message0": "create text block named %1 with text %2",
+                "args0": [
+                    { "type": "field_input", "name": "NAME", "text": "myText" },
+                    { "type": "input_value", "name": "TEXT", "check": "String" }
+                ],
+                "previousStatement": null,
+                "nextStatement": null,
+                "colour": "#5B80A5",
+                "tooltip": "Creates a new text block in the GUI.",
+                "helpUrl": ""
+            },
+            {
+                "type": "gui_set_text",
+                "message0": "set text of GUI element %1 to %2",
+                "args0": [
+                    { "type": "field_input", "name": "NAME", "text": "myText" },
+                    { "type": "input_value", "name": "TEXT", "check": "String" }
+                ],
+                "previousStatement": null,
+                "nextStatement": null,
+                "colour": "#5B80A5",
+                "tooltip": "Sets the text of an existing GUI text block.",
+                "helpUrl": ""
+            },
+            {
+                "type": "gui_create_input_text",
+                "message0": "create input field named %1",
+                "args0": [
+                    { "type": "field_input", "name": "NAME", "text": "myInput" }
+                ],
+                "previousStatement": null,
+                "nextStatement": null,
+                "colour": "#5B80A5",
+                "tooltip": "Creates a new input text field in the GUI.",
+                "helpUrl": ""
+            },
+            {
+                "type": "gui_get_input_text",
+                "message0": "get text from input field %1",
+                "args0": [
+                    { "type": "field_input", "name": "NAME", "text": "myInput" }
+                ],
+                "output": "String",
+                "colour": "#5B80A5",
+                "tooltip": "Gets the text from a GUI input field.",
+                "helpUrl": ""
             }
         ]);
 
@@ -2533,6 +2670,30 @@ if (thisMesh) {
                 const duration = generator.valueToCode(block, 'DURATION', generator.ORDER_ATOMIC) || '0.5';
                 return `sceneManager.playNote(${note}, ${duration});\n`;
             };
+
+            // --- GUI Block Generators ---
+            javascript.javascriptGenerator.forBlock['gui_create_text_block'] = function(block, generator) {
+                const name = block.getFieldValue('NAME');
+                const text = generator.valueToCode(block, 'TEXT', generator.ORDER_ATOMIC) || "''";
+                return `sceneManager.uiManager.createText('${name}', ${text});\n`;
+            };
+
+            javascript.javascriptGenerator.forBlock['gui_set_text'] = function(block, generator) {
+                const name = block.getFieldValue('NAME');
+                const text = generator.valueToCode(block, 'TEXT', generator.ORDER_ATOMIC) || "''";
+                return `sceneManager.uiManager.setText('${name}', ${text});\n`;
+            };
+
+            javascript.javascriptGenerator.forBlock['gui_create_input_text'] = function(block, generator) {
+                const name = block.getFieldValue('NAME');
+                return `sceneManager.uiManager.createInput('${name}');\n`;
+            };
+
+            javascript.javascriptGenerator.forBlock['gui_get_input_text'] = function(block, generator) {
+                const name = block.getFieldValue('NAME');
+                const code = `sceneManager.uiManager.getInputText('${name}')`;
+                return [code, generator.ORDER_ATOMIC];
+            };
         }
 
         // Convert Blockly Code to JavaScript
@@ -2580,6 +2741,9 @@ if (thisMesh) {
             let state = {
                 "blocks": {
                     "languageVersion": 0,
+                    "variables": [
+                        { "name": "score", "id": "score_var" }
+                    ],
                     "blocks": [
                         // Setup Scene
                         {
@@ -2648,7 +2812,7 @@ if (thisMesh) {
                             "type": "on_button_press", "id": "down_ctl", "x": 50, "y": 750, "fields": { "BUTTON": "Down" },
                             "inputs": { "DO": { "block": { "type": "player_move", "id": "down_act", "fields": { "DIRECTION": "BACKWARD" }, "inputs": { "SPEED": { "block": { "type": "math_number", "fields": { "NUM": 5 } } } } } } }
                         },
-                        // Coin
+                        // Coin and Score
                         {
                             "type": "create_box", "id": "coin", "x": 400, "y": 50,
                             "fields": { "NAME": "coin" },
@@ -2670,21 +2834,76 @@ if (thisMesh) {
                                          }
                                      }
                                  }
-                             }                             
+                             }
                         },
                         {
-                            "type": "on_collision", "id": "collide", "x": 400, "y": 150,
+                            "type": "on_collision", "id": "collide", "x": 400, "y": 200,
                             "inputs": {
                                 "OBJECT1": { "block": { "type": "text", "fields": { "TEXT": "player" } } },
                                 "OBJECT2": { "block": { "type": "text", "fields": { "TEXT": "coin" } } },
                                 "DO": {
                                     "block": {
-                                        "type": "move_object", "id": "respawn_c",
-                                        "fields": { "NAME": "coin" },
+                                        "type": "variables_set",
+                                        "fields": { "VAR": { "name": "score", "id": "score_var"} },
                                         "inputs": {
-                                            "X": { "block": { "type": "math_random_int", "inputs": { "FROM": { "block": { "type": "math_number", "fields": { "NUM": -9 } } }, "TO": { "block": { "type": "math_number", "fields": { "NUM": 9 } } } } } },
-                                            "Y": { "block": { "type": "math_number", "fields": { "NUM": 2 } } },
-                                            "Z": { "block": { "type": "math_random_int", "inputs": { "FROM": { "block": { "type": "math_number", "fields": { "NUM": -9 } } }, "TO": { "block": { "type": "math_number", "fields": { "NUM": 9 } } } } } }
+                                            "VALUE": {
+                                                "block": {
+                                                    "type": "math_arithmetic", "fields": { "OP": "ADD" },
+                                                    "inputs": {
+                                                        "A": { "block": { "type": "variables_get", "fields": { "VAR": { "name": "score", "id": "score_var"} } } },
+                                                        "B": { "block": { "type": "math_number", "fields": { "NUM": 1 } } }
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        "next": {
+                                            "block": {
+                                                "type": "gui_set_text", "fields": { "NAME": "scoreText" },
+                                                "inputs": {
+                                                    "TEXT": {
+                                                        "block": {
+                                                            "type": "text_join", "extraState": { "itemCount": 2 },
+                                                            "inputs": {
+                                                                "ADD0": { "block": { "type": "text", "fields": { "TEXT": "Score: " } } },
+                                                                "ADD1": { "block": { "type": "variables_get", "fields": { "VAR": { "name": "score", "id": "score_var"} } } }
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                "next": {
+                                                    "block": {
+                                                        "type": "move_object", "id": "respawn_c",
+                                                        "fields": { "NAME": "coin" },
+                                                        "inputs": {
+                                                            "X": { "block": { "type": "math_random_int", "inputs": { "FROM": { "block": { "type": "math_number", "fields": { "NUM": -9 } } }, "TO": { "block": { "type": "math_number", "fields": { "NUM": 9 } } } } } },
+                                                            "Y": { "block": { "type": "math_number", "fields": { "NUM": 2 } } },
+                                                            "Z": { "block": { "type": "math_random_int", "inputs": { "FROM": { "block": { "type": "math_number", "fields": { "NUM": -9 } } }, "TO": { "block": { "type": "math_number", "fields": { "NUM": 9 } } } } } }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "type": "variables_set", "x": 800, "y": 50,
+                            "fields": { "VAR": { "name": "score", "id": "score_var"} },
+                            "inputs": { "VALUE": { "block": { "type": "math_number", "fields": { "NUM": 0 } } } },
+                            "next": {
+                                "block": {
+                                    "type": "gui_create_text_block",
+                                    "fields": { "NAME": "scoreText" },
+                                    "inputs": {
+                                        "TEXT": {
+                                            "block": {
+                                                "type": "text_join", "extraState": { "itemCount": 2 },
+                                                "inputs": {
+                                                    "ADD0": { "block": { "type": "text", "fields": { "TEXT": "Score: " } } },
+                                                    "ADD1": { "block": { "type": "variables_get", "fields": { "VAR": { "name": "score", "id": "score_var"} } } }
+                                                }
+                                            }
                                         }
                                     }
                                 }
@@ -2715,6 +2934,7 @@ if (thisMesh) {
                 const AsyncFunction = Object.getPrototypeOf(async function(){}).constructor;
                 const userGeneratedCode = new AsyncFunction('sceneManager', codeToRun);
                 await userGeneratedCode(sceneManager);
+                console.log("JULES_VERIFICATION: SCENE_READY");
             } catch (error) {
                 console.error('Error executing code:', error);
             }
