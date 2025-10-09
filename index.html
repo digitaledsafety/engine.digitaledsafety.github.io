@@ -135,12 +135,20 @@
             padding: 8px 12px; /* Adjust padding for a better look */
         }
 
+        #joystick-zone {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 50%;
+            height: 100%;
+            z-index: 10;
+        }
 
         #jump-button-container {
             position: absolute;
             bottom: 40px;
             right: 40px;
-            z-index: 10;
+            z-index: 15; /* Ensure it's above the joystick */
             display: none;
         }
 
@@ -193,6 +201,7 @@
 <body>
     <div class="container">
         <div class="canvas-container">
+            <div id="joystick-zone"></div>
             <canvas id="gameCanvas"></canvas>
             <button id="fullscreenBtn" class="btn-fullscreen interactive-ui">⛶</button>
             <div id="jump-button-container" class="interactive-ui">

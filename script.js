@@ -1046,35 +1046,23 @@ class BabylonSceneManager {
     }
 
     initJoystick() {
-        const canvasContainer = document.querySelector('.canvas-container');
+        const joystickZone = document.getElementById('joystick-zone');
 
         // Only initialize the joystick if the touch UI is likely active (based on CSS media queries).
-        if (canvasContainer && window.matchMedia('(max-width: 768px)').matches) {
+        if (joystickZone && window.matchMedia('(max-width: 768px)').matches) {
             const manager = nipplejs.create({
-                zone: canvasContainer,
+                zone: joystickZone,
                 mode: 'dynamic',
                 color: 'grey',
                 size: 120,
                 fadeTime: 0
             });
 
-            let activeNipple = null;
-
             manager.on('added', (evt, nipple) => {
-                // If there's already an active nipple, or if the tap is outside the bottom-left quadrant, destroy it.
-                const isInLeftHalf = nipple.position.x < canvasContainer.offsetWidth / 2;
-                const isInBottomHalf = nipple.position.y > canvasContainer.offsetHeight / 2;
-
-                if (activeNipple || !isInLeftHalf || !isInBottomHalf) {
-                    nipple.destroy();
-                    return;
+                // Detach camera controls when the joystick is active to prevent conflicts
+                if (this.scene.activeCamera) {
+                    this.scene.activeCamera.detachControl(this.canvas);
                 }
-
-                activeNipple = nipple;
-
-                nipple.on('start', () => {
-                    this.joystick_state.pressed = true;
-                });
 
                 nipple.on('move', (evt, data) => {
                     const angle = data.angle.radian;
@@ -1102,6 +1090,10 @@ class BabylonSceneManager {
                     }
                 });
 
+                nipple.on('start', () => {
+                    this.joystick_state.pressed = true;
+                });
+
                 nipple.on('end', () => {
                     this.joystick_state.up = false;
                     this.joystick_state.down = false;
@@ -1111,9 +1103,15 @@ class BabylonSceneManager {
                     this.joystick_state.angle = 0;
                     this.joystick_state.force = 0;
 
-                    // Release the active nipple lock
-                    activeNipple = null;
+                    // Re-attach camera controls when the joystick is released
+                    if (this.scene.activeCamera) {
+                        this.scene.activeCamera.attachControl(this.canvas, true);
+                    }
                 });
+            });
+
+            manager.on('removed', (evt, nipple) => {
+                nipple.off('start move end');
             });
         }
     }
