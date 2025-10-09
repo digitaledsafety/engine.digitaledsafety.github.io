@@ -2834,56 +2834,75 @@ if (thisMesh) {
                 const joystickZone = document.getElementById('joystick-zone');
                 const jumpButtonContainer = document.getElementById('jump-button-container');
 
-                // Check if the Document Picture-in-Picture API is supported.
-                if (!window.documentPictureInPicture) {
-                    alert('Picture-in-Picture is not supported by your browser.');
-                    return;
+                // Prefer Document Picture-in-Picture API
+                if (window.documentPictureInPicture) {
+                    try {
+                        const pipWindow = await window.documentPictureInPicture.requestWindow({
+                            width: gameCanvas.clientWidth,
+                            height: gameCanvas.clientHeight,
+                        });
+
+                        pipWindow.document.body.append(gameCanvas, joystickZone, jumpButtonContainer);
+
+                        [...document.styleSheets].forEach((styleSheet) => {
+                            try {
+                                const cssRules = [...styleSheet.cssRules].map((rule) => rule.cssText).join('');
+                                const style = document.createElement('style');
+                                style.textContent = cssRules;
+                                pipWindow.document.head.appendChild(style);
+                            } catch (e) {
+                                const link = document.createElement('link');
+                                link.rel = 'stylesheet';
+                                link.type = styleSheet.type;
+                                link.href = styleSheet.href;
+                                pipWindow.document.head.appendChild(link);
+                            }
+                        });
+
+                        sceneManager.initInputListeners(pipWindow);
+                        pipWindow.addEventListener('pagehide', () => {
+                            const canvasContainer = document.querySelector('.canvas-container');
+                            canvasContainer.append(gameCanvas, joystickZone, jumpButtonContainer);
+                            sceneManager.initInputListeners(window);
+                            resizeCanvas();
+                        });
+
+                        pipWindow.addEventListener('resize', resizeCanvas);
+                        resizeCanvas();
+                    } catch (error) {
+                        console.error('Error entering Document Picture-in-Picture mode:', error);
+                    }
                 }
+                // Fallback to standard <video> Picture-in-Picture
+                else if (document.pictureInPictureEnabled && gameCanvas.captureStream) {
+                    console.log('Attempting standard video PiP fallback.');
+                    console.log('pictureInPictureEnabled:', document.pictureInPictureEnabled);
+                    console.log('captureStream available:', typeof gameCanvas.captureStream);
+                    try {
+                        const video = document.createElement('video');
+                        video.srcObject = gameCanvas.captureStream();
+                        video.autoplay = true;
+                        video.muted = true;
+                        video.style.display = 'none';
+                        document.body.appendChild(video);
 
-                try {
-                    // Open a Picture-in-Picture window.
-                    const pipWindow = await window.documentPictureInPicture.requestWindow({
-                        width: gameCanvas.clientWidth,
-                        height: gameCanvas.clientHeight,
-                    });
+                        await video.play();
+                        console.log('Video element is playing, requesting PiP...');
+                        await video.requestPictureInPicture();
+                        console.log('Standard PiP request successful.');
 
-                    // Move the canvas and its UI elements to the new window.
-                    pipWindow.document.body.append(gameCanvas, joystickZone, jumpButtonContainer);
-
-                    // Copy styles to the new window.
-                    [...document.styleSheets].forEach((styleSheet) => {
-                        try {
-                            const cssRules = [...styleSheet.cssRules].map((rule) => rule.cssText).join('');
-                            const style = document.createElement('style');
-                            style.textContent = cssRules;
-                            pipWindow.document.head.appendChild(style);
-                        } catch (e) {
-                            const link = document.createElement('link');
-                            link.rel = 'stylesheet';
-                            link.type = styleSheet.type;
-                            link.href = styleSheet.href;
-                            pipWindow.document.head.appendChild(link);
-                        }
-                    });
-
-                    // Re-initialize input listeners for the new window
-                    sceneManager.initInputListeners(pipWindow);
-
-                    // The 'pagehide' event is fired when the PiP window is closed.
-                    pipWindow.addEventListener('pagehide', (event) => {
-                        const canvasContainer = document.querySelector('.canvas-container');
-                        canvasContainer.append(gameCanvas, joystickZone, jumpButtonContainer);
-
-                        // Restore input listeners to the main window
-                        sceneManager.initInputListeners(window);
-                        resizeCanvas(); // Resize upon returning to main window
-                    });
-
-                    // Handle resizing of the PiP window
-                    pipWindow.addEventListener('resize', resizeCanvas);
-                    resizeCanvas(); // Initial resize in the new window
-                } catch (error) {
-                    console.error('Error entering Picture-in-Picture mode:', error);
+                        video.addEventListener('leavepictureinpicture', () => {
+                            console.log('Left standard PiP mode.');
+                            video.remove();
+                        });
+                    } catch (error) {
+                        console.error('Error entering standard Picture-in-Picture mode:', error);
+                    }
+                }
+                // If no PiP is supported
+                else {
+                    console.log('No PiP support detected.');
+                    alert('Picture-in-Picture is not supported by your browser.');
                 }
             });
         }
