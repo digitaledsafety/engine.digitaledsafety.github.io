@@ -2872,12 +2872,26 @@ if (thisMesh) {
                                                 },
                                                 "next": {
                                                     "block": {
-                                                        "type": "move_object", "id": "respawn_c",
-                                                        "fields": { "NAME": "coin" },
+                                                        "type": "play_note",
+                                                        "fields": { "NOTE": "261.63" },
                                                         "inputs": {
-                                                            "X": { "block": { "type": "math_random_int", "inputs": { "FROM": { "block": { "type": "math_number", "fields": { "NUM": -9 } } }, "TO": { "block": { "type": "math_number", "fields": { "NUM": 9 } } } } } },
-                                                            "Y": { "block": { "type": "math_number", "fields": { "NUM": 2 } } },
-                                                            "Z": { "block": { "type": "math_random_int", "inputs": { "FROM": { "block": { "type": "math_number", "fields": { "NUM": -9 } } }, "TO": { "block": { "type": "math_number", "fields": { "NUM": 9 } } } } } }
+                                                            "DURATION": {
+                                                                "block": {
+                                                                    "type": "math_number",
+                                                                    "fields": { "NUM": 0.1 }
+                                                                }
+                                                            }
+                                                        },
+                                                        "next": {
+                                                            "block": {
+                                                                "type": "move_object", "id": "respawn_c",
+                                                                "fields": { "NAME": "coin" },
+                                                                "inputs": {
+                                                                    "X": { "block": { "type": "math_random_int", "inputs": { "FROM": { "block": { "type": "math_number", "fields": { "NUM": -9 } } }, "TO": { "block": { "type": "math_number", "fields": { "NUM": 9 } } } } } },
+                                                                    "Y": { "block": { "type": "math_number", "fields": { "NUM": 2 } } },
+                                                                    "Z": { "block": { "type": "math_random_int", "inputs": { "FROM": { "block": { "type": "math_number", "fields": { "NUM": -9 } } }, "TO": { "block": { "type": "math_number", "fields": { "NUM": 9 } } } } } }
+                                                                }
+                                                            }
                                                         }
                                                     }
                                                 }
