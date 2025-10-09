@@ -1352,13 +1352,25 @@ class BabylonSceneManager {
         oscillator.stop(this.audioContext.currentTime + duration);
     }
 
-    initInputListeners() {
-        window.addEventListener('keydown', (event) => {
+    initInputListeners(targetWindow = window) {
+        // Clean up existing listeners from the previous target window
+        if (this.keydownHandler && this.targetWindow) {
+            this.targetWindow.removeEventListener('keydown', this.keydownHandler);
+            this.targetWindow.removeEventListener('keyup', this.keyupHandler);
+        }
+
+        this.targetWindow = targetWindow;
+
+        // Store handlers to be able to remove them later
+        this.keydownHandler = (event) => {
             this.inputState.keys[event.key.toLowerCase()] = true;
-        });
-        window.addEventListener('keyup', (event) => {
+        };
+        this.keyupHandler = (event) => {
             this.inputState.keys[event.key.toLowerCase()] = false;
-        });
+        };
+
+        this.targetWindow.addEventListener('keydown', this.keydownHandler);
+        this.targetWindow.addEventListener('keyup', this.keyupHandler);
     }
 
     initScene() {
@@ -2542,9 +2554,13 @@ if (thisMesh) {
 
         // Resize canvas to fit its container
         function resizeCanvas() {
-            const container = document.querySelector('.canvas-container');
-            canvas.width = container.offsetWidth;
-            canvas.height = container.offsetHeight;
+            const container = canvas.parentElement;
+            if (!container) return; // Exit if canvas has no parent
+
+            // Use clientWidth/Height which is generally better for this use case
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+
             if (sceneManager && sceneManager.engine) {
                 sceneManager.engine.resize();
             }
@@ -2559,8 +2575,8 @@ if (thisMesh) {
                     camera.orthoRight = orthoSize * aspectRatio;
                     camera.orthoBottom = -orthoSize;
                     camera.orthoTop = orthoSize;
-                }  
-            } 
+                }
+            }
         }
 
         function saveWorkspace() {
@@ -2810,6 +2826,67 @@ if (thisMesh) {
                 }
             }
         });
+
+        const pipBtn = document.getElementById('pipBtn');
+        if (pipBtn) {
+            pipBtn.addEventListener('click', async () => {
+                const gameCanvas = document.getElementById('gameCanvas');
+                const joystickZone = document.getElementById('joystick-zone');
+                const jumpButtonContainer = document.getElementById('jump-button-container');
+
+                // Check if the Document Picture-in-Picture API is supported.
+                if (!window.documentPictureInPicture) {
+                    alert('Picture-in-Picture is not supported by your browser.');
+                    return;
+                }
+
+                try {
+                    // Open a Picture-in-Picture window.
+                    const pipWindow = await window.documentPictureInPicture.requestWindow({
+                        width: gameCanvas.clientWidth,
+                        height: gameCanvas.clientHeight,
+                    });
+
+                    // Move the canvas and its UI elements to the new window.
+                    pipWindow.document.body.append(gameCanvas, joystickZone, jumpButtonContainer);
+
+                    // Copy styles to the new window.
+                    [...document.styleSheets].forEach((styleSheet) => {
+                        try {
+                            const cssRules = [...styleSheet.cssRules].map((rule) => rule.cssText).join('');
+                            const style = document.createElement('style');
+                            style.textContent = cssRules;
+                            pipWindow.document.head.appendChild(style);
+                        } catch (e) {
+                            const link = document.createElement('link');
+                            link.rel = 'stylesheet';
+                            link.type = styleSheet.type;
+                            link.href = styleSheet.href;
+                            pipWindow.document.head.appendChild(link);
+                        }
+                    });
+
+                    // Re-initialize input listeners for the new window
+                    sceneManager.initInputListeners(pipWindow);
+
+                    // The 'pagehide' event is fired when the PiP window is closed.
+                    pipWindow.addEventListener('pagehide', (event) => {
+                        const canvasContainer = document.querySelector('.canvas-container');
+                        canvasContainer.append(gameCanvas, joystickZone, jumpButtonContainer);
+
+                        // Restore input listeners to the main window
+                        sceneManager.initInputListeners(window);
+                        resizeCanvas(); // Resize upon returning to main window
+                    });
+
+                    // Handle resizing of the PiP window
+                    pipWindow.addEventListener('resize', resizeCanvas);
+                    resizeCanvas(); // Initial resize in the new window
+                } catch (error) {
+                    console.error('Error entering Picture-in-Picture mode:', error);
+                }
+            });
+        }
 
         document.addEventListener('fullscreenchange', resizeCanvas);
         document.addEventListener('webkitfullscreenchange', resizeCanvas);
