@@ -3050,9 +3050,38 @@ if (thisMesh) {
                 "blocks": {
                     "languageVersion": 0,
                     "variables": [
-                        { "name": "score", "id": "score_var" }
+                        { "name": "score", "id": "score_var" },
+                        { "name": "playerId", "id": "playerId_var" }
                     ],
                     "blocks": [
+                        // Multiplayer Example
+                        {
+                            "type": "multiplayer_on_player_connected", "id": "mp_connect_event", "x": 800, "y": 400,
+                            "fields": {
+                                "PLAYER_ID_VAR": { "name": "playerId", "id": "playerId_var" }
+                            },
+                            "inputs": {
+                                "DO": {
+                                    "block": {
+                                        "type": "gui_create_text_block",
+                                        "fields": { "NAME": "join_text", "H_ALIGN": "2", "V_ALIGN": "1" },
+                                        "inputs": {
+                                            "TEXT": {
+                                                "block": {
+                                                    "type": "text_join", "extraState": { "itemCount": 2 },
+                                                    "inputs": {
+                                                        "ADD0": { "block": { "type": "text", "fields": { "TEXT": "Player Connected" } } },
+                                                        "ADD1": { "block": { "type": "variables_get", "fields": { "VAR": { "name": "playerId", "id": "playerId_var"} } } }
+                                                    }
+                                                }
+                                            },
+                                            "TOP": { "block": { "type": "text", "fields": { "TEXT": "-100px" } } },
+                                            "LEFT": { "block": { "type": "text", "fields": { "TEXT": "0px" } } }
+                                        }
+                                    }
+                                }
+                            }
+                        },
                         // Setup Scene
                         {
                             "type": "set_isometric_camera",
