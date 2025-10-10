@@ -3016,6 +3016,12 @@ if (thisMesh) {
             canvas.height = container.offsetHeight;
             if (sceneManager && sceneManager.engine) {
                 sceneManager.engine.resize();
+
+                // Resize the GUI advanced texture to match the new canvas size
+                sceneManager.uiManager.advancedTexture.scaleTo(sceneManager.engine.getRenderWidth(), sceneManager.engine.getRenderHeight());
+
+                // Mark the texture as dirty to force a re-render of the GUI
+                sceneManager.uiManager.advancedTexture.markAsDirty();                  
             }
 
             // Adjust orthographic camera parameters if in isometric mode
