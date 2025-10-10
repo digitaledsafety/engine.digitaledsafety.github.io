@@ -1248,13 +1248,25 @@ class BabylonSceneManager {
         }
     }
 
-    onCollision(object1_name, object2_name, callback) {
-        let obj1Mesh = this.objects[object1_name];
-        let obj2Mesh = this.objects[object2_name];
+    onCollision(target1, target2, callback) {
+        let name1, name2;
+        if (typeof target1 === 'string') {
+            name1 = target1;
+        } else if (target1 && typeof target1 === 'object' && target1.name) {
+            name1 = target1.name;
+        }
+        if (typeof target2 === 'string') {
+            name2 = target2;
+        } else if (target2 && typeof target2 === 'object' && target2.name) {
+            name2 = target2.name;
+        }
+
+        let obj1Mesh = this.objects[name1];
+        let obj2Mesh = this.objects[name2];
 
         if (obj1Mesh && obj2Mesh && obj1Mesh.physicsImpostor && obj2Mesh.physicsImpostor) {
             obj1Mesh.physicsImpostor.registerOnPhysicsCollide(obj2Mesh.physicsImpostor, (main, collided) => {
-                // Check if the collided object is the one we are interested in                
+                // Check if the collided object is the one we are interested in
                 if (collided.object === obj2Mesh) {
                     callback();
                 }
@@ -2272,13 +2284,11 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                 "args0": [
                     {
                         "type": "input_value",
-                        "name": "OBJECT1",
-                        "check": "String"
+                        "name": "OBJECT1"
                     },
                     {
                         "type": "input_value",
-                        "name": "OBJECT2",
-                        "check": "String"
+                        "name": "OBJECT2"
                     },
                     {
                         "type": "input_dummy"
@@ -2779,7 +2789,8 @@ if (thisMesh) {
                     "languageVersion": 0,
                     "variables": [
                         { "name": "score", "id": "score_var" },
-                        { "name": "player_mesh", "id": "player_mesh_var" }
+                        { "name": "player_mesh", "id": "player_mesh_var" },
+                        { "name": "coin_mesh", "id": "coin_mesh_var" }
                     ],
                     "blocks": [
                         // Setup Scene
@@ -2838,42 +2849,54 @@ if (thisMesh) {
                         },
                         // Controls
                         {
-                            "type": "on_button_press", "id": "jump_ctl", "x": 50, "y": 350, "fields": { "BUTTON": "A" },
-                            "inputs": { "DO": { "block": { "type": "player_jump", "id": "jump_act", "inputs": { "FORCE": { "block": { "type": "math_number", "fields": { "NUM": 8 } } } } } } }
+                            "type": "on_button_press", "x": 50, "y": 350, "fields": { "BUTTON": "A" },
+                            "inputs": { "DO": { "block": { "type": "player_jump", "inputs": { "FORCE": { "block": { "type": "math_number", "fields": { "NUM": 8 } } } } } } }
                         },
                         {
-                            "type": "on_button_press", "id": "left_ctl", "x": 50, "y": 450, "fields": { "BUTTON": "Left" },
-                            "inputs": { "DO": { "block": { "type": "player_move", "id": "left_act", "fields": { "DIRECTION": "LEFT" }, "inputs": { "SPEED": { "block": { "type": "math_number", "fields": { "NUM": 5 } } } } } } }
+                            "type": "on_button_press", "x": 50, "y": 450, "fields": { "BUTTON": "Left" },
+                            "inputs": { "DO": { "block": { "type": "player_move", "fields": { "DIRECTION": "LEFT" }, "inputs": { "SPEED": { "block": { "type": "math_number", "fields": { "NUM": 5 } } } } } } }
                         },
                         {
-                            "type": "on_button_press", "id": "right_ctl", "x": 50, "y": 550, "fields": { "BUTTON": "Right" },
-                            "inputs": { "DO": { "block": { "type": "player_move", "id": "right_act", "fields": { "DIRECTION": "RIGHT" }, "inputs": { "SPEED": { "block": { "type": "math_number", "fields": { "NUM": 5 } } } } } } }
+                            "type": "on_button_press", "x": 50, "y": 550, "fields": { "BUTTON": "Right" },
+                            "inputs": { "DO": { "block": { "type": "player_move", "fields": { "DIRECTION": "RIGHT" }, "inputs": { "SPEED": { "block": { "type": "math_number", "fields": { "NUM": 5 } } } } } } }
                         },
                         {
-                            "type": "on_button_press", "id": "up_ctl", "x": 50, "y": 650, "fields": { "BUTTON": "Up" },
-                            "inputs": { "DO": { "block": { "type": "player_move", "id": "up_act", "fields": { "DIRECTION": "FORWARD" }, "inputs": { "SPEED": { "block": { "type": "math_number", "fields": { "NUM": 5 } } } } } } }
+                            "type": "on_button_press", "x": 50, "y": 650, "fields": { "BUTTON": "Up" },
+                            "inputs": { "DO": { "block": { "type": "player_move", "fields": { "DIRECTION": "FORWARD" }, "inputs": { "SPEED": { "block": { "type": "math_number", "fields": { "NUM": 5 } } } } } } }
                         },
                         {
-                            "type": "on_button_press", "id": "down_ctl", "x": 50, "y": 750, "fields": { "BUTTON": "Down" },
-                            "inputs": { "DO": { "block": { "type": "player_move", "id": "down_act", "fields": { "DIRECTION": "BACKWARD" }, "inputs": { "SPEED": { "block": { "type": "math_number", "fields": { "NUM": 5 } } } } } } }
+                            "type": "on_button_press", "x": 50, "y": 750, "fields": { "BUTTON": "Down" },
+                            "inputs": { "DO": { "block": { "type": "player_move", "fields": { "DIRECTION": "BACKWARD" }, "inputs": { "SPEED": { "block": { "type": "math_number", "fields": { "NUM": 5 } } } } } } }
                         },
                         // Coin and Score
                         {
-                            "type": "create_box", "id": "coin", "x": 400, "y": 50,
-                            "fields": { "NAME": "coin" },
+                            "type": "variables_set", "x": 400, "y": 50,
+                            "fields": { "VAR": { "name": "coin_mesh", "id": "coin_mesh_var"} },
                             "inputs": {
-                                "X": { "block": { "type": "math_number", "fields": { "NUM": 5 } } },
-                                "Y": { "block": { "type": "math_number", "fields": { "NUM": 2 } } },
-                                "Z": { "block": { "type": "math_number", "fields": { "NUM": 0 } } }
+                                "VALUE": {
+                                    "block": {
+                                        "type": "create_box",
+                                        "fields": { "NAME": "coin" },
+                                        "inputs": {
+                                            "X": { "block": { "type": "math_number", "fields": { "NUM": 5 } } },
+                                            "Y": { "block": { "type": "math_number", "fields": { "NUM": 2 } } },
+                                            "Z": { "block": { "type": "math_number", "fields": { "NUM": 0 } } }
+                                        }
+                                    }
+                                }
                             },
                              "next": {
                                  "block": {
-                                     "type": "change_object_color", "id": "c_color", "fields": { "NAME": "coin", "COLOR": "#FFD700" },
+                                     "type": "change_object_color",
+                                     "inputs": {
+                                         "NAME": { "block": { "type": "variables_get", "fields": { "VAR": { "name": "coin_mesh", "id": "coin_mesh_var"} } } }
+                                     },
+                                     "fields": { "COLOR": "#FFD700" },
                                      "next": {
                                          "block": {
-                                             "type": "enable_physics", "id": "c_phys",
-                                             "fields": { "NAME": "coin" },
+                                             "type": "enable_physics",
                                              "inputs": {
+                                                 "NAME": { "block": { "type": "variables_get", "fields": { "VAR": { "name": "coin_mesh", "id": "coin_mesh_var"} } } },
                                                  "MASS": { "block": { "type": "math_number", "fields": { "NUM": 0 } } }
                                              }
                                          }
@@ -2882,10 +2905,10 @@ if (thisMesh) {
                              }
                         },
                         {
-                            "type": "on_collision", "id": "collide", "x": 400, "y": 200,
+                            "type": "on_collision", "x": 400, "y": 200,
                             "inputs": {
-                                "OBJECT1": { "block": { "type": "text", "fields": { "TEXT": "player" } } },
-                                "OBJECT2": { "block": { "type": "text", "fields": { "TEXT": "coin" } } },
+                                "OBJECT1": { "block": { "type": "variables_get", "fields": { "VAR": { "name": "player_mesh", "id": "player_mesh_var"} } } },
+                                "OBJECT2": { "block": { "type": "variables_get", "fields": { "VAR": { "name": "coin_mesh", "id": "coin_mesh_var"} } } },
                                 "DO": {
                                     "block": {
                                         "type": "variables_set",
@@ -2929,9 +2952,9 @@ if (thisMesh) {
                                                         },
                                                         "next": {
                                                             "block": {
-                                                                "type": "move_object", "id": "respawn_c",
-                                                                "fields": { "NAME": "coin" },
+                                                                "type": "move_object",
                                                                 "inputs": {
+                                                                    "NAME": { "block": { "type": "variables_get", "fields": { "VAR": { "name": "coin_mesh", "id": "coin_mesh_var"} } } },
                                                                     "X": { "block": { "type": "math_random_int", "inputs": { "FROM": { "block": { "type": "math_number", "fields": { "NUM": -9 } } }, "TO": { "block": { "type": "math_number", "fields": { "NUM": 9 } } } } } },
                                                                     "Y": { "block": { "type": "math_number", "fields": { "NUM": 2 } } },
                                                                     "Z": { "block": { "type": "math_random_int", "inputs": { "FROM": { "block": { "type": "math_number", "fields": { "NUM": -9 } } }, "TO": { "block": { "type": "math_number", "fields": { "NUM": 9 } } } } } }
