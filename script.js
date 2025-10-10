@@ -1852,10 +1852,9 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                     { type: 'input_value', name: 'Y', check: 'Number' },
                     { type: 'input_value', name: 'Z', check: 'Number' },
                 ],
-                previousStatement: null,
-                nextStatement: null,
+                output: "Mesh",
                 colour: 160,
-                tooltip: 'Creates a box at the specified position',
+                tooltip: 'Creates a box at the specified position and returns it.',
             },
             {
                 type: 'create_sphere',
@@ -1866,10 +1865,9 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                     { type: 'input_value', name: 'Y', check: 'Number' },
                     { type: 'input_value', name: 'Z', check: 'Number' },
                 ],
-                previousStatement: null,
-                nextStatement: null,
+                output: "Mesh",
                 colour: 160,
-                tooltip: 'Creates a sphere at the specified position',
+                tooltip: 'Creates a sphere at the specified position and returns it.',
             },
             {
                 type: 'move_object',
@@ -2611,7 +2609,8 @@ if (thisMesh) {
                 const x = generator.valueToCode(block, 'X', generator.ORDER_ATOMIC) || 0;
                 const y = generator.valueToCode(block, 'Y', generator.ORDER_ATOMIC) || 0;
                 const z = generator.valueToCode(block, 'Z', generator.ORDER_ATOMIC) || 0;
-                return `sceneManager.createBox('${name}', ${x}, ${y}, ${z});\n`;
+                const code = `sceneManager.createBox('${name}', ${x}, ${y}, ${z})`;
+                return [code, generator.ORDER_ATOMIC];
             };
 
             javascript.javascriptGenerator.forBlock['create_sphere'] = function (block, generator) {
@@ -2619,7 +2618,8 @@ if (thisMesh) {
                 const x = generator.valueToCode(block, 'X', generator.ORDER_ATOMIC) || 0;
                 const y = generator.valueToCode(block, 'Y', generator.ORDER_ATOMIC) || 0;
                 const z = generator.valueToCode(block, 'Z', generator.ORDER_ATOMIC) || 0;
-                return `sceneManager.createSphere('${name}', ${x}, ${y}, ${z});\n`;
+                const code = `sceneManager.createSphere('${name}', ${x}, ${y}, ${z})`;
+                return [code, generator.ORDER_ATOMIC];
             };
 
             javascript.javascriptGenerator.forBlock['move_object'] = function (block, generator) {
@@ -2778,7 +2778,8 @@ if (thisMesh) {
                 "blocks": {
                     "languageVersion": 0,
                     "variables": [
-                        { "name": "score", "id": "score_var" }
+                        { "name": "score", "id": "score_var" },
+                        { "name": "player_mesh", "id": "player_mesh_var" }
                     ],
                     "blocks": [
                         // Setup Scene
@@ -2786,7 +2787,7 @@ if (thisMesh) {
                             "type": "set_isometric_camera",
                             "next": {
                                 "block": {
-                                    "type": "create_ground", "id": "ground", "x": 50, "y": 50,
+                                    "type": "create_ground",
                                     "fields": { "NAME": "ground" },
                                     "inputs": {
                                         "WIDTH": { "block": { "type": "math_number", "fields": { "NUM": 20 } } },
@@ -2794,28 +2795,36 @@ if (thisMesh) {
                                     },
                                     "next": {
                                         "block": {
-                                            "type": "create_box", "id": "p_box",
-                                            "fields": { "NAME": "player" },
+                                            "type": "variables_set",
+                                            "fields": { "VAR": { "name": "player_mesh", "id": "player_mesh_var"} },
                                             "inputs": {
-                                                "X": { "block": { "type": "math_number", "fields": { "NUM": 0 } } },
-                                                "Y": { "block": { "type": "math_number", "fields": { "NUM": 5 } } },
-                                                "Z": { "block": { "type": "math_number", "fields": { "NUM": 0 } } }
+                                                "VALUE": {
+                                                    "block": {
+                                                        "type": "create_box",
+                                                        "fields": { "NAME": "player" },
+                                                        "inputs": {
+                                                            "X": { "block": { "type": "math_number", "fields": { "NUM": 0 } } },
+                                                            "Y": { "block": { "type": "math_number", "fields": { "NUM": 5 } } },
+                                                            "Z": { "block": { "type": "math_number", "fields": { "NUM": 0 } } }
+                                                        }
+                                                    }
+                                                }
                                             },
                                             "next": {
                                                 "block": {
-                                                    "type": "enable_physics", "id": "p_phys",
-                                                    "fields": { "NAME": "player" },
+                                                    "type": "enable_physics",
                                                     "inputs": {
+                                                        "NAME": { "block": { "type": "variables_get", "fields": { "VAR": { "name": "player_mesh", "id": "player_mesh_var"} } } },
                                                         "MASS": { "block": { "type": "math_number", "fields": { "NUM": 1 } } }
                                                     },
                                                     "next": {
                                                         "block": {
-                                                            "type": "set_as_player", "id": "p_set",
-                                                            "inputs": { "OBJECT": { "block": { "type": "text", "fields": { "TEXT": "player" } } } },
+                                                            "type": "set_as_player",
+                                                            "inputs": { "OBJECT": { "block": { "type": "variables_get", "fields": { "VAR": { "name": "player_mesh", "id": "player_mesh_var"} } } } },
                                                             "next": {
                                                                 "block": {
-                                                                    "type": "camera_follow", "id": "cam_f",
-                                                                    "inputs": { "OBJECT": { "block": { "type": "text", "fields": { "TEXT": "player" } } } }
+                                                                    "type": "camera_follow",
+                                                                    "inputs": { "OBJECT": { "block": { "type": "variables_get", "fields": { "VAR": { "name": "player_mesh", "id": "player_mesh_var"} } } } }
                                                                 }
                                                             }
                                                         }
