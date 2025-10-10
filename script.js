@@ -1562,10 +1562,13 @@ class UIManager {
 
     createText(name, text, options = {}) {
         const textBlock = new BABYLON.GUI.TextBlock(name, text);
+        textBlock.resizeToFit = true;
         textBlock.color = options.color || "white";
         textBlock.fontSize = options.fontSize || 24;
         textBlock.top = options.top || "0px";
         textBlock.left = options.left || "0px";
+        textBlock.horizontalAlignment = options.horizontalAlignment !== undefined ? options.horizontalAlignment : BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
+        textBlock.verticalAlignment = options.verticalAlignment !== undefined ? options.verticalAlignment : BABYLON.GUI.Control.VERTICAL_ALIGNMENT_CENTER;
         this.advancedTexture.addControl(textBlock);
         this.controls[name] = textBlock;
         return textBlock;
@@ -1585,6 +1588,8 @@ class UIManager {
         inputText.background = options.background || "grey";
         inputText.top = options.top || "0px";
         inputText.left = options.left || "0px";
+        inputText.horizontalAlignment = options.horizontalAlignment !== undefined ? options.horizontalAlignment : BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
+        inputText.verticalAlignment = options.verticalAlignment !== undefined ? options.verticalAlignment : BABYLON.GUI.Control.VERTICAL_ALIGNMENT_CENTER;
         this.advancedTexture.addControl(inputText);
         this.controls[name] = inputText;
         return inputText;
@@ -2403,10 +2408,27 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                     { "type": "field_input", "name": "NAME", "text": "myText" },
                     { "type": "input_value", "name": "TEXT", "check": "String" }
                 ],
+                "message1": "align horizontal %1 vertical %2",
+                "args1": [
+                    {
+                        "type": "field_dropdown", "name": "H_ALIGN",
+                        "options": [["left", "0"], ["right", "1"], ["center", "2"]]
+                    },
+                    {
+                        "type": "field_dropdown", "name": "V_ALIGN",
+                        "options": [["top", "0"], ["bottom", "1"], ["center", "2"]]
+                    }
+                ],
+                "message2": "at top %1 left %2",
+                "args2": [
+                    { "type": "input_value", "name": "TOP", "check": "String" },
+                    { "type": "input_value", "name": "LEFT", "check": "String" }
+                ],
+                "inputsInline": false,
                 "previousStatement": null,
                 "nextStatement": null,
                 "colour": "#5B80A5",
-                "tooltip": "Creates a new text block in the GUI.",
+                "tooltip": "Creates a new text block in the GUI with positioning.",
                 "helpUrl": ""
             },
             {
@@ -2428,10 +2450,27 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                 "args0": [
                     { "type": "field_input", "name": "NAME", "text": "myInput" }
                 ],
+                "message1": "align horizontal %1 vertical %2",
+                "args1": [
+                    {
+                        "type": "field_dropdown", "name": "H_ALIGN",
+                        "options": [["left", "0"], ["right", "1"], ["center", "2"]]
+                    },
+                    {
+                        "type": "field_dropdown", "name": "V_ALIGN",
+                        "options": [["top", "0"], ["bottom", "1"], ["center", "2"]]
+                    }
+                ],
+                "message2": "at top %1 left %2",
+                "args2": [
+                    { "type": "input_value", "name": "TOP", "check": "String" },
+                    { "type": "input_value", "name": "LEFT", "check": "String" }
+                ],
+                "inputsInline": false,
                 "previousStatement": null,
                 "nextStatement": null,
                 "colour": "#5B80A5",
-                "tooltip": "Creates a new input text field in the GUI.",
+                "tooltip": "Creates a new input text field in the GUI with positioning.",
                 "helpUrl": ""
             },
             {
@@ -2721,7 +2760,32 @@ if (thisMesh) {
             javascript.javascriptGenerator.forBlock['gui_create_text_block'] = function(block, generator) {
                 const name = block.getFieldValue('NAME');
                 const text = generator.valueToCode(block, 'TEXT', generator.ORDER_ATOMIC) || "''";
-                return `sceneManager.uiManager.createText('${name}', ${text});\n`;
+                const hAlign = parseInt(block.getFieldValue('H_ALIGN'));
+                const vAlign = parseInt(block.getFieldValue('V_ALIGN'));
+
+                let top, left;
+                const topBlock = block.getInputTargetBlock('TOP');
+                if (topBlock && topBlock.type === 'text') {
+                    top = `'${topBlock.getFieldValue('TEXT')}'`;
+                } else {
+                    top = generator.valueToCode(block, 'TOP', generator.ORDER_ATOMIC) || "'0px'";
+                }
+
+                const leftBlock = block.getInputTargetBlock('LEFT');
+                if (leftBlock && leftBlock.type === 'text') {
+                    left = `'${leftBlock.getFieldValue('TEXT')}'`;
+                } else {
+                    left = generator.valueToCode(block, 'LEFT', generator.ORDER_ATOMIC) || "'0px'";
+                }
+
+                const options = `{
+                    horizontalAlignment: ${hAlign},
+                    verticalAlignment: ${vAlign},
+                    top: ${top},
+                    left: ${left}
+                }`;
+
+                return `sceneManager.uiManager.createText('${name}', ${text}, ${options});\n`;
             };
 
             javascript.javascriptGenerator.forBlock['gui_set_text'] = function(block, generator) {
@@ -2732,7 +2796,32 @@ if (thisMesh) {
 
             javascript.javascriptGenerator.forBlock['gui_create_input_text'] = function(block, generator) {
                 const name = block.getFieldValue('NAME');
-                return `sceneManager.uiManager.createInput('${name}');\n`;
+                const hAlign = parseInt(block.getFieldValue('H_ALIGN'));
+                const vAlign = parseInt(block.getFieldValue('V_ALIGN'));
+
+                let top, left;
+                const topBlock = block.getInputTargetBlock('TOP');
+                if (topBlock && topBlock.type === 'text') {
+                    top = `'${topBlock.getFieldValue('TEXT')}'`;
+                } else {
+                    top = generator.valueToCode(block, 'TOP', generator.ORDER_ATOMIC) || "'0px'";
+                }
+
+                const leftBlock = block.getInputTargetBlock('LEFT');
+                if (leftBlock && leftBlock.type === 'text') {
+                    left = `'${leftBlock.getFieldValue('TEXT')}'`;
+                } else {
+                    left = generator.valueToCode(block, 'LEFT', generator.ORDER_ATOMIC) || "'0px'";
+                }
+
+                const options = `{
+                    horizontalAlignment: ${hAlign},
+                    verticalAlignment: ${vAlign},
+                    top: ${top},
+                    left: ${left}
+                }`;
+
+                return `sceneManager.uiManager.createInput('${name}', ${options});\n`;
             };
 
             javascript.javascriptGenerator.forBlock['gui_get_input_text'] = function(block, generator) {
@@ -2754,6 +2843,12 @@ if (thisMesh) {
             canvas.height = container.offsetHeight;
             if (sceneManager && sceneManager.engine) {
                 sceneManager.engine.resize();
+
+                // Resize the GUI advanced texture to match the new canvas size
+                sceneManager.uiManager.advancedTexture.scaleTo(sceneManager.engine.getRenderWidth(), sceneManager.engine.getRenderHeight());
+
+                // Mark the texture as dirty to force a re-render of the GUI
+                sceneManager.uiManager.advancedTexture.markAsDirty();                  
             }
 
             // Adjust orthographic camera parameters if in isometric mode
@@ -2976,7 +3071,11 @@ if (thisMesh) {
                             "next": {
                                 "block": {
                                     "type": "gui_create_text_block",
-                                    "fields": { "NAME": "scoreText" },
+                                    "fields": {
+                                        "NAME": "scoreText",
+                                        "H_ALIGN": "0",
+                                        "V_ALIGN": "0"
+                                    },
                                     "inputs": {
                                         "TEXT": {
                                             "block": {
@@ -2986,7 +3085,9 @@ if (thisMesh) {
                                                     "ADD1": { "block": { "type": "variables_get", "fields": { "VAR": { "name": "score", "id": "score_var"} } } }
                                                 }
                                             }
-                                        }
+                                        },
+                                        "TOP": { "block": { "type": "text", "fields": { "TEXT": "20px" } } },
+                                        "LEFT": { "block": { "type": "text", "fields": { "TEXT": "20px" } } }
                                     }
                                 }
                             }
