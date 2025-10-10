@@ -124,6 +124,30 @@ var toolbox = {
 
         {
             kind: 'category',
+            name: 'Multiplayer',
+            categorystyle: 'logic_category',
+            contents: [
+                {
+                    kind: 'block',
+                    type: 'multiplayer_connect',
+                },
+                {
+                    kind: 'block',
+                    type: 'multiplayer_send_data',
+                },
+                {
+                    kind: 'block',
+                    type: 'multiplayer_on_data_received',
+                },
+                {
+                    kind: 'block',
+                    type: 'multiplayer_on_player_connected',
+                }
+            ]
+        },
+
+        {
+            kind: 'category',
             name: 'Audio',
             categorystyle: 'audio_category',
             contents: [
@@ -1029,6 +1053,84 @@ var toolbox = {
     ]
 };
 
+class MultiplayerManager {
+    constructor(sceneManager) {
+        this.sceneManager = sceneManager;
+        this.peer = null;
+        this.connections = {};
+        this.myId = null;
+    }
+
+    initialize(myId) {
+        this.myId = myId;
+        this.peer = new Peer(myId, {
+            // debug: 3 // Uncomment for detailed logs
+        });
+
+        this.peer.on('open', (id) => {
+            console.log('My peer ID is: ' + id);
+            this.myId = id;
+            // Update UI with this ID
+            const myIdElement = document.getElementById('my-peer-id');
+            if (myIdElement) {
+                myIdElement.textContent = `My ID: ${id}`;
+            }
+        });
+
+        this.peer.on('connection', (conn) => {
+            console.log('Connected to: ' + conn.peer);
+            this.setupConnectionEvents(conn);
+            this.connections[conn.peer] = conn;
+        });
+
+        this.peer.on('error', (err) => {
+            console.error('PeerJS error:', err);
+        });
+    }
+
+    connect(peerId) {
+        if (this.peer && peerId && !this.connections[peerId]) {
+            console.log('Attempting to connect to: ' + peerId);
+            const conn = this.peer.connect(peerId);
+            this.setupConnectionEvents(conn);
+            this.connections[peerId] = conn;
+        }
+    }
+
+    setupConnectionEvents(conn) {
+        conn.on('open', () => {
+            console.log(`Connection to ${conn.peer} opened.`);
+            // Optionally send a handshake message
+            conn.send({ type: 'handshake', from: this.myId });
+            this.sceneManager.onPlayerConnected(conn.peer);
+        });
+
+        conn.on('data', (data) => {
+            // console.log('Data received from ' + conn.peer, data);
+            this.sceneManager.onDataReceived(conn.peer, data);
+        });
+
+        conn.on('close', () => {
+            console.log(`Connection to ${conn.peer} closed.`);
+            this.sceneManager.onPlayerDisconnected(conn.peer);
+            delete this.connections[conn.peer];
+        });
+
+        conn.on('error', (err) => {
+            console.error(`Connection error with ${conn.peer}:`, err);
+        });
+    }
+
+    broadcast(data) {
+        for (const peerId in this.connections) {
+            const conn = this.connections[peerId];
+            if (conn && conn.open) {
+                conn.send(data);
+            }
+        }
+    }
+}
+
 class BabylonSceneManager {
     constructor(canvas) {
         this.canvas = canvas;
@@ -1062,12 +1164,45 @@ class BabylonSceneManager {
         this.uiElements = [];
         this.inactivityTimer = null;
         this.uiManager = new UIManager(this.scene);
+        this.multiplayerManager = new MultiplayerManager(this);
+        this.remotePlayers = {}; // To store remote player objects
+        this.onDataReceivedCallbacks = [];
+        this.onPlayerConnectedCallbacks = [];
 
         this.initScene();
         this.initInputListeners();
         this.initJoystick();
         this.initAutoHide();
         this.runRenderLoop();
+        this.multiplayerManager.initialize(); // Initialize PeerJS
+    }
+
+    // --- Multiplayer Event Handlers ---
+    onPlayerConnected(peerId) {
+        console.log(`Creating avatar for new player: ${peerId}`);
+        // Create a visual representation for the new player
+        const playerAvatar = BABYLON.MeshBuilder.CreateBox(`player_${peerId}`, { size: 1 }, this.scene);
+        playerAvatar.position = new BABYLON.Vector3(0, 1, 5); // Initial position
+        this.remotePlayers[peerId] = playerAvatar;
+
+        // Execute callbacks
+        this.onPlayerConnectedCallbacks.forEach(callback => callback(peerId));
+    }
+
+    onPlayerDisconnected(peerId) {
+        console.log(`Player ${peerId} disconnected.`);
+        if (this.remotePlayers[peerId]) {
+            this.remotePlayers[peerId].dispose();
+            delete this.remotePlayers[peerId];
+        }
+    }
+
+    onDataReceived(peerId, data) {
+        if (data.type === 'position' && this.remotePlayers[peerId]) {
+            this.remotePlayers[peerId].position = new BABYLON.Vector3(data.x, data.y, data.z);
+        }
+        // Execute callbacks
+        this.onDataReceivedCallbacks.forEach(callback => callback(data));
     }
 
     initJoystick() {
@@ -1396,10 +1531,22 @@ class BabylonSceneManager {
 
     runRenderLoop() {
         let lastTime = performance.now();
+        let frameCount = 0;
         this.engine.runRenderLoop(() => {
             const currentTime = performance.now();
             const deltaTime = currentTime - lastTime;
             lastTime = currentTime;
+            frameCount++;
+
+            // Broadcast player position every 3 frames (approx. 20 times/sec)
+            if (frameCount % 3 === 0 && this.player && this.multiplayerManager) {
+                this.multiplayerManager.broadcast({
+                    type: 'position',
+                    x: this.player.position.x,
+                    y: this.player.position.y,
+                    z: this.player.position.z
+                });
+            }
 
             // Reset movement direction at the start of the frame
             this.moveDirection.set(0, 0, 0);
@@ -2439,10 +2586,82 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                 "colour": "#5B80A5",
                 "tooltip": "Gets the text from a GUI input field.",
                 "helpUrl": ""
+            },
+            // Multiplayer Blocks
+            {
+                "type": "multiplayer_connect",
+                "message0": "connect to peer %1",
+                "args0": [
+                    { "type": "input_value", "name": "PEER_ID", "check": "String" }
+                ],
+                "previousStatement": null,
+                "nextStatement": null,
+                "colour": "#4C97FF",
+                "tooltip": "Connects to another player using their Peer ID.",
+                "helpUrl": ""
+            },
+            {
+                "type": "multiplayer_send_data",
+                "message0": "send data %1",
+                "args0": [
+                    { "type": "input_value", "name": "DATA" }
+                ],
+                "previousStatement": null,
+                "nextStatement": null,
+                "colour": "#4C97FF",
+                "tooltip": "Sends data to all connected peers.",
+                "helpUrl": ""
+            },
+            {
+                "type": "multiplayer_on_data_received",
+                "message0": "when data is received %1 %2",
+                "args0": [
+                    { "type": "input_statement", "name": "DO" },
+                    { "type": "field_variable", "name": "DATA_VAR", "variable": "receivedData" }
+                ],
+                "colour": "#5BA55B",
+                "tooltip": "Executes code when data is received from a peer.",
+                "helpUrl": ""
+            },
+            {
+                "type": "multiplayer_on_player_connected",
+                "message0": "when a player connects %1 %2",
+                "args0": [
+                  { "type": "input_statement", "name": "DO" },
+                  { "type": "field_variable", "name": "PLAYER_ID_VAR", "variable": "playerId" }
+                ],
+                "colour": "#5BA55B",
+                "tooltip": "Executes code when a new player connects.",
+                "helpUrl": ""
             }
         ]);
 
         {
+
+            // --- Multiplayer Block Generators ---
+            javascript.javascriptGenerator.forBlock['multiplayer_connect'] = function(block, generator) {
+                const peerId = generator.valueToCode(block, 'PEER_ID', generator.ORDER_ATOMIC) || '""';
+                return `sceneManager.multiplayerManager.connect(${peerId});\n`;
+            };
+
+            javascript.javascriptGenerator.forBlock['multiplayer_send_data'] = function(block, generator) {
+                const data = generator.valueToCode(block, 'DATA', generator.ORDER_ATOMIC) || 'null';
+                return `sceneManager.multiplayerManager.broadcast(${data});\n`;
+            };
+
+            javascript.javascriptGenerator.forBlock['multiplayer_on_data_received'] = function(block, generator) {
+                const doCode = generator.statementToCode(block, 'DO');
+                const dataVar = generator.nameDB_.getName(block.getFieldValue('DATA_VAR'), Blockly.Variables.NAME_TYPE);
+                const callback = `function(data) {\n  let ${dataVar} = data;\n${doCode}\n}`;
+                return `sceneManager.onDataReceivedCallbacks.push(${callback});\n`;
+            };
+
+            javascript.javascriptGenerator.forBlock['multiplayer_on_player_connected'] = function(block, generator) {
+                const doCode = generator.statementToCode(block, 'DO');
+                const playerIdVar = generator.nameDB_.getName(block.getFieldValue('PLAYER_ID_VAR'), Blockly.Variables.NAME_TYPE);
+                const callback = `function(peerId) {\n  let ${playerIdVar} = peerId;\n${doCode}\n}`;
+                return `sceneManager.onPlayerConnectedCallbacks.push(${callback});\n`;
+            };
 
             // --- Scripting Block Generators ---
             javascript.javascriptGenerator.forBlock['event_on_click'] = function(block, generator) {
@@ -3091,6 +3310,11 @@ if (thisMesh) {
         });
         document.getElementById('loadButton').addEventListener('click', () => {
             loadWorkspace();
+        });
+
+        document.getElementById('connect-button').addEventListener('click', () => {
+            const peerId = document.getElementById('peer-id-input').value;
+            sceneManager.multiplayerManager.connect(peerId);
         });
 
         document.getElementById('toggleToolboxButton').addEventListener('click', () => {

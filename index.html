@@ -13,6 +13,7 @@
     <script src="https://unpkg.com/blockly@11.1.1/msg/en.js"></script>
     <script src="https://unpkg.com/cannon@0.6.2/build/cannon.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/nipplejs@0.10.2/dist/nipplejs.js"></script>
+    <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
     <style>
         /* Basic Reset */
         body,
@@ -265,6 +266,12 @@
                 <div id="monacoEditorContainer" class="editor-container"
                     style="height: 80%; min-height: 300px; border: 1px solid #ddd; margin-bottom: 10px; display: none;">
                     <!-- Monaco Editor will be initialized here by script.js -->
+                </div>
+                <div id="multiplayer-controls" style="padding: 10px; background: #f0f0f0; border-top: 1px solid #ddd;">
+                    <h4>Multiplayer</h4>
+                    <div id="my-peer-id">Connecting...</div>
+                    <input type="text" id="peer-id-input" placeholder="Enter Peer ID">
+                    <button id="connect-button" class="btn">Connect</button>
                 </div>
             </div>
             <div id="audio-view" style="display: none;">
