@@ -1885,7 +1885,7 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                 type: 'move_object',
                 message0: 'Move object %1 to x %2 y %3 z %4',
                 args0: [
-                    { type: 'field_input', name: 'NAME', text: 'object' },
+                    { type: 'input_value', name: 'NAME' },
                     { type: 'input_value', name: 'X', check: 'Number' },
                     { type: 'input_value', name: 'Y', check: 'Number' },
                     { type: 'input_value', name: 'Z', check: 'Number' },
@@ -2633,11 +2633,11 @@ if (thisMesh) {
             };
 
             javascript.javascriptGenerator.forBlock['move_object'] = function (block, generator) {
-                const name = block.getFieldValue('NAME');
+                const name = generator.valueToCode(block, 'NAME', generator.ORDER_ATOMIC) || 'null';
                 const x = generator.valueToCode(block, 'X', generator.ORDER_ATOMIC) || 0;
                 const y = generator.valueToCode(block, 'Y', generator.ORDER_ATOMIC) || 0;
                 const z = generator.valueToCode(block, 'Z', generator.ORDER_ATOMIC) || 0;
-                return `sceneManager.move('${name}', ${x}, ${y}, ${z});\n`;
+                return `sceneManager.move(${name}, ${x}, ${y}, ${z});\n`;
             };
 
             javascript.javascriptGenerator.forBlock['create_light'] = function (block, generator) {
