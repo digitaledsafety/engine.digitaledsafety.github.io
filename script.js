@@ -458,57 +458,6 @@ var toolbox = {
         },
         {
             kind: 'category',
-            name: 'Text',
-            categorystyle: 'text_category',
-            contents: [
-                {
-                    kind: 'block',
-                    type: 'text',
-                },
-                {
-                    kind: 'block',
-                    type: 'text_join',
-                },
-                {
-                    kind: 'block',
-                    type: 'text_append',
-                },
-                {
-                    kind: 'block',
-                    type: 'text_length',
-                },
-                {
-                    kind: 'block',
-                    type: 'text_isEmpty',
-                },
-                {
-                    kind: 'block',
-                    type: 'text_indexOf',
-                },
-                {
-                    kind: 'block',
-                    type: 'text_charAt',
-                },
-                {
-                    kind: 'block',
-                    type: 'text_getSubstring',
-                },
-                {
-                    kind: 'block',
-                    type: 'text_changeCase',
-                },
-                {
-                    kind: 'block',
-                    type: 'text_trim',
-                },
-                {
-                    kind: 'block',
-                    type: 'text_print',
-                },
-            ],
-        },
-        {
-            kind: 'category',
             name: 'Math',
             categorystyle: 'math_category',
             contents: [
@@ -1383,26 +1332,13 @@ class BabylonSceneManager {
         return null;
     }
 
-    move(target, x, y, z) {
-        let name;
-        if (typeof target === 'string') {
-            name = target;
-        } else if (target && typeof target === 'object' && target.name) {
-            name = target.name;
-        }
-
-        if (name && this.objects[name]) {
+    move(name, x, y, z) {
+        if (this.objects[name]) {
             this.objects[name].position.set(x, y, z);
         }
     }
 
-    changeColor(target, color) {
-        let name;
-        if (typeof target === 'string') {
-            name = target;
-        } else if (target && typeof target === 'object' && target.name) {
-            name = target.name;
-        }
+    changeColor(name, color) {
         if (this.objects[name]) {
             if (!this.objects[name].material) {
                 this.objects[name].material = new BABYLON.StandardMaterial(`${name}_material`, this.scene);
@@ -1411,13 +1347,7 @@ class BabylonSceneManager {
         }
     }
 
-    rotate(target, x, y, z) {
-        let name;
-        if (typeof target === 'string') {
-            name = target;
-        } else if (target && typeof target === 'object' && target.name) {
-            name = target.name;
-        }
+    rotate(name, x, y, z) {
         if (this.objects[name]) {
             this.objects[name].rotation = new BABYLON.Vector3(
                 BABYLON.Tools.ToRadians(x),
@@ -1427,34 +1357,16 @@ class BabylonSceneManager {
         }
     }
 
-    enablePhysics(target, mass, impostorType = 'BoxImpostor') {
-        let name;
-        if (typeof target === 'string') {
-            name = target;
-        } else if (target && typeof target === 'object' && target.name) {
-            name = target.name;
-        }
+    enablePhysics(name, mass, impostorType = 'BoxImpostor') {
         if (this.objects[name]) {
             const impostor = BABYLON.PhysicsImpostor[impostorType];
             this.objects[name].physicsImpostor = new BABYLON.PhysicsImpostor(this.objects[name], impostor, { mass: mass, restitution: 0.9 }, this.scene);
         }
     }
 
-    onCollision(target1, target2, callback) {
-        let name1, name2;
-        if (typeof target1 === 'string') {
-            name1 = target1;
-        } else if (target1 && typeof target1 === 'object' && target1.name) {
-            name1 = target1.name;
-        }
-        if (typeof target2 === 'string') {
-            name2 = target2;
-        } else if (target2 && typeof target2 === 'object' && target2.name) {
-            name2 = target2.name;
-        }
-
-        let obj1Mesh = this.objects[name1];
-        let obj2Mesh = this.objects[name2];
+    onCollision(object1_name, object2_name, callback) {
+        let obj1Mesh = this.objects[object1_name];
+        let obj2Mesh = this.objects[object2_name];
 
         if (obj1Mesh && obj2Mesh && obj1Mesh.physicsImpostor && obj2Mesh.physicsImpostor) {
             obj1Mesh.physicsImpostor.registerOnPhysicsCollide(obj2Mesh.physicsImpostor, (main, collided) => {
@@ -1536,29 +1448,15 @@ class BabylonSceneManager {
         return light;
     }
 
-    setAsPlayer(target) {
-        let name;
-        if (typeof target === 'string') {
-            name = target;
-        } else if (target && typeof target === 'object' && target.name) {
-            name = target.name;
-        }
+    setAsPlayer(name) {
         if (this.objects[name]) {
             this.player = this.objects[name];
         }
     }
 
-    cameraFollow(target) {
-        let mesh = null;
-        if (typeof target === 'string') {
-            mesh = this.objects[target];
-        } else if (target && typeof target === 'object') {
-            // Assumes target is a mesh object
-            mesh = target;
-        }
-
-        if (mesh && this.scene.activeCamera) {
-            this.scene.activeCamera.lockedTarget = mesh;
+    cameraFollow(name) {
+        if (this.objects[name] && this.scene.activeCamera) {
+            this.scene.activeCamera.lockedTarget = this.objects[name];
         }
     }
 
@@ -1879,8 +1777,9 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                 "message0": "position model %1 at X %2 Y %3 Z %4",
                 "args0": [
                     {
-                        "type": "input_value",
-                        "name": "MODEL"
+                        "type": "field_variable",
+                        "name": "MODEL",
+                        "variable": "model"
                     },
                     {
                         "type": "input_value",
@@ -2073,9 +1972,10 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                     { type: 'input_value', name: 'Y', check: 'Number' },
                     { type: 'input_value', name: 'Z', check: 'Number' },
                 ],
-                output: "Mesh",
+                previousStatement: null,
+                nextStatement: null,
                 colour: 160,
-                tooltip: 'Creates a box at the specified position and returns it.',
+                tooltip: 'Creates a box at the specified position',
             },
             {
                 type: 'create_sphere',
@@ -2086,15 +1986,16 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                     { type: 'input_value', name: 'Y', check: 'Number' },
                     { type: 'input_value', name: 'Z', check: 'Number' },
                 ],
-                output: "Mesh",
+                previousStatement: null,
+                nextStatement: null,
                 colour: 160,
-                tooltip: 'Creates a sphere at the specified position and returns it.',
+                tooltip: 'Creates a sphere at the specified position',
             },
             {
                 type: 'move_object',
                 message0: 'Move object %1 to x %2 y %3 z %4',
                 args0: [
-                    { type: 'input_value', name: 'NAME' },
+                    { type: 'field_input', name: 'NAME', text: 'object' },
                     { type: 'input_value', name: 'X', check: 'Number' },
                     { type: 'input_value', name: 'Y', check: 'Number' },
                     { type: 'input_value', name: 'Z', check: 'Number' },
@@ -2122,7 +2023,7 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                 type: 'change_object_color',
                 message0: 'Change color of %1 to %2',
                 args0: [
-                    { type: 'input_value', name: 'NAME' },
+                    { type: 'field_input', name: 'NAME', text: 'object' },
                     { type: 'field_input', name: 'COLOR', text: '#ff0000' },
                 ],
                 previousStatement: null,
@@ -2134,7 +2035,7 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                 type: 'rotate_object',
                 message0: 'Rotate %1 by x %2 y %3 z %4 degrees',
                 args0: [
-                    { type: 'input_value', name: 'NAME' },
+                    { type: 'field_input', name: 'NAME', text: 'object' },
                     { type: 'input_value', name: 'X', check: 'Number' },
                     { type: 'input_value', name: 'Y', check: 'Number' },
                     { type: 'input_value', name: 'Z', check: 'Number' },
@@ -2165,7 +2066,7 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                 type: 'enable_physics',
                 message0: 'Enable physics on %1 with mass %2',
                 args0: [
-                    { type: 'input_value', name: 'NAME' },
+                    { type: 'field_input', name: 'NAME', text: 'object' },
                     { type: 'input_value', name: 'MASS', check: 'Number' },
                 ],
                 previousStatement: null,
@@ -2493,11 +2394,13 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                 "args0": [
                     {
                         "type": "input_value",
-                        "name": "OBJECT1"
+                        "name": "OBJECT1",
+                        "check": "String"
                     },
                     {
                         "type": "input_value",
-                        "name": "OBJECT2"
+                        "name": "OBJECT2",
+                        "check": "String"
                     },
                     {
                         "type": "input_dummy"
@@ -2519,7 +2422,8 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                 "args0": [
                     {
                         "type": "input_value",
-                        "name": "OBJECT"
+                        "name": "OBJECT",
+                        "check": "String"
                     }
                 ],
                 "previousStatement": null,
@@ -2534,7 +2438,8 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                 "args0": [
                     {
                         "type": "input_value",
-                        "name": "OBJECT"
+                        "name": "OBJECT",
+                        "check": "String"
                     }
                 ],
                 "previousStatement": null,
@@ -2745,7 +2650,13 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
             },
             {
                 "type": "when_multiplayer_starts",
-                "message0": "when multiplayer starts",
+                "message0": "when multiplayer starts %1",
+                "args0": [
+                    {
+                        "type": "input_statement",
+                        "name": "DO"
+                    }
+                ],
                 "nextStatement": null,
                 "colour": "#FFBF00",
                 "tooltip": "This block is the entry point for your multiplayer game.",
@@ -2756,7 +2667,7 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
         {
 
             javascript.javascriptGenerator.forBlock['when_multiplayer_starts'] = function(block, generator) {
-                const doCode = generator.statementToCode(block, 'STACK');
+                const doCode = generator.statementToCode(block, 'DO');
                 return `sceneManager.multiplayerManager.initialize();\n${doCode}`;
             };
 
@@ -2877,11 +2788,11 @@ if (thisMesh) {
 
             // --- Simplified JavaScript Generators ---
             javascript.javascriptGenerator.forBlock['position_model'] = function (block, generator) {
-                const modelVar = generator.valueToCode(block, 'MODEL', generator.ORDER_ATOMIC) || 'null';
+                const modelVar = generator.nameDB_.getName(block.getFieldValue('MODEL'), Blockly.Variables.NAME_TYPE);
                 const x = generator.valueToCode(block, 'X', generator.ORDER_ATOMIC) || '0';
                 const y = generator.valueToCode(block, 'Y', generator.ORDER_ATOMIC) || '0';
                 const z = generator.valueToCode(block, 'Z', generator.ORDER_ATOMIC) || '0';
-                return `sceneManager.move(${modelVar}, ${x}, ${y}, ${z});\n`;
+                return `sceneManager.move(${modelVar}.name, ${x}, ${y}, ${z});\n`;
             };
 
             javascript.javascriptGenerator.forBlock['create_camera'] = function (block, generator) {
@@ -2959,8 +2870,7 @@ if (thisMesh) {
                 const x = generator.valueToCode(block, 'X', generator.ORDER_ATOMIC) || 0;
                 const y = generator.valueToCode(block, 'Y', generator.ORDER_ATOMIC) || 0;
                 const z = generator.valueToCode(block, 'Z', generator.ORDER_ATOMIC) || 0;
-                const code = `sceneManager.createBox('${name}', ${x}, ${y}, ${z})`;
-                return [code, generator.ORDER_ATOMIC];
+                return `sceneManager.createBox('${name}', ${x}, ${y}, ${z});\n`;
             };
 
             javascript.javascriptGenerator.forBlock['create_sphere'] = function (block, generator) {
@@ -2968,16 +2878,15 @@ if (thisMesh) {
                 const x = generator.valueToCode(block, 'X', generator.ORDER_ATOMIC) || 0;
                 const y = generator.valueToCode(block, 'Y', generator.ORDER_ATOMIC) || 0;
                 const z = generator.valueToCode(block, 'Z', generator.ORDER_ATOMIC) || 0;
-                const code = `sceneManager.createSphere('${name}', ${x}, ${y}, ${z})`;
-                return [code, generator.ORDER_ATOMIC];
+                return `sceneManager.createSphere('${name}', ${x}, ${y}, ${z});\n`;
             };
 
             javascript.javascriptGenerator.forBlock['move_object'] = function (block, generator) {
-                const name = generator.valueToCode(block, 'NAME', generator.ORDER_ATOMIC) || 'null';
+                const name = block.getFieldValue('NAME');
                 const x = generator.valueToCode(block, 'X', generator.ORDER_ATOMIC) || 0;
                 const y = generator.valueToCode(block, 'Y', generator.ORDER_ATOMIC) || 0;
                 const z = generator.valueToCode(block, 'Z', generator.ORDER_ATOMIC) || 0;
-                return `sceneManager.move(${name}, ${x}, ${y}, ${z});\n`;
+                return `sceneManager.move('${name}', ${x}, ${y}, ${z});\n`;
             };
 
             javascript.javascriptGenerator.forBlock['create_light'] = function (block, generator) {
@@ -2989,17 +2898,17 @@ if (thisMesh) {
             };
 
             javascript.javascriptGenerator.forBlock['change_object_color'] = function (block, generator) {
-                const name = generator.valueToCode(block, 'NAME', generator.ORDER_ATOMIC) || 'null';
+                const name = block.getFieldValue('NAME');
                 const color = block.getFieldValue('COLOR');
-                return `sceneManager.changeColor(${name}, '${color}');\n`;
+                return `sceneManager.changeColor('${name}', '${color}');\n`;
             };
 
             javascript.javascriptGenerator.forBlock['rotate_object'] = function (block, generator) {
-                const name = generator.valueToCode(block, 'NAME', generator.ORDER_ATOMIC) || 'null';
+                const name = block.getFieldValue('NAME');
                 const x = generator.valueToCode(block, 'X', generator.ORDER_ATOMIC) || 0;
                 const y = generator.valueToCode(block, 'Y', generator.ORDER_ATOMIC) || 0;
                 const z = generator.valueToCode(block, 'Z', generator.ORDER_ATOMIC) || 0;
-                return `sceneManager.rotate(${name}, ${x}, ${y}, ${z});\n`;
+                return `sceneManager.rotate('${name}', ${x}, ${y}, ${z});\n`;
             };
 
             javascript.javascriptGenerator.forBlock['animate_object'] = function (block, generator) {
@@ -3016,9 +2925,9 @@ if (thisMesh) {
             };
 
             javascript.javascriptGenerator.forBlock['enable_physics'] = function (block, generator) {
-                const name = generator.valueToCode(block, 'NAME', generator.ORDER_ATOMIC) || 'null';
+                const name = block.getFieldValue('NAME');
                 const mass = generator.valueToCode(block, 'MASS', generator.ORDER_ATOMIC) || 1;
-                return `sceneManager.enablePhysics(${name}, ${mass});\n`;
+                return `sceneManager.enablePhysics('${name}', ${mass});\n`;
             };
 
             javascript.javascriptGenerator.forBlock['apply_force'] = function (block, generator) {
@@ -3144,12 +3053,6 @@ if (thisMesh) {
             canvas.height = container.offsetHeight;
             if (sceneManager && sceneManager.engine) {
                 sceneManager.engine.resize();
-
-                // Resize the GUI advanced texture to match the new canvas size
-                sceneManager.uiManager.advancedTexture.scaleTo(sceneManager.engine.getRenderWidth(), sceneManager.engine.getRenderHeight());
-
-                // Mark the texture as dirty to force a re-render of the GUI
-                sceneManager.uiManager.advancedTexture.markAsDirty();                  
             }
 
             // Adjust orthographic camera parameters if in isometric mode
@@ -3185,30 +3088,30 @@ if (thisMesh) {
                     "languageVersion": 0,
                     "variables": [
                         { "name": "score", "id": "score_var" },
-                        { "name": "playerId", "id": "playerId_var" },
-                        { "name": "player_mesh", "id": "player_mesh_var" },
-                        { "name": "coin_mesh", "id": "coin_mesh_var" }
+                        { "name": "playerId", "id": "playerId_var" }
                     ],
                     "blocks": [
                         // Multiplayer Example
                         {
                             "type": "when_multiplayer_starts", "id": "mp_start_event", "x": 800, "y": 400,
-                            "next": {
-                                "block": {
-                                    "type": "gui_create_text_block",
-                                    "fields": { "NAME": "peer_id_display", "H_ALIGN": "2", "V_ALIGN": "0" },
-                                    "inputs": {
-                                        "TEXT": {
-                                            "block": {
-                                                "type": "text_join", "extraState": { "itemCount": 2 },
-                                                "inputs": {
-                                                    "ADD0": { "block": { "type": "text", "fields": { "TEXT": "My ID: " } } },
-                                                    "ADD1": { "block": { "type": "multiplayer_get_id" } }
+                            "inputs": {
+                                "DO": {
+                                    "block": {
+                                        "type": "gui_create_text_block",
+                                        "fields": { "NAME": "peer_id_display", "H_ALIGN": "2", "V_ALIGN": "0" },
+                                        "inputs": {
+                                            "TEXT": {
+                                                "block": {
+                                                    "type": "text_join", "extraState": { "itemCount": 2 },
+                                                    "inputs": {
+                                                        "ADD0": { "block": { "type": "text", "fields": { "TEXT": "My ID: " } } },
+                                                        "ADD1": { "block": { "type": "multiplayer_get_id" } }
+                                                    }
                                                 }
-                                            }
-                                        },
-                                        "TOP": { "block": { "type": "text", "fields": { "TEXT": "20px" } } },
-                                        "LEFT": { "block": { "type": "text", "fields": { "TEXT": "-20px" } } }
+                                            },
+                                            "TOP": { "block": { "type": "text", "fields": { "TEXT": "20px" } } },
+                                            "LEFT": { "block": { "type": "text", "fields": { "TEXT": "-20px" } } }
+                                        }
                                     }
                                 }
                             }
@@ -3218,7 +3121,7 @@ if (thisMesh) {
                             "type": "set_isometric_camera",
                             "next": {
                                 "block": {
-                                    "type": "create_ground",
+                                    "type": "create_ground", "id": "ground", "x": 50, "y": 50,
                                     "fields": { "NAME": "ground" },
                                     "inputs": {
                                         "WIDTH": { "block": { "type": "math_number", "fields": { "NUM": 20 } } },
@@ -3226,36 +3129,28 @@ if (thisMesh) {
                                     },
                                     "next": {
                                         "block": {
-                                            "type": "variables_set",
-                                            "fields": { "VAR": { "name": "player_mesh", "id": "player_mesh_var"} },
+                                            "type": "create_box", "id": "p_box",
+                                            "fields": { "NAME": "player" },
                                             "inputs": {
-                                                "VALUE": {
-                                                    "block": {
-                                                        "type": "create_box",
-                                                        "fields": { "NAME": "player" },
-                                                        "inputs": {
-                                                            "X": { "block": { "type": "math_number", "fields": { "NUM": 0 } } },
-                                                            "Y": { "block": { "type": "math_number", "fields": { "NUM": 5 } } },
-                                                            "Z": { "block": { "type": "math_number", "fields": { "NUM": 0 } } }
-                                                        }
-                                                    }
-                                                }
+                                                "X": { "block": { "type": "math_number", "fields": { "NUM": 0 } } },
+                                                "Y": { "block": { "type": "math_number", "fields": { "NUM": 5 } } },
+                                                "Z": { "block": { "type": "math_number", "fields": { "NUM": 0 } } }
                                             },
                                             "next": {
                                                 "block": {
-                                                    "type": "enable_physics",
+                                                    "type": "enable_physics", "id": "p_phys",
+                                                    "fields": { "NAME": "player" },
                                                     "inputs": {
-                                                        "NAME": { "block": { "type": "variables_get", "fields": { "VAR": { "name": "player_mesh", "id": "player_mesh_var"} } } },
                                                         "MASS": { "block": { "type": "math_number", "fields": { "NUM": 1 } } }
                                                     },
                                                     "next": {
                                                         "block": {
-                                                            "type": "set_as_player",
-                                                            "inputs": { "OBJECT": { "block": { "type": "variables_get", "fields": { "VAR": { "name": "player_mesh", "id": "player_mesh_var"} } } } },
+                                                            "type": "set_as_player", "id": "p_set",
+                                                            "inputs": { "OBJECT": { "block": { "type": "text", "fields": { "TEXT": "player" } } } },
                                                             "next": {
                                                                 "block": {
-                                                                    "type": "camera_follow",
-                                                                    "inputs": { "OBJECT": { "block": { "type": "variables_get", "fields": { "VAR": { "name": "player_mesh", "id": "player_mesh_var"} } } } }
+                                                                    "type": "camera_follow", "id": "cam_f",
+                                                                    "inputs": { "OBJECT": { "block": { "type": "text", "fields": { "TEXT": "player" } } } }
                                                                 }
                                                             }
                                                         }
@@ -3269,54 +3164,42 @@ if (thisMesh) {
                         },
                         // Controls
                         {
-                            "type": "on_button_press", "x": 50, "y": 350, "fields": { "BUTTON": "A" },
-                            "inputs": { "DO": { "block": { "type": "player_jump", "inputs": { "FORCE": { "block": { "type": "math_number", "fields": { "NUM": 8 } } } } } } }
+                            "type": "on_button_press", "id": "jump_ctl", "x": 50, "y": 350, "fields": { "BUTTON": "A" },
+                            "inputs": { "DO": { "block": { "type": "player_jump", "id": "jump_act", "inputs": { "FORCE": { "block": { "type": "math_number", "fields": { "NUM": 8 } } } } } } }
                         },
                         {
-                            "type": "on_button_press", "x": 50, "y": 450, "fields": { "BUTTON": "Left" },
-                            "inputs": { "DO": { "block": { "type": "player_move", "fields": { "DIRECTION": "LEFT" }, "inputs": { "SPEED": { "block": { "type": "math_number", "fields": { "NUM": 5 } } } } } } }
+                            "type": "on_button_press", "id": "left_ctl", "x": 50, "y": 450, "fields": { "BUTTON": "Left" },
+                            "inputs": { "DO": { "block": { "type": "player_move", "id": "left_act", "fields": { "DIRECTION": "LEFT" }, "inputs": { "SPEED": { "block": { "type": "math_number", "fields": { "NUM": 5 } } } } } } }
                         },
                         {
-                            "type": "on_button_press", "x": 50, "y": 550, "fields": { "BUTTON": "Right" },
-                            "inputs": { "DO": { "block": { "type": "player_move", "fields": { "DIRECTION": "RIGHT" }, "inputs": { "SPEED": { "block": { "type": "math_number", "fields": { "NUM": 5 } } } } } } }
+                            "type": "on_button_press", "id": "right_ctl", "x": 50, "y": 550, "fields": { "BUTTON": "Right" },
+                            "inputs": { "DO": { "block": { "type": "player_move", "id": "right_act", "fields": { "DIRECTION": "RIGHT" }, "inputs": { "SPEED": { "block": { "type": "math_number", "fields": { "NUM": 5 } } } } } } }
                         },
                         {
-                            "type": "on_button_press", "x": 50, "y": 650, "fields": { "BUTTON": "Up" },
-                            "inputs": { "DO": { "block": { "type": "player_move", "fields": { "DIRECTION": "FORWARD" }, "inputs": { "SPEED": { "block": { "type": "math_number", "fields": { "NUM": 5 } } } } } } }
+                            "type": "on_button_press", "id": "up_ctl", "x": 50, "y": 650, "fields": { "BUTTON": "Up" },
+                            "inputs": { "DO": { "block": { "type": "player_move", "id": "up_act", "fields": { "DIRECTION": "FORWARD" }, "inputs": { "SPEED": { "block": { "type": "math_number", "fields": { "NUM": 5 } } } } } } }
                         },
                         {
-                            "type": "on_button_press", "x": 50, "y": 750, "fields": { "BUTTON": "Down" },
-                            "inputs": { "DO": { "block": { "type": "player_move", "fields": { "DIRECTION": "BACKWARD" }, "inputs": { "SPEED": { "block": { "type": "math_number", "fields": { "NUM": 5 } } } } } } }
+                            "type": "on_button_press", "id": "down_ctl", "x": 50, "y": 750, "fields": { "BUTTON": "Down" },
+                            "inputs": { "DO": { "block": { "type": "player_move", "id": "down_act", "fields": { "DIRECTION": "BACKWARD" }, "inputs": { "SPEED": { "block": { "type": "math_number", "fields": { "NUM": 5 } } } } } } }
                         },
                         // Coin and Score
                         {
-                            "type": "variables_set", "x": 400, "y": 50,
-                            "fields": { "VAR": { "name": "coin_mesh", "id": "coin_mesh_var"} },
+                            "type": "create_box", "id": "coin", "x": 400, "y": 50,
+                            "fields": { "NAME": "coin" },
                             "inputs": {
-                                "VALUE": {
-                                    "block": {
-                                        "type": "create_box",
-                                        "fields": { "NAME": "coin" },
-                                        "inputs": {
-                                            "X": { "block": { "type": "math_number", "fields": { "NUM": 5 } } },
-                                            "Y": { "block": { "type": "math_number", "fields": { "NUM": 2 } } },
-                                            "Z": { "block": { "type": "math_number", "fields": { "NUM": 0 } } }
-                                        }
-                                    }
-                                }
+                                "X": { "block": { "type": "math_number", "fields": { "NUM": 5 } } },
+                                "Y": { "block": { "type": "math_number", "fields": { "NUM": 2 } } },
+                                "Z": { "block": { "type": "math_number", "fields": { "NUM": 0 } } }
                             },
                              "next": {
                                  "block": {
-                                     "type": "change_object_color",
-                                     "inputs": {
-                                         "NAME": { "block": { "type": "variables_get", "fields": { "VAR": { "name": "coin_mesh", "id": "coin_mesh_var"} } } }
-                                     },
-                                     "fields": { "COLOR": "#FFD700" },
+                                     "type": "change_object_color", "id": "c_color", "fields": { "NAME": "coin", "COLOR": "#FFD700" },
                                      "next": {
                                          "block": {
-                                             "type": "enable_physics",
+                                             "type": "enable_physics", "id": "c_phys",
+                                             "fields": { "NAME": "coin" },
                                              "inputs": {
-                                                 "NAME": { "block": { "type": "variables_get", "fields": { "VAR": { "name": "coin_mesh", "id": "coin_mesh_var"} } } },
                                                  "MASS": { "block": { "type": "math_number", "fields": { "NUM": 0 } } }
                                              }
                                          }
@@ -3325,10 +3208,10 @@ if (thisMesh) {
                              }
                         },
                         {
-                            "type": "on_collision", "x": 400, "y": 200,
+                            "type": "on_collision", "id": "collide", "x": 400, "y": 200,
                             "inputs": {
-                                "OBJECT1": { "block": { "type": "variables_get", "fields": { "VAR": { "name": "player_mesh", "id": "player_mesh_var"} } } },
-                                "OBJECT2": { "block": { "type": "variables_get", "fields": { "VAR": { "name": "coin_mesh", "id": "coin_mesh_var"} } } },
+                                "OBJECT1": { "block": { "type": "text", "fields": { "TEXT": "player" } } },
+                                "OBJECT2": { "block": { "type": "text", "fields": { "TEXT": "coin" } } },
                                 "DO": {
                                     "block": {
                                         "type": "variables_set",
@@ -3372,9 +3255,9 @@ if (thisMesh) {
                                                         },
                                                         "next": {
                                                             "block": {
-                                                                "type": "move_object",
+                                                                "type": "move_object", "id": "respawn_c",
+                                                                "fields": { "NAME": "coin" },
                                                                 "inputs": {
-                                                                    "NAME": { "block": { "type": "variables_get", "fields": { "VAR": { "name": "coin_mesh", "id": "coin_mesh_var"} } } },
                                                                     "X": { "block": { "type": "math_random_int", "inputs": { "FROM": { "block": { "type": "math_number", "fields": { "NUM": -9 } } }, "TO": { "block": { "type": "math_number", "fields": { "NUM": 9 } } } } } },
                                                                     "Y": { "block": { "type": "math_number", "fields": { "NUM": 2 } } },
                                                                     "Z": { "block": { "type": "math_random_int", "inputs": { "FROM": { "block": { "type": "math_number", "fields": { "NUM": -9 } } }, "TO": { "block": { "type": "math_number", "fields": { "NUM": 9 } } } } } }
