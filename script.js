@@ -83,14 +83,6 @@ var toolbox = {
                         // },
                         {
                             kind: 'block',
-                            type: 'event_on_click',
-                        },
-                        {
-                            kind: 'block',
-                            type: 'event_every_frame',
-                        },
-                        {
-                            kind: 'block',
                             type: 'action_rotate_continuously',
                         },
                     ],
@@ -98,6 +90,41 @@ var toolbox = {
             ],
         },
 
+        {
+            kind: 'category',
+            name: 'Events',
+            categorystyle: 'loop_category',
+            contents: [
+                {
+                    kind: 'block',
+                    type: 'when_multiplayer_starts',
+                },
+                {
+                    kind: 'block',
+                    type: 'event_on_click',
+                },
+                {
+                    kind: 'block',
+                    type: 'event_every_frame',
+                },
+                {
+                    kind: 'block',
+                    type: 'on_collision',
+                },
+                {
+                    kind: 'block',
+                    type: 'on_button_press',
+                },
+                {
+                    kind: 'block',
+                    type: 'multiplayer_on_player_connected',
+                },
+                {
+                    kind: 'block',
+                    type: 'multiplayer_on_data_received',
+                }
+            ]
+        },
         {
             kind: 'category',
             name: 'GUI',
@@ -145,10 +172,6 @@ var toolbox = {
             contents: [
                 {
                     kind: 'block',
-                    type: 'on_button_press',
-                },
-                {
-                    kind: 'block',
                     type: 'get_joystick_direction',
                 },
                 {
@@ -181,14 +204,6 @@ var toolbox = {
                 {
                     kind: 'block',
                     type: 'multiplayer_send_data',
-                },
-                {
-                    kind: 'block',
-                    type: 'multiplayer_on_data_received',
-                },
-                {
-                    kind: 'block',
-                    type: 'multiplayer_on_player_connected',
                 },
                 {
                     kind: 'block',
@@ -368,10 +383,6 @@ var toolbox = {
             name: 'Gameplay',
             categorystyle: 'logic_category',
             contents: [
-                {
-                    kind: 'block',
-                    type: 'on_collision',
-                },
                 {
                     kind: 'block',
                     type: 'destroy_object',
@@ -1170,7 +1181,6 @@ class BabylonSceneManager {
         this.initJoystick();
         this.initAutoHide();
         this.runRenderLoop();
-        this.multiplayerManager.initialize(); // Initialize PeerJS
     }
 
     // --- Multiplayer Event Handlers ---
@@ -2637,10 +2647,23 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                 "colour": "#4C97FF",
                 "tooltip": "Gets your own PeerJS ID.",
                 "helpUrl": ""
+            },
+            {
+                "type": "when_multiplayer_starts",
+                "message0": "when multiplayer starts",
+                "nextStatement": null,
+                "colour": "#FFBF00",
+                "tooltip": "This block is the entry point for your multiplayer game.",
+                "helpUrl": ""
             }
         ]);
 
         {
+
+            javascript.javascriptGenerator.forBlock['when_multiplayer_starts'] = function(block, generator) {
+                const doCode = generator.statementToCode(block, 'STACK');
+                return `sceneManager.multiplayerManager.initialize();\n${doCode}`;
+            };
 
             javascript.javascriptGenerator.forBlock['multiplayer_get_id'] = function(block, generator) {
                 return [`sceneManager.multiplayerManager.myId`, generator.ORDER_ATOMIC];
@@ -3064,28 +3087,23 @@ if (thisMesh) {
                     "blocks": [
                         // Multiplayer Example
                         {
-                            "type": "multiplayer_on_player_connected", "id": "mp_connect_event", "x": 800, "y": 400,
-                            "fields": {
-                                "PLAYER_ID_VAR": { "name": "playerId", "id": "playerId_var" }
-                            },
-                            "inputs": {
-                                "DO": {
-                                    "block": {
-                                        "type": "gui_create_text_block",
-                                        "fields": { "NAME": "join_text", "H_ALIGN": "2", "V_ALIGN": "1" },
-                                        "inputs": {
-                                            "TEXT": {
-                                                "block": {
-                                                    "type": "text_join", "extraState": { "itemCount": 2 },
-                                                    "inputs": {
-                                                        "ADD0": { "block": { "type": "text", "fields": { "TEXT": "My Peer ID: " } } },
-                                                        "ADD1": { "block": { "type": "multiplayer_get_id" } }
-                                                    }
+                            "type": "when_multiplayer_starts", "id": "mp_start_event", "x": 800, "y": 400,
+                            "next": {
+                                "block": {
+                                    "type": "gui_create_text_block",
+                                    "fields": { "NAME": "peer_id_display", "H_ALIGN": "2", "V_ALIGN": "0" },
+                                    "inputs": {
+                                        "TEXT": {
+                                            "block": {
+                                                "type": "text_join", "extraState": { "itemCount": 2 },
+                                                "inputs": {
+                                                    "ADD0": { "block": { "type": "text", "fields": { "TEXT": "My ID: " } } },
+                                                    "ADD1": { "block": { "type": "multiplayer_get_id" } }
                                                 }
-                                            },
-                                            "TOP": { "block": { "type": "text", "fields": { "TEXT": "-100px" } } },
-                                            "LEFT": { "block": { "type": "text", "fields": { "TEXT": "0px" } } }
-                                        }
+                                            }
+                                        },
+                                        "TOP": { "block": { "type": "text", "fields": { "TEXT": "20px" } } },
+                                        "LEFT": { "block": { "type": "text", "fields": { "TEXT": "-20px" } } }
                                     }
                                 }
                             }
@@ -3342,6 +3360,19 @@ if (thisMesh) {
         document.getElementById('runButton').addEventListener('click', () => {
             doRun();
         });
+
+        document.getElementById('startMultiplayerButton').addEventListener('click', () => {
+            // Find the 'when_multiplayer_starts' block and execute its code
+            const topBlocks = workspace.getTopBlocks(true);
+            const startBlock = topBlocks.find(block => block.type === 'when_multiplayer_starts');
+            if (startBlock) {
+                const code = javascript.javascriptGenerator.blockToCode(startBlock);
+                const AsyncFunction = Object.getPrototypeOf(async function(){}).constructor;
+                const userGeneratedCode = new AsyncFunction('sceneManager', code);
+                userGeneratedCode(sceneManager);
+            }
+        });
+
         document.getElementById('saveButton').addEventListener('click', () => {
             saveWorkspace();
         });
