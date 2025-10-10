@@ -1191,13 +1191,26 @@ class BabylonSceneManager {
         return null;
     }
 
-    move(name, x, y, z) {
-        if (this.objects[name]) {
+    move(target, x, y, z) {
+        let name;
+        if (typeof target === 'string') {
+            name = target;
+        } else if (target && typeof target === 'object' && target.name) {
+            name = target.name;
+        }
+
+        if (name && this.objects[name]) {
             this.objects[name].position.set(x, y, z);
         }
     }
 
-    changeColor(name, color) {
+    changeColor(target, color) {
+        let name;
+        if (typeof target === 'string') {
+            name = target;
+        } else if (target && typeof target === 'object' && target.name) {
+            name = target.name;
+        }
         if (this.objects[name]) {
             if (!this.objects[name].material) {
                 this.objects[name].material = new BABYLON.StandardMaterial(`${name}_material`, this.scene);
@@ -1206,7 +1219,13 @@ class BabylonSceneManager {
         }
     }
 
-    rotate(name, x, y, z) {
+    rotate(target, x, y, z) {
+        let name;
+        if (typeof target === 'string') {
+            name = target;
+        } else if (target && typeof target === 'object' && target.name) {
+            name = target.name;
+        }
         if (this.objects[name]) {
             this.objects[name].rotation = new BABYLON.Vector3(
                 BABYLON.Tools.ToRadians(x),
@@ -1216,7 +1235,13 @@ class BabylonSceneManager {
         }
     }
 
-    enablePhysics(name, mass, impostorType = 'BoxImpostor') {
+    enablePhysics(target, mass, impostorType = 'BoxImpostor') {
+        let name;
+        if (typeof target === 'string') {
+            name = target;
+        } else if (target && typeof target === 'object' && target.name) {
+            name = target.name;
+        }
         if (this.objects[name]) {
             const impostor = BABYLON.PhysicsImpostor[impostorType];
             this.objects[name].physicsImpostor = new BABYLON.PhysicsImpostor(this.objects[name], impostor, { mass: mass, restitution: 0.9 }, this.scene);
@@ -1307,15 +1332,29 @@ class BabylonSceneManager {
         return light;
     }
 
-    setAsPlayer(name) {
+    setAsPlayer(target) {
+        let name;
+        if (typeof target === 'string') {
+            name = target;
+        } else if (target && typeof target === 'object' && target.name) {
+            name = target.name;
+        }
         if (this.objects[name]) {
             this.player = this.objects[name];
         }
     }
 
-    cameraFollow(name) {
-        if (this.objects[name] && this.scene.activeCamera) {
-            this.scene.activeCamera.lockedTarget = this.objects[name];
+    cameraFollow(target) {
+        let mesh = null;
+        if (typeof target === 'string') {
+            mesh = this.objects[target];
+        } else if (target && typeof target === 'object') {
+            // Assumes target is a mesh object
+            mesh = target;
+        }
+
+        if (mesh && this.scene.activeCamera) {
+            this.scene.activeCamera.lockedTarget = mesh;
         }
     }
 
@@ -1619,9 +1658,8 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                 "message0": "position model %1 at X %2 Y %3 Z %4",
                 "args0": [
                     {
-                        "type": "field_variable",
-                        "name": "MODEL",
-                        "variable": "model"
+                        "type": "input_value",
+                        "name": "MODEL"
                     },
                     {
                         "type": "input_value",
@@ -1865,7 +1903,7 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                 type: 'change_object_color',
                 message0: 'Change color of %1 to %2',
                 args0: [
-                    { type: 'field_input', name: 'NAME', text: 'object' },
+                    { type: 'input_value', name: 'NAME' },
                     { type: 'field_input', name: 'COLOR', text: '#ff0000' },
                 ],
                 previousStatement: null,
@@ -1877,7 +1915,7 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                 type: 'rotate_object',
                 message0: 'Rotate %1 by x %2 y %3 z %4 degrees',
                 args0: [
-                    { type: 'field_input', name: 'NAME', text: 'object' },
+                    { type: 'input_value', name: 'NAME' },
                     { type: 'input_value', name: 'X', check: 'Number' },
                     { type: 'input_value', name: 'Y', check: 'Number' },
                     { type: 'input_value', name: 'Z', check: 'Number' },
@@ -1908,7 +1946,7 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                 type: 'enable_physics',
                 message0: 'Enable physics on %1 with mass %2',
                 args0: [
-                    { type: 'field_input', name: 'NAME', text: 'object' },
+                    { type: 'input_value', name: 'NAME' },
                     { type: 'input_value', name: 'MASS', check: 'Number' },
                 ],
                 previousStatement: null,
@@ -2264,8 +2302,7 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                 "args0": [
                     {
                         "type": "input_value",
-                        "name": "OBJECT",
-                        "check": "String"
+                        "name": "OBJECT"
                     }
                 ],
                 "previousStatement": null,
@@ -2280,8 +2317,7 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                 "args0": [
                     {
                         "type": "input_value",
-                        "name": "OBJECT",
-                        "check": "String"
+                        "name": "OBJECT"
                     }
                 ],
                 "previousStatement": null,
@@ -2493,11 +2529,11 @@ if (thisMesh) {
 
             // --- Simplified JavaScript Generators ---
             javascript.javascriptGenerator.forBlock['position_model'] = function (block, generator) {
-                const modelVar = generator.nameDB_.getName(block.getFieldValue('MODEL'), Blockly.Variables.NAME_TYPE);
+                const modelVar = generator.valueToCode(block, 'MODEL', generator.ORDER_ATOMIC) || 'null';
                 const x = generator.valueToCode(block, 'X', generator.ORDER_ATOMIC) || '0';
                 const y = generator.valueToCode(block, 'Y', generator.ORDER_ATOMIC) || '0';
                 const z = generator.valueToCode(block, 'Z', generator.ORDER_ATOMIC) || '0';
-                return `sceneManager.move(${modelVar}.name, ${x}, ${y}, ${z});\n`;
+                return `sceneManager.move(${modelVar}, ${x}, ${y}, ${z});\n`;
             };
 
             javascript.javascriptGenerator.forBlock['create_camera'] = function (block, generator) {
@@ -2603,17 +2639,17 @@ if (thisMesh) {
             };
 
             javascript.javascriptGenerator.forBlock['change_object_color'] = function (block, generator) {
-                const name = block.getFieldValue('NAME');
+                const name = generator.valueToCode(block, 'NAME', generator.ORDER_ATOMIC) || 'null';
                 const color = block.getFieldValue('COLOR');
-                return `sceneManager.changeColor('${name}', '${color}');\n`;
+                return `sceneManager.changeColor(${name}, '${color}');\n`;
             };
 
             javascript.javascriptGenerator.forBlock['rotate_object'] = function (block, generator) {
-                const name = block.getFieldValue('NAME');
+                const name = generator.valueToCode(block, 'NAME', generator.ORDER_ATOMIC) || 'null';
                 const x = generator.valueToCode(block, 'X', generator.ORDER_ATOMIC) || 0;
                 const y = generator.valueToCode(block, 'Y', generator.ORDER_ATOMIC) || 0;
                 const z = generator.valueToCode(block, 'Z', generator.ORDER_ATOMIC) || 0;
-                return `sceneManager.rotate('${name}', ${x}, ${y}, ${z});\n`;
+                return `sceneManager.rotate(${name}, ${x}, ${y}, ${z});\n`;
             };
 
             javascript.javascriptGenerator.forBlock['animate_object'] = function (block, generator) {
@@ -2630,9 +2666,9 @@ if (thisMesh) {
             };
 
             javascript.javascriptGenerator.forBlock['enable_physics'] = function (block, generator) {
-                const name = block.getFieldValue('NAME');
+                const name = generator.valueToCode(block, 'NAME', generator.ORDER_ATOMIC) || 'null';
                 const mass = generator.valueToCode(block, 'MASS', generator.ORDER_ATOMIC) || 1;
-                return `sceneManager.enablePhysics('${name}', ${mass});\n`;
+                return `sceneManager.enablePhysics(${name}, ${mass});\n`;
             };
 
             javascript.javascriptGenerator.forBlock['apply_force'] = function (block, generator) {
