@@ -124,30 +124,6 @@ var toolbox = {
 
         {
             kind: 'category',
-            name: 'Multiplayer',
-            categorystyle: 'logic_category',
-            contents: [
-                {
-                    kind: 'block',
-                    type: 'multiplayer_connect',
-                },
-                {
-                    kind: 'block',
-                    type: 'multiplayer_send_data',
-                },
-                {
-                    kind: 'block',
-                    type: 'multiplayer_on_data_received',
-                },
-                {
-                    kind: 'block',
-                    type: 'multiplayer_on_player_connected',
-                }
-            ]
-        },
-
-        {
-            kind: 'category',
             name: 'Audio',
             categorystyle: 'audio_category',
             contents: [
@@ -198,6 +174,26 @@ var toolbox = {
                     kind: 'block',
                     type: 'player_move',
                 },
+                {
+                    kind: 'block',
+                    type: 'multiplayer_connect',
+                },
+                {
+                    kind: 'block',
+                    type: 'multiplayer_send_data',
+                },
+                {
+                    kind: 'block',
+                    type: 'multiplayer_on_data_received',
+                },
+                {
+                    kind: 'block',
+                    type: 'multiplayer_on_player_connected',
+                },
+                {
+                    kind: 'block',
+                    type: 'multiplayer_get_id',
+                }
             ]
         },
 
@@ -2633,10 +2629,22 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                 "colour": "#5BA55B",
                 "tooltip": "Executes code when a new player connects.",
                 "helpUrl": ""
+            },
+            {
+                "type": "multiplayer_get_id",
+                "message0": "my peer id",
+                "output": "String",
+                "colour": "#4C97FF",
+                "tooltip": "Gets your own PeerJS ID.",
+                "helpUrl": ""
             }
         ]);
 
         {
+
+            javascript.javascriptGenerator.forBlock['multiplayer_get_id'] = function(block, generator) {
+                return [`sceneManager.multiplayerManager.myId`, generator.ORDER_ATOMIC];
+            };
 
             // --- Multiplayer Block Generators ---
             javascript.javascriptGenerator.forBlock['multiplayer_connect'] = function(block, generator) {
@@ -3070,8 +3078,8 @@ if (thisMesh) {
                                                 "block": {
                                                     "type": "text_join", "extraState": { "itemCount": 2 },
                                                     "inputs": {
-                                                        "ADD0": { "block": { "type": "text", "fields": { "TEXT": "Player Connected" } } },
-                                                        "ADD1": { "block": { "type": "variables_get", "fields": { "VAR": { "name": "playerId", "id": "playerId_var"} } } }
+                                                        "ADD0": { "block": { "type": "text", "fields": { "TEXT": "My Peer ID: " } } },
+                                                        "ADD1": { "block": { "type": "multiplayer_get_id" } }
                                                     }
                                                 }
                                             },
