@@ -1119,6 +1119,11 @@ class BabylonSceneManager {
         this.initJoystick();
         this.initAutoHide();
         this.runRenderLoop();
+        this.initAudioEngine();
+    }
+
+    async initAudioEngine() {
+        this.audioEngine = await BABYLON.CreateAudioEngineAsync();
     }
 
     initJoystick() {
@@ -1452,12 +1457,16 @@ class BabylonSceneManager {
         this.buttonPressActions[button].push(callback);
     }
 
-    playSound(url) {
+    async playSound(url) {
         // Create a new sound and play it.
-        const sound = new BABYLON.Sound("sound", url, this.scene, null, {
-            loop: false,
-            autoplay: true
-        });
+ 
+        const sound = await BABYLON.CreateStreamingSoundAsync("sound",
+            url
+        );        
+
+        await this.audioEngine.unlockAsync();
+
+        sound.play();
     }
 
     playNote(frequency, duration) {
