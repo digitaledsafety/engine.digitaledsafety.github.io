@@ -1597,12 +1597,19 @@ class BabylonSceneManager {
         this.buttonPressActions[button].push(callback);
     }
 
-    playSound(url) {
-        // Create a new sound and play it.
-        const sound = new BABYLON.Sound("sound", url, this.scene, null, {
-            loop: false,
-            autoplay: true
-        });
+    playSound(data) {
+        console.log("playSound called");
+        if (data instanceof ArrayBuffer) {
+            const sound = new BABYLON.Sound("sound", data, this.scene, null, {
+                loop: false,
+                autoplay: true
+            });
+        } else {
+            const sound = new BABYLON.Sound("sound", data, this.scene, null, {
+                loop: false,
+                autoplay: true
+            });
+        }
     }
 
     playNote(frequency, duration) {
@@ -3099,8 +3106,8 @@ if (thisMesh) {
                 return `
                     const asset = await assetManager.getAsset(${assetName});
                     if (asset) {
-                        const url = URL.createObjectURL(asset.data);
-                        sceneManager.playSound(url);
+                        const arrayBuffer = await asset.data.arrayBuffer();
+                        sceneManager.playSound(arrayBuffer);
                     }
                 `;
             };
