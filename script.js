@@ -1,3 +1,84 @@
+class AssetManager {
+    constructor() {
+        this.db = null;
+        this.DB_NAME = 'AssetDB';
+        this.DB_VERSION = 1;
+        this.OBJECT_STORE_NAME = 'assets';
+    }
+
+    async init() {
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open(this.DB_NAME, this.DB_VERSION);
+
+            request.onupgradeneeded = (event) => {
+                const db = event.target.result;
+                if (!db.objectStoreNames.contains(this.OBJECT_STORE_NAME)) {
+                    db.createObjectStore(this.OBJECT_STORE_NAME, { keyPath: 'name' });
+                }
+            };
+
+            request.onsuccess = (event) => {
+                this.db = event.target.result;
+                resolve();
+            };
+
+            request.onerror = (event) => {
+                console.error('IndexedDB error:', event.target.errorCode);
+                reject(event.target.errorCode);
+            };
+        });
+    }
+
+    async addAsset(file) {
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction([this.OBJECT_STORE_NAME], 'readwrite');
+            const store = transaction.objectStore(this.OBJECT_STORE_NAME);
+            const asset = {
+                name: file.name,
+                type: file.type,
+                data: file
+            };
+            const request = store.put(asset);
+
+            request.onsuccess = () => resolve();
+            request.onerror = (event) => reject(event.target.error);
+        });
+    }
+
+    async getAsset(name) {
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction([this.OBJECT_STORE_NAME], 'readonly');
+            const store = transaction.objectStore(this.OBJECT_STORE_NAME);
+            const request = store.get(name);
+
+            request.onsuccess = (event) => resolve(event.target.result);
+            request.onerror = (event) => reject(event.target.error);
+        });
+    }
+
+    async getAllAssets() {
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction([this.OBJECT_STORE_NAME], 'readonly');
+            const store = transaction.objectStore(this.OBJECT_STORE_NAME);
+            const request = store.getAll();
+
+            request.onsuccess = (event) => resolve(event.target.result);
+            request.onerror = (event) => reject(event.target.error);
+        });
+    }
+
+    async deleteAsset(name) {
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction([this.OBJECT_STORE_NAME], 'readwrite');
+            const store = transaction.objectStore(this.OBJECT_STORE_NAME);
+            const request = store.delete(name);
+
+            request.onsuccess = () => resolve();
+            request.onerror = (event) => reject(event.target.error);
+        });
+    }
+}
+
 // Initialize Blockly with Drag-and-Drop Enabled
 
 var toolbox = {
@@ -343,6 +424,37 @@ var toolbox = {
             ]
         },
 
+        {
+            kind: 'category',
+            name: 'Assets',
+            categorystyle: 'variable_category',
+            contents: [
+                {
+                    kind: 'block',
+                    type: 'asset_model',
+                },
+                {
+                    kind: 'block',
+                    type: 'asset_audio',
+                },
+                {
+                    kind: 'block',
+                    type: 'asset_image',
+                },
+                {
+                    kind: 'block',
+                    type: 'import_model_from_asset',
+                },
+                {
+                    kind: 'block',
+                    type: 'play_sound_from_asset',
+                },
+                {
+                    kind: 'block',
+                    type: 'set_texture_from_asset',
+                }
+            ]
+        },
         {
             kind: 'category',
             name: 'Gameplay',
@@ -1242,6 +1354,27 @@ class BabylonSceneManager {
         return null;
     }
 
+    async setTexture(target, assetName, assetManager) {
+        let name;
+        if (typeof target === 'string') {
+            name = target;
+        } else if (target && typeof target === 'object' && target.name) {
+            name = target.name;
+        }
+
+        if (this.objects[name]) {
+            const asset = await assetManager.getAsset(assetName);
+            if (asset && asset.type.startsWith('image/')) {
+                const url = URL.createObjectURL(asset.data);
+                const texture = new BABYLON.Texture(url, this.scene);
+                if (!this.objects[name].material) {
+                    this.objects[name].material = new BABYLON.StandardMaterial(`${name}_material`, this.scene);
+                }
+                this.objects[name].material.diffuseTexture = texture;
+            }
+        }
+    }
+
     move(target, x, y, z) {
         let name;
         if (typeof target === 'string') {
@@ -1721,6 +1854,114 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
 
         // Define Blockly Blocks
         Blockly.defineBlocksWithJsonArray([
+            {
+                "type": "asset_model",
+                "message0": "model asset %1",
+                "args0": [
+                    {
+                        "type": "field_dropdown",
+                        "name": "ASSET",
+                        "options": [
+                            ["none", "NONE"]
+                        ]
+                    }
+                ],
+                "output": "String",
+                "colour": "%{BKY_VARIABLE_HUE}",
+                "tooltip": "Selects a model asset.",
+                "helpUrl": ""
+            },
+            {
+                "type": "asset_audio",
+                "message0": "audio asset %1",
+                "args0": [
+                    {
+                        "type": "field_dropdown",
+                        "name": "ASSET",
+                        "options": [
+                            ["none", "NONE"]
+                        ]
+                    }
+                ],
+                "output": "String",
+                "colour": "%{BKY_VARIABLE_HUE}",
+                "tooltip": "Selects an audio asset.",
+                "helpUrl": ""
+            },
+            {
+                "type": "asset_image",
+                "message0": "image asset %1",
+                "args0": [
+                    {
+                        "type": "field_dropdown",
+                        "name": "ASSET",
+                        "options": [
+                            ["none", "NONE"]
+                        ]
+                    }
+                ],
+                "output": "String",
+                "colour": "%{BKY_VARIABLE_HUE}",
+                "tooltip": "Selects an image asset.",
+                "helpUrl": ""
+            },
+            {
+                "type": "import_model_from_asset",
+                "message0": "import model from asset %1 as %2",
+                "args0": [
+                    {
+                        "type": "input_value",
+                        "name": "ASSET",
+                        "check": "String"
+                    },
+                    {
+                        "type": "field_variable",
+                        "name": "VAR",
+                        "variable": "model"
+                    }
+                ],
+                "previousStatement": null,
+                "nextStatement": null,
+                "colour": "%{BKY_MATH_HUE}",
+                "tooltip": "Imports a model from the asset manager.",
+                "helpUrl": ""
+            },
+            {
+                "type": "play_sound_from_asset",
+                "message0": "play sound from asset %1",
+                "args0": [
+                    {
+                        "type": "input_value",
+                        "name": "ASSET",
+                        "check": "String"
+                    }
+                ],
+                "previousStatement": null,
+                "nextStatement": null,
+                "colour": "%{BKY_AUDIO_HUE}",
+                "tooltip": "Plays a sound from the asset manager.",
+                "helpUrl": ""
+            },
+            {
+                "type": "set_texture_from_asset",
+                "message0": "set texture of %1 to asset %2",
+                "args0": [
+                    {
+                        "type": "input_value",
+                        "name": "OBJECT"
+                    },
+                    {
+                        "type": "input_value",
+                        "name": "ASSET",
+                        "check": "String"
+                    }
+                ],
+                "previousStatement": null,
+                "nextStatement": null,
+                "colour": "%{BKY_MATH_HUE}",
+                "tooltip": "Sets the texture of an object from an image asset.",
+                "helpUrl": ""
+            },
             {
                 "type": "position_model",
                 "message0": "position model %1 at X %2 Y %3 Z %4",
@@ -2807,6 +3048,50 @@ if (thisMesh) {
                 return `sceneManager.playNote(${note}, ${duration});\n`;
             };
 
+            javascript.javascriptGenerator.forBlock['asset_model'] = function(block, generator) {
+                const assetName = block.getFieldValue('ASSET');
+                return [`'${assetName}'`, generator.ORDER_ATOMIC];
+            };
+
+            javascript.javascriptGenerator.forBlock['asset_audio'] = function(block, generator) {
+                const assetName = block.getFieldValue('ASSET');
+                return [`'${assetName}'`, generator.ORDER_ATOMIC];
+            };
+
+            javascript.javascriptGenerator.forBlock['asset_image'] = function(block, generator) {
+                const assetName = block.getFieldValue('ASSET');
+                return [`'${assetName}'`, generator.ORDER_ATOMIC];
+            };
+
+            javascript.javascriptGenerator.forBlock['import_model_from_asset'] = function(block, generator) {
+                const assetName = generator.valueToCode(block, 'ASSET', generator.ORDER_ATOMIC) || 'null';
+                const varName = generator.nameDB_.getName(block.getFieldValue('VAR'), Blockly.Variables.NAME_TYPE);
+                return `
+                    const asset = await assetManager.getAsset(${assetName});
+                    if (asset) {
+                        const url = URL.createObjectURL(asset.data);
+                        var ${varName} = await sceneManager.importModel(${assetName}, url);
+                    }
+                `;
+            };
+
+            javascript.javascriptGenerator.forBlock['play_sound_from_asset'] = function(block, generator) {
+                const assetName = generator.valueToCode(block, 'ASSET', generator.ORDER_ATOMIC) || 'null';
+                return `
+                    const asset = await assetManager.getAsset(${assetName});
+                    if (asset) {
+                        const url = URL.createObjectURL(asset.data);
+                        sceneManager.playSound(url);
+                    }
+                `;
+            };
+
+            javascript.javascriptGenerator.forBlock['set_texture_from_asset'] = function(block, generator) {
+                const object = generator.valueToCode(block, 'OBJECT', generator.ORDER_ATOMIC) || 'null';
+                const assetName = generator.valueToCode(block, 'ASSET', generator.ORDER_ATOMIC) || 'null';
+                return `sceneManager.setTexture(${object}, ${assetName}, assetManager);\n`;
+            };
+
             // --- GUI Block Generators ---
             javascript.javascriptGenerator.forBlock['gui_create_text_block'] = function(block, generator) {
                 const name = block.getFieldValue('NAME');
@@ -3166,8 +3451,8 @@ if (thisMesh) {
 
             try {
                 const AsyncFunction = Object.getPrototypeOf(async function(){}).constructor;
-                const userGeneratedCode = new AsyncFunction('sceneManager', codeToRun);
-                await userGeneratedCode(sceneManager);
+                const userGeneratedCode = new AsyncFunction('sceneManager', 'assetManager', codeToRun);
+                await userGeneratedCode(sceneManager, assetManager);
                 console.log("JULES_VERIFICATION: SCENE_READY");
             } catch (error) {
                 console.error('Error executing code:', error);
@@ -3180,8 +3465,120 @@ if (thisMesh) {
         Blockly.Extensions.register('set_max_display_length', helper);
 
         const canvas = document.getElementById('gameCanvas');
+        const assetManager = new AssetManager();
         let sceneManager = new BabylonSceneManager(canvas);
 
+        assetManager.init().then(() => {
+            console.log("Asset manager initialized");
+            loadAssetsIntoView();
+        }).catch(error => {
+            console.error("Failed to initialize asset manager:", error);
+        });
+
+        const assetUploader = document.getElementById('asset-uploader');
+        assetUploader.addEventListener('change', async (event) => {
+            const files = event.target.files;
+            for (const file of files) {
+                await assetManager.addAsset(file);
+            }
+            loadAssetsIntoView();
+        });
+
+        async function loadAssetsIntoView() {
+            const assetList = document.getElementById('asset-list');
+            assetList.innerHTML = '';
+            const assets = await assetManager.getAllAssets();
+            assets.forEach(asset => {
+                const li = document.createElement('li');
+                li.textContent = asset.name;
+                const deleteButton = document.createElement('button');
+                deleteButton.textContent = 'Delete';
+                deleteButton.onclick = async () => {
+                    await assetManager.deleteAsset(asset.name);
+                    loadAssetsIntoView();
+                };
+                li.appendChild(deleteButton);
+                assetList.appendChild(li);
+            });
+            updateAssetBlocks(assets);
+        }
+
+        function updateAssetBlocks(assets) {
+            const modelOptions = assets
+                .filter(asset => asset.type.startsWith('model/') || asset.name.endsWith('.glb') || asset.name.endsWith('.gltf'))
+                .map(asset => [asset.name, asset.name]);
+
+            const audioOptions = assets
+                .filter(asset => asset.type.startsWith('audio/'))
+                .map(asset => [asset.name, asset.name]);
+
+            const imageOptions = assets
+                .filter(asset => asset.type.startsWith('image/'))
+                .map(asset => [asset.name, asset.name]);
+
+            // Function to find and update a block's options in the toolbox definition
+            function updateToolboxBlockOptions(toolboxDef, blockType, options) {
+                for (const category of toolboxDef.contents) {
+                    if (category.kind === 'category' && category.contents) {
+                        const block = category.contents.find(item => item.kind === 'block' && item.type === blockType);
+                        if (block) {
+                            if (!block.fields) block.fields = {};
+                            block.fields.ASSET = { options: options.length > 0 ? options : [['none', 'NONE']] };
+                            return; // Found and updated
+                        }
+                        // Also check in subcategories
+                        if (category.contents) {
+                            for (const subCategory of category.contents) {
+                                if (subCategory.kind === 'category' && subCategory.contents) {
+                                    const nestedBlock = subCategory.contents.find(item => item.kind === 'block' && item.type === blockType);
+                                    if (nestedBlock) {
+                                        if (!nestedBlock.fields) nestedBlock.fields = {};
+                                        nestedBlock.fields.ASSET = { options: options.length > 0 ? options : [['none', 'NONE']] };
+                                        return;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            const newToolbox = JSON.parse(JSON.stringify(toolbox)); // Deep copy
+
+            // Find the asset blocks in the toolbox definition and update their options
+            const assetCategory = newToolbox.contents.find(cat => cat.name === 'Assets');
+            if (assetCategory) {
+                const modelBlock = assetCategory.contents.find(b => b.type === 'asset_model');
+                if (modelBlock) {
+                    if (!modelBlock.inputs) modelBlock.inputs = {};
+                    if (!modelBlock.inputs.ASSET) modelBlock.inputs.ASSET = { type: 'field_dropdown', name: 'ASSET' };
+                    modelBlock.inputs.ASSET.options = modelOptions.length > 0 ? modelOptions : [['none', 'NONE']];
+                }
+
+                const audioBlock = assetCategory.contents.find(b => b.type === 'asset_audio');
+                if (audioBlock) {
+                    if (!audioBlock.inputs) audioBlock.inputs = {};
+                    if (!audioBlock.inputs.ASSET) audioBlock.inputs.ASSET = { type: 'field_dropdown', name: 'ASSET' };
+                    audioBlock.inputs.ASSET.options = audioOptions.length > 0 ? audioOptions : [['none', 'NONE']];
+                }
+
+                const imageBlock = assetCategory.contents.find(b => b.type === 'asset_image');
+                if (imageBlock) {
+                    if (!imageBlock.inputs) imageBlock.inputs = {};
+                    if (!imageBlock.inputs.ASSET) imageBlock.inputs.ASSET = { type: 'field_dropdown', name: 'ASSET' };
+                    imageBlock.inputs.ASSET.options = imageOptions.length > 0 ? imageOptions : [['none', 'NONE']];
+                }
+            }
+
+            // This is a workaround because `updateToolbox` is not updating the dropdowns correctly.
+            // We will modify the block definition directly.
+            Blockly.Blocks['asset_model'].definition.args0[0].options = modelOptions.length > 0 ? modelOptions : [['none', 'NONE']];
+            Blockly.Blocks['asset_audio'].definition.args0[0].options = audioOptions.length > 0 ? audioOptions : [['none', 'NONE']];
+            Blockly.Blocks['asset_image'].definition.args0[0].options = imageOptions.length > 0 ? imageOptions : [['none', 'NONE']];
+
+            console.log('New toolbox definition:', JSON.stringify(newToolbox, null, 2));
+            workspace.updateToolbox(newToolbox);
+        }
 
         // --- Dropdown Menu Logic ---
         document.getElementById('menuButton').addEventListener('click', function() {
@@ -3338,28 +3735,41 @@ if (thisMesh) {
         // --- Main View Switching Logic ---
         const codeViewButton = document.getElementById('codeViewButton');
         const audioViewButton = document.getElementById('audioViewButton');
+        const assetsViewButton = document.getElementById('assetsViewButton');
         const codeView = document.getElementById('code-view');
         const audioView = document.getElementById('audio-view');
+        const assetsView = document.getElementById('assets-view');
 
-        function showCodeView() {
-            codeView.style.display = 'block';
-            audioView.style.display = 'none';
-            codeViewButton.classList.add('active');
-            audioViewButton.classList.remove('active');
-        }
-
-        function showAudioView() {
+        function showView(viewToShow) {
+            // Hide all views
             codeView.style.display = 'none';
-            audioView.style.display = 'block';
+            audioView.style.display = 'none';
+            assetsView.style.display = 'none';
+
+            // Deactivate all buttons
             codeViewButton.classList.remove('active');
-            audioViewButton.classList.add('active');
+            audioViewButton.classList.remove('active');
+            assetsViewButton.classList.remove('active');
+
+            // Show the selected view and activate its button
+            if (viewToShow === 'code') {
+                codeView.style.display = 'block';
+                codeViewButton.classList.add('active');
+            } else if (viewToShow === 'audio') {
+                audioView.style.display = 'block';
+                audioViewButton.classList.add('active');
+            } else if (viewToShow === 'assets') {
+                assetsView.style.display = 'block';
+                assetsViewButton.classList.add('active');
+            }
         }
 
-        codeViewButton.addEventListener('click', showCodeView);
-        audioViewButton.addEventListener('click', showAudioView);
+        codeViewButton.addEventListener('click', () => showView('code'));
+        audioViewButton.addEventListener('click', () => showView('audio'));
+        assetsViewButton.addEventListener('click', () => showView('assets'));
 
         // Set the initial view
-        showCodeView();
+        showView('code');
 
 
         // --- Touch Control Event Listeners ---
