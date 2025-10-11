@@ -1371,7 +1371,9 @@ class BabylonSceneManager {
     }
 
     async importModel(name, url, x, y, z) {
-        const result = await BABYLON.SceneLoader.ImportMeshAsync(null, '', url, this.scene);
+        // Load model using SceneLoader
+        let ext = "." + name.split('.').pop().toLowerCase();
+        const result = await BABYLON.SceneLoader.ImportMeshAsync(null, '', url, this.scene, null, ext);
         if (result.meshes.length > 0) {
             const rootMesh = result.meshes[0];
             rootMesh.name = name;
@@ -3712,30 +3714,23 @@ if (thisMesh) {
 
         // --- Main View Switching Logic ---
         const codeViewButton = document.getElementById('codeViewButton');
-        const audioViewButton = document.getElementById('audioViewButton');
         const assetsViewButton = document.getElementById('assetsViewButton');
         const codeView = document.getElementById('code-view');
-        const audioView = document.getElementById('audio-view');
         const assetsView = document.getElementById('assets-view');
 
         function showView(viewToShow) {
             // Hide all views
             codeView.style.display = 'none';
-            audioView.style.display = 'none';
             assetsView.style.display = 'none';
 
             // Deactivate all buttons
             codeViewButton.classList.remove('active');
-            audioViewButton.classList.remove('active');
             assetsViewButton.classList.remove('active');
 
             // Show the selected view and activate its button
             if (viewToShow === 'code') {
                 codeView.style.display = 'block';
                 codeViewButton.classList.add('active');
-            } else if (viewToShow === 'audio') {
-                audioView.style.display = 'block';
-                audioViewButton.classList.add('active');
             } else if (viewToShow === 'assets') {
                 assetsView.style.display = 'block';
                 assetsViewButton.classList.add('active');
@@ -3743,7 +3738,6 @@ if (thisMesh) {
         }
 
         codeViewButton.addEventListener('click', () => showView('code'));
-        audioViewButton.addEventListener('click', () => showView('audio'));
         assetsViewButton.addEventListener('click', () => showView('assets'));
 
         // Set the initial view
