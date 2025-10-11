@@ -32,17 +32,20 @@ class AssetManager {
     }
 
     async addAsset(file) {
+        const data = file.type.startsWith('audio/') ? await file.arrayBuffer() : file;
+        const asset = {
+            name: file.name,
+            type: file.type,
+            data: data
+        };
+
         return new Promise((resolve, reject) => {
             const transaction = this.db.transaction([this.OBJECT_STORE_NAME], 'readwrite');
             const store = transaction.objectStore(this.OBJECT_STORE_NAME);
-            const asset = {
-                name: file.name,
-                type: file.type,
-                data: file
-            };
             const request = store.put(asset);
 
             request.onsuccess = () => {
+                this.assets = this.assets.filter(a => a.name !== asset.name); // Remove old version if it exists
                 this.assets.push(asset);
                 resolve();
             };
@@ -3105,9 +3108,8 @@ if (thisMesh) {
                 const assetName = generator.valueToCode(block, 'ASSET', generator.ORDER_ATOMIC) || 'null';
                 return `
                     const asset = await assetManager.getAsset(${assetName});
-                    if (asset) {
-                        const arrayBuffer = await asset.data.arrayBuffer();
-                        sceneManager.playSound(arrayBuffer);
+                    if (asset && asset.data instanceof ArrayBuffer) {
+                        sceneManager.playSound(asset.data);
                     }
                 `;
             };
