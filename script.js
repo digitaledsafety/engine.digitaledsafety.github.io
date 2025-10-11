@@ -1,6 +1,7 @@
 class AssetManager {
     constructor() {
         this.db = null;
+        this.assets = [];
         this.DB_NAME = 'AssetDB';
         this.DB_VERSION = 1;
         this.OBJECT_STORE_NAME = 'assets';
@@ -17,8 +18,9 @@ class AssetManager {
                 }
             };
 
-            request.onsuccess = (event) => {
+            request.onsuccess = async (event) => {
                 this.db = event.target.result;
+                await this.loadAssetsIntoCache();
                 resolve();
             };
 
@@ -40,7 +42,10 @@ class AssetManager {
             };
             const request = store.put(asset);
 
-            request.onsuccess = () => resolve();
+            request.onsuccess = () => {
+                this.assets.push(asset);
+                resolve();
+            };
             request.onerror = (event) => reject(event.target.error);
         });
     }
@@ -73,9 +78,16 @@ class AssetManager {
             const store = transaction.objectStore(this.OBJECT_STORE_NAME);
             const request = store.delete(name);
 
-            request.onsuccess = () => resolve();
+            request.onsuccess = () => {
+                this.assets = this.assets.filter(asset => asset.name !== name);
+                resolve();
+            };
             request.onerror = (event) => reject(event.target.error);
         });
+    }
+
+    async loadAssetsIntoCache() {
+        this.assets = await this.getAllAssets();
     }
 }
 
@@ -1854,25 +1866,22 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
 
         // Define Blockly Blocks
 
-        async function getModelAssets() {
-            const assets = await assetManager.getAllAssets();
-            const modelOptions = assets
+        function getModelAssets() {
+            const modelOptions = assetManager.assets
                 .filter(asset => asset.type.startsWith('model/') || asset.name.endsWith('.glb') || asset.name.endsWith('.gltf'))
                 .map(asset => [asset.name, asset.name]);
             return modelOptions.length > 0 ? modelOptions : [['none', 'NONE']];
         }
 
-        async function getAudioAssets() {
-            const assets = await assetManager.getAllAssets();
-            const audioOptions = assets
+        function getAudioAssets() {
+            const audioOptions = assetManager.assets
                 .filter(asset => asset.type.startsWith('audio/'))
                 .map(asset => [asset.name, asset.name]);
             return audioOptions.length > 0 ? audioOptions : [['none', 'NONE']];
         }
 
-        async function getImageAssets() {
-            const assets = await assetManager.getAllAssets();
-            const imageOptions = assets
+        function getImageAssets() {
+            const imageOptions = assetManager.assets
                 .filter(asset => asset.type.startsWith('image/'))
                 .map(asset => [asset.name, asset.name]);
             return imageOptions.length > 0 ? imageOptions : [['none', 'NONE']];
