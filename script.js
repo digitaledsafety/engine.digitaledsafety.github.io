@@ -1386,6 +1386,15 @@ class BabylonSceneManager {
         return null;
     }
 
+    async importModelAsset(name, assetManager)
+    {
+        let asset = await assetManager.getAsset(name);
+        if (asset) {
+            let url = URL.createObjectURL(asset.data);
+            return await this.importModel(name, url);
+        }
+    }
+
     async setTexture(target, assetName, assetManager) {
         let name;
         if (typeof target === 'string') {
@@ -1632,6 +1641,13 @@ class BabylonSceneManager {
         await this.audioEngine.unlockAsync();
         
         sound.play();
+    }
+
+    async playSoundAsset(name, assetManager) {
+        let asset = await assetManager.getAsset(name);
+        if (asset && asset.data instanceof ArrayBuffer) {
+            this.playSound(URL.createObjectURL(new Blob([asset.data])));
+        }
     }
 
     playNote(frequency, duration) {
@@ -3124,23 +3140,12 @@ if (thisMesh) {
             javascript.javascriptGenerator.forBlock['import_model_from_asset'] = function(block, generator) {
                 const assetName = generator.valueToCode(block, 'ASSET', generator.ORDER_ATOMIC) || 'null';
                 const varName = generator.nameDB_.getName(block.getFieldValue('VAR'), Blockly.Variables.NAME_TYPE);
-                return `
-                    const asset = await assetManager.getAsset(${assetName});
-                    if (asset) {
-                        const url = URL.createObjectURL(asset.data);
-                        var ${varName} = await sceneManager.importModel(${assetName}, url);
-                    }
-                `;
+                return `var ${varName} = await sceneManager.importModelAsset(${assetName}, assetManager);\n`;
             };
 
             javascript.javascriptGenerator.forBlock['play_sound_from_asset'] = function(block, generator) {
                 const assetName = generator.valueToCode(block, 'ASSET', generator.ORDER_ATOMIC) || 'null';
-                return `
-                    const asset = await assetManager.getAsset(${assetName});
-                    if (asset && asset.data instanceof ArrayBuffer) {
-                        sceneManager.playSound(URL.createObjectURL(new Blob([asset.data])));
-                    }
-                `;
+                return `sceneManager.playSoundAsset(${assetName}, assetManager);\n`;
             };
 
             javascript.javascriptGenerator.forBlock['set_texture_from_asset'] = function(block, generator) {
