@@ -192,6 +192,21 @@ var toolbox = {
                 {
                     kind: 'block',
                     type: 'player_move',
+                }
+            ]
+        },
+        {
+            kind: 'category',
+            name: 'Multiplayer',
+            categorystyle: 'logic_category',
+            contents: [
+                {
+                    kind: 'block',
+                    type: 'when_multiplayer_starts',
+                },
+                {
+                    kind: 'block',
+                    type: 'multiplayer_get_id',
                 },
                 {
                     kind: 'block',
@@ -200,10 +215,6 @@ var toolbox = {
                 {
                     kind: 'block',
                     type: 'multiplayer_send_data',
-                },
-                {
-                    kind: 'block',
-                    type: 'start_multiplayer_and_get_id',
                 }
             ]
         },
@@ -1065,37 +1076,32 @@ class MultiplayerManager {
     }
 
     initialize() {
-        return new Promise((resolve, reject) => {
-            if (this.peer) {
-                console.log("Multiplayer already initialized.");
-                return resolve(this.myId);
+        if (this.peer) {
+            console.log("Multiplayer already initialized.");
+            return;
+        }
+
+        // Use a randomly generated ID from the server
+        this.peer = new Peer({
+            // debug: 3 // Uncomment for verbose logging
+        });
+
+        this.peer.on('open', (id) => {
+            console.log('My peer ID is: ' + id);
+            this.myId = id;
+
+            this.peer.on('connection', (conn) => {
+                console.log('Incoming connection from: ' + conn.peer);
+                this.setupConnectionEvents(conn);
+            });
+        });
+
+        this.peer.on('error', (err) => {
+            console.error('PeerJS error:', err);
+            if (err.type === 'peer-unavailable') {
+                // This is a common error, handle it gracefully
+                alert(`Connection failed: Peer with ID '${err.message.split(' ').pop()}' is unavailable.`);
             }
-
-            // Use a randomly generated ID from the server
-            this.peer = new Peer({
-                // debug: 3 // Uncomment for verbose logging
-            });
-
-            this.peer.on('open', (id) => {
-                console.log('My peer ID is: ' + id);
-                this.myId = id;
-
-                this.peer.on('connection', (conn) => {
-                    console.log('Incoming connection from: ' + conn.peer);
-                    this.setupConnectionEvents(conn);
-                });
-
-                resolve(id);
-            });
-
-            this.peer.on('error', (err) => {
-                console.error('PeerJS error:', err);
-                if (err.type === 'peer-unavailable') {
-                    // This is a common error, handle it gracefully
-                    alert(`Connection failed: Peer with ID '${err.message.split(' ').pop()}' is unavailable.`);
-                }
-                reject(err);
-            });
         });
     }
 
@@ -2654,19 +2660,45 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                 "helpUrl": ""
             },
             {
-                "type": "start_multiplayer_and_get_id",
-                "message0": "start multiplayer and get my id",
+                "type": "multiplayer_get_id",
+                "message0": "my peer id",
                 "output": "String",
                 "colour": "#4C97FF",
-                "tooltip": "Starts the multiplayer session and returns your unique ID.",
+                "tooltip": "Gets your own PeerJS ID.",
+                "helpUrl": ""
+            },
+            {
+                "type": "when_multiplayer_starts",
+                "message0": "when multiplayer starts %1",
+                "args0": [
+                    {
+                        "type": "input_statement",
+                        "name": "DO"
+                    }
+                ],
+                "nextStatement": null,
+                "colour": "#FFBF00",
+                "tooltip": "This block is the entry point for your multiplayer game.",
                 "helpUrl": ""
             }
         ]);
 
         {
-            javascript.javascriptGenerator.forBlock['start_multiplayer_and_get_id'] = function(block, generator) {
-                const code = `await sceneManager.multiplayerManager.initialize()`;
-                return [code, generator.ORDER_ATOMIC];
+
+            javascript.javascriptGenerator.forBlock['when_multiplayer_starts'] = function(block, generator) {
+                const doCode = generator.statementToCode(block, 'DO');
+                // We'll add a marker to the code to indicate that multiplayer should be initialized.
+                return `// JULES_MULTIPLAYER_START
+sceneManager.multiplayerManager.peer.on('open', (id) => {
+    (async () => {
+${doCode}
+    })();
+});
+`;
+            };
+
+            javascript.javascriptGenerator.forBlock['multiplayer_get_id'] = function(block, generator) {
+                return [`sceneManager.multiplayerManager.myId`, generator.ORDER_ATOMIC];
             };
 
             // --- Multiplayer Block Generators ---
@@ -3088,29 +3120,25 @@ if (thisMesh) {
                     "blocks": [
                         // Multiplayer Example
                         {
-                            "type": "variables_set", "id": "set_my_id", "x": 800, "y": 400,
-                            "fields": { "VAR": { "name": "my_id", "id": "my_id_var" } },
+                            "type": "when_multiplayer_starts", "id": "mp_start_event", "x": 800, "y": 400,
                             "inputs": {
-                                "VALUE": {
-                                    "block": { "type": "start_multiplayer_and_get_id" }
-                                }
-                            },
-                            "next": {
-                                "block": {
-                                    "type": "gui_create_text_block",
-                                    "fields": { "NAME": "peer_id_display", "H_ALIGN": "2", "V_ALIGN": "0" },
-                                    "inputs": {
-                                        "TEXT": {
-                                            "block": {
-                                                "type": "text_join", "extraState": { "itemCount": 2 },
-                                                "inputs": {
-                                                    "ADD0": { "block": { "type": "text", "fields": { "TEXT": "My ID: " } } },
-                                                    "ADD1": { "block": { "type": "variables_get", "fields": { "VAR": { "name": "my_id", "id": "my_id_var" } } } }
+                                "DO": {
+                                    "block": {
+                                        "type": "gui_create_text_block",
+                                        "fields": { "NAME": "peer_id_display", "H_ALIGN": "2", "V_ALIGN": "0" },
+                                        "inputs": {
+                                            "TEXT": {
+                                                "block": {
+                                                    "type": "text_join", "extraState": { "itemCount": 2 },
+                                                    "inputs": {
+                                                        "ADD0": { "block": { "type": "text", "fields": { "TEXT": "My ID: " } } },
+                                                        "ADD1": { "block": { "type": "multiplayer_get_id" } }
+                                                    }
                                                 }
-                                            }
-                                        },
-                                        "TOP": { "block": { "type": "text", "fields": { "TEXT": "20px" } } },
-                                        "LEFT": { "block": { "type": "text", "fields": { "TEXT": "-20px" } } }
+                                            },
+                                            "TOP": { "block": { "type": "text", "fields": { "TEXT": "20px" } } },
+                                            "LEFT": { "block": { "type": "text", "fields": { "TEXT": "-20px" } } }
+                                        }
                                     }
                                 }
                             }
@@ -3322,6 +3350,50 @@ if (thisMesh) {
             sceneManager.clear();
 
             try {
+                let multiplayerCode = '';
+                const multiplayerMarker = "// JULES_MULTIPLAYER_START";
+                const openListenerMarker = "sceneManager.multiplayerManager.peer.on('open', (id) => {";
+
+                if (codeToRun.includes(multiplayerMarker)) {
+                    sceneManager.multiplayerManager.initialize();
+
+                    // Extract the multiplayer-specific code
+                    const startIndex = codeToRun.indexOf(openListenerMarker);
+                    if (startIndex !== -1) {
+                        let braceCount = 0;
+                        let endIndex = -1;
+                        for (let i = startIndex + openListenerMarker.length; i < codeToRun.length; i++) {
+                            if (codeToRun[i] === '{') {
+                                braceCount++;
+                            } else if (codeToRun[i] === '}') {
+                                if (braceCount === 0) {
+                                    endIndex = i;
+                                    break;
+                                }
+                                braceCount--;
+                            }
+                        }
+
+                        if (endIndex !== -1) {
+                            multiplayerCode = codeToRun.substring(startIndex + openListenerMarker.length, endIndex);
+                            // We need to find the closing });\n of the event listener to remove it all
+                            const listenerEndIndex = codeToRun.indexOf('});', endIndex);
+                            if (listenerEndIndex !== -1) {
+                                codeToRun = codeToRun.substring(0, startIndex) + codeToRun.substring(listenerEndIndex + 4);
+                            }
+                        }
+                    }
+
+                    if (multiplayerCode) {
+                        sceneManager.multiplayerManager.peer.on('open', (id) => {
+                             const AsyncFunction = Object.getPrototypeOf(async function(){}).constructor;
+                             const userGeneratedCode = new AsyncFunction('sceneManager', multiplayerCode);
+                             userGeneratedCode(sceneManager);
+                        });
+                    }
+                }
+
+
                 const AsyncFunction = Object.getPrototypeOf(async function(){}).constructor;
                 const userGeneratedCode = new AsyncFunction('sceneManager', codeToRun);
                 await userGeneratedCode(sceneManager);
