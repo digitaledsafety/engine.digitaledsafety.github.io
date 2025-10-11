@@ -1893,7 +1893,7 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                     .appendField("model asset")
                     .appendField(new Blockly.FieldDropdown(getModelAssets), "ASSET");
                 this.setOutput(true, "String");
-                this.setColour("%{BKY_VARIABLE_HUE}");
+                this.setColour('#A55B5B');
                 this.setTooltip("Selects a model asset.");
                 this.setHelpUrl("");
             }
@@ -1905,7 +1905,7 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                     .appendField("audio asset")
                     .appendField(new Blockly.FieldDropdown(getAudioAssets), "ASSET");
                 this.setOutput(true, "String");
-                this.setColour("%{BKY_VARIABLE_HUE}");
+                this.setColour('#A55B5B');
                 this.setTooltip("Selects an audio asset.");
                 this.setHelpUrl("");
             }
@@ -1917,7 +1917,7 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                     .appendField("image asset")
                     .appendField(new Blockly.FieldDropdown(getImageAssets), "ASSET");
                 this.setOutput(true, "String");
-                this.setColour("%{BKY_VARIABLE_HUE}");
+                this.setColour('#A55B5B');
                 this.setTooltip("Selects an image asset.");
                 this.setHelpUrl("");
             }
