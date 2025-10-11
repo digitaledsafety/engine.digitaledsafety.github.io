@@ -1209,11 +1209,13 @@ var toolbox = {
 
 class BabylonSceneManager {
     constructor(canvas) {
+        this.initAudioEngine();        
         this.canvas = canvas;
         this.engine = new BABYLON.Engine(this.canvas, true);
         this.scene = new BABYLON.Scene(this.engine);
         this.objects = {};
         this.materials = {};
+        this.sounds = [];
         this.player = null;
         this.moveDirection = new BABYLON.Vector3(0, 0, 0);
         this.playerSpeed = 5;
@@ -1246,10 +1248,18 @@ class BabylonSceneManager {
         this.initJoystick();
         this.initAutoHide();
         this.runRenderLoop();
-        this.initAudioEngine();
+        
     }
 
     async initAudioEngine() {
+        if (this.engine && this.engine.audioEngine && this.sounds.length > 0) {
+            this.sounds.forEach(sound => {
+
+                console.log("stopping sound");
+                sound.stop(); // Set default volume
+            }); 
+            this.engine.audioEngine.dispose();
+        }
         this.audioEngine = await BABYLON.CreateAudioEngineAsync();
     }
 
@@ -1605,15 +1615,20 @@ class BabylonSceneManager {
         this.buttonPressActions[button].push(callback);
     }
 
+
     async playSound(url) {
         // Create a new sound and play it.
- 
-        const sound = await BABYLON.CreateStreamingSoundAsync("sound",
-            url
-        );        
 
+        if (!this.audioEngine) {
+            return;
+        }
+
+        let sound = await BABYLON.CreateStreamingSoundAsync("sound", url);
+
+        this.sounds.push(sound);
+        
         await this.audioEngine.unlockAsync();
-
+        
         sound.play();
     }
 
@@ -1741,6 +1756,7 @@ class BabylonSceneManager {
     }
 
     clear() {
+        
         this.uiManager.clear();
         this.scene.dispose();
         this.scene = new BABYLON.Scene(this.engine);
@@ -1748,6 +1764,13 @@ class BabylonSceneManager {
         this.uiManager = new UIManager(this.scene); // Re-initialize UIManager for the new scene
         this.objects = {};
         this.materials = {};
+
+        // Dispose all sounds
+        for(let i = 0; i < this.sounds.length; i++) {
+            this.sounds[i].dispose();
+        }
+        this.sounds = [];
+
         this.player = null;
         this.perFrameFunctions = [];
         this.buttonPressActions = {};
@@ -3070,7 +3093,9 @@ if (thisMesh) {
             // --- Audio Block Generators ---
             javascript.javascriptGenerator.forBlock['play_sound_url'] = function(block, generator) {
                 const url = block.getFieldValue('URL');
-                return `sceneManager.playSound('${url}');\n`;
+                return `
+                    sceneManager.playSound('${url}');
+                `;                
             };
 
             javascript.javascriptGenerator.forBlock['play_note'] = function(block, generator) {
@@ -3111,7 +3136,7 @@ if (thisMesh) {
                 return `
                     const asset = await assetManager.getAsset(${assetName});
                     if (asset && asset.data instanceof ArrayBuffer) {
-                        sceneManager.playSound(asset.data);
+                        sceneManager.playSound(URL.createObjectURL(new Blob([asset.data])));
                     }
                 `;
             };
