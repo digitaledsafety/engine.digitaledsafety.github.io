@@ -1853,58 +1853,68 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
         });
 
         // Define Blockly Blocks
+
+        async function getModelAssets() {
+            const assets = await assetManager.getAllAssets();
+            const modelOptions = assets
+                .filter(asset => asset.type.startsWith('model/') || asset.name.endsWith('.glb') || asset.name.endsWith('.gltf'))
+                .map(asset => [asset.name, asset.name]);
+            return modelOptions.length > 0 ? modelOptions : [['none', 'NONE']];
+        }
+
+        async function getAudioAssets() {
+            const assets = await assetManager.getAllAssets();
+            const audioOptions = assets
+                .filter(asset => asset.type.startsWith('audio/'))
+                .map(asset => [asset.name, asset.name]);
+            return audioOptions.length > 0 ? audioOptions : [['none', 'NONE']];
+        }
+
+        async function getImageAssets() {
+            const assets = await assetManager.getAllAssets();
+            const imageOptions = assets
+                .filter(asset => asset.type.startsWith('image/'))
+                .map(asset => [asset.name, asset.name]);
+            return imageOptions.length > 0 ? imageOptions : [['none', 'NONE']];
+        }
+
+        Blockly.Blocks['asset_model'] = {
+            init: function() {
+                this.appendDummyInput()
+                    .appendField("model asset")
+                    .appendField(new Blockly.FieldDropdown(getModelAssets), "ASSET");
+                this.setOutput(true, "String");
+                this.setColour("%{BKY_VARIABLE_HUE}");
+                this.setTooltip("Selects a model asset.");
+                this.setHelpUrl("");
+            }
+        };
+
+        Blockly.Blocks['asset_audio'] = {
+            init: function() {
+                this.appendDummyInput()
+                    .appendField("audio asset")
+                    .appendField(new Blockly.FieldDropdown(getAudioAssets), "ASSET");
+                this.setOutput(true, "String");
+                this.setColour("%{BKY_VARIABLE_HUE}");
+                this.setTooltip("Selects an audio asset.");
+                this.setHelpUrl("");
+            }
+        };
+
+        Blockly.Blocks['asset_image'] = {
+            init: function() {
+                this.appendDummyInput()
+                    .appendField("image asset")
+                    .appendField(new Blockly.FieldDropdown(getImageAssets), "ASSET");
+                this.setOutput(true, "String");
+                this.setColour("%{BKY_VARIABLE_HUE}");
+                this.setTooltip("Selects an image asset.");
+                this.setHelpUrl("");
+            }
+        };
+
         Blockly.defineBlocksWithJsonArray([
-            {
-                "type": "asset_model",
-                "message0": "model asset %1",
-                "args0": [
-                    {
-                        "type": "field_dropdown",
-                        "name": "ASSET",
-                        "options": [
-                            ["none", "NONE"]
-                        ]
-                    }
-                ],
-                "output": "String",
-                "colour": "%{BKY_VARIABLE_HUE}",
-                "tooltip": "Selects a model asset.",
-                "helpUrl": ""
-            },
-            {
-                "type": "asset_audio",
-                "message0": "audio asset %1",
-                "args0": [
-                    {
-                        "type": "field_dropdown",
-                        "name": "ASSET",
-                        "options": [
-                            ["none", "NONE"]
-                        ]
-                    }
-                ],
-                "output": "String",
-                "colour": "%{BKY_VARIABLE_HUE}",
-                "tooltip": "Selects an audio asset.",
-                "helpUrl": ""
-            },
-            {
-                "type": "asset_image",
-                "message0": "image asset %1",
-                "args0": [
-                    {
-                        "type": "field_dropdown",
-                        "name": "ASSET",
-                        "options": [
-                            ["none", "NONE"]
-                        ]
-                    }
-                ],
-                "output": "String",
-                "colour": "%{BKY_VARIABLE_HUE}",
-                "tooltip": "Selects an image asset.",
-                "helpUrl": ""
-            },
             {
                 "type": "import_model_from_asset",
                 "message0": "import model from asset %1 as %2",
@@ -3500,84 +3510,7 @@ if (thisMesh) {
                 li.appendChild(deleteButton);
                 assetList.appendChild(li);
             });
-            updateAssetBlocks(assets);
-        }
-
-        function updateAssetBlocks(assets) {
-            const modelOptions = assets
-                .filter(asset => asset.type.startsWith('model/') || asset.name.endsWith('.glb') || asset.name.endsWith('.gltf'))
-                .map(asset => [asset.name, asset.name]);
-
-            const audioOptions = assets
-                .filter(asset => asset.type.startsWith('audio/'))
-                .map(asset => [asset.name, asset.name]);
-
-            const imageOptions = assets
-                .filter(asset => asset.type.startsWith('image/'))
-                .map(asset => [asset.name, asset.name]);
-
-            // Function to find and update a block's options in the toolbox definition
-            function updateToolboxBlockOptions(toolboxDef, blockType, options) {
-                for (const category of toolboxDef.contents) {
-                    if (category.kind === 'category' && category.contents) {
-                        const block = category.contents.find(item => item.kind === 'block' && item.type === blockType);
-                        if (block) {
-                            if (!block.fields) block.fields = {};
-                            block.fields.ASSET = { options: options.length > 0 ? options : [['none', 'NONE']] };
-                            return; // Found and updated
-                        }
-                        // Also check in subcategories
-                        if (category.contents) {
-                            for (const subCategory of category.contents) {
-                                if (subCategory.kind === 'category' && subCategory.contents) {
-                                    const nestedBlock = subCategory.contents.find(item => item.kind === 'block' && item.type === blockType);
-                                    if (nestedBlock) {
-                                        if (!nestedBlock.fields) nestedBlock.fields = {};
-                                        nestedBlock.fields.ASSET = { options: options.length > 0 ? options : [['none', 'NONE']] };
-                                        return;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            const newToolbox = JSON.parse(JSON.stringify(toolbox)); // Deep copy
-
-            // Find the asset blocks in the toolbox definition and update their options
-            const assetCategory = newToolbox.contents.find(cat => cat.name === 'Assets');
-            if (assetCategory) {
-                const modelBlock = assetCategory.contents.find(b => b.type === 'asset_model');
-                if (modelBlock) {
-                    if (!modelBlock.inputs) modelBlock.inputs = {};
-                    if (!modelBlock.inputs.ASSET) modelBlock.inputs.ASSET = { type: 'field_dropdown', name: 'ASSET' };
-                    modelBlock.inputs.ASSET.options = modelOptions.length > 0 ? modelOptions : [['none', 'NONE']];
-                }
-
-                const audioBlock = assetCategory.contents.find(b => b.type === 'asset_audio');
-                if (audioBlock) {
-                    if (!audioBlock.inputs) audioBlock.inputs = {};
-                    if (!audioBlock.inputs.ASSET) audioBlock.inputs.ASSET = { type: 'field_dropdown', name: 'ASSET' };
-                    audioBlock.inputs.ASSET.options = audioOptions.length > 0 ? audioOptions : [['none', 'NONE']];
-                }
-
-                const imageBlock = assetCategory.contents.find(b => b.type === 'asset_image');
-                if (imageBlock) {
-                    if (!imageBlock.inputs) imageBlock.inputs = {};
-                    if (!imageBlock.inputs.ASSET) imageBlock.inputs.ASSET = { type: 'field_dropdown', name: 'ASSET' };
-                    imageBlock.inputs.ASSET.options = imageOptions.length > 0 ? imageOptions : [['none', 'NONE']];
-                }
-            }
-
-            // This is a workaround because `updateToolbox` is not updating the dropdowns correctly.
-            // We will modify the block definition directly.
-            Blockly.Blocks['asset_model'].definition.args0[0].options = modelOptions.length > 0 ? modelOptions : [['none', 'NONE']];
-            Blockly.Blocks['asset_audio'].definition.args0[0].options = audioOptions.length > 0 ? audioOptions : [['none', 'NONE']];
-            Blockly.Blocks['asset_image'].definition.args0[0].options = imageOptions.length > 0 ? imageOptions : [['none', 'NONE']];
-
-            console.log('New toolbox definition:', JSON.stringify(newToolbox, null, 2));
-            workspace.updateToolbox(newToolbox);
+            // The toolbox will be updated dynamically by the block definitions.
         }
 
         // --- Dropdown Menu Logic ---
