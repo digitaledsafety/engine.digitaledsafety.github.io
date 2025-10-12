@@ -1076,32 +1076,37 @@ class MultiplayerManager {
     }
 
     initialize() {
+        console.log("Initializing MultiplayerManager...");
         if (this.peer) {
             console.log("Multiplayer already initialized.");
-            return;
+            return Promise.resolve(this.myId);
         }
 
-        // Use a randomly generated ID from the server
-        this.peer = new Peer({
-            // debug: 3 // Uncomment for verbose logging
-        });
-
-        this.peer.on('open', (id) => {
-            console.log('My peer ID is: ' + id);
-            this.myId = id;
-
-            this.peer.on('connection', (conn) => {
-                console.log('Incoming connection from: ' + conn.peer);
-                this.setupConnectionEvents(conn);
+        return new Promise((resolve, reject) => {
+            // Use a randomly generated ID from the server
+            this.peer = new Peer({
+                // debug: 3 // Uncomment for verbose logging
             });
-        });
 
-        this.peer.on('error', (err) => {
-            console.error('PeerJS error:', err);
-            if (err.type === 'peer-unavailable') {
-                // This is a common error, handle it gracefully
-                alert(`Connection failed: Peer with ID '${err.message.split(' ').pop()}' is unavailable.`);
-            }
+            this.peer.on('open', (id) => {
+                console.log('My peer ID is: ' + id);
+                this.myId = id;
+
+                this.peer.on('connection', (conn) => {
+                    console.log('Incoming connection from: ' + conn.peer);
+                    this.setupConnectionEvents(conn);
+                });
+                resolve(id);
+            });
+
+            this.peer.on('error', (err) => {
+                console.error('PeerJS error:', err);
+                if (err.type === 'peer-unavailable') {
+                    // This is a common error, handle it gracefully
+                    alert(`Connection failed: Peer with ID '${err.message.split(' ').pop()}' is unavailable.`);
+                }
+                reject(err);
+            });
         });
     }
 
@@ -1153,6 +1158,16 @@ class MultiplayerManager {
             if (conn && conn.open) {
                 conn.send(data);
             }
+        }
+    }
+
+    destroy() {
+        if (this.peer) {
+            this.peer.destroy();
+            this.peer = null;
+            this.myId = null;
+            this.connections = {};
+            console.log("Multiplayer session destroyed.");
         }
     }
 }
@@ -1654,17 +1669,20 @@ class BabylonSceneManager {
     }
 
     clear() {
+        this.multiplayerManager.destroy(); // Destroy the old multiplayer session
         this.uiManager.clear();
         this.scene.dispose();
+
         this.scene = new BABYLON.Scene(this.engine);
         this.initScene();
-        this.uiManager = new UIManager(this.scene); // Re-initialize UIManager for the new scene
+        this.uiManager = new UIManager(this.scene);
+        this.multiplayerManager = new MultiplayerManager(this); // Create a new multiplayer manager
         this.objects = {};
         this.materials = {};
         this.player = null;
         this.perFrameFunctions = [];
         this.buttonPressActions = {};
-        this.inputState = { keys: {} }; // Reset state on clear
+        this.inputState = { keys: {} };
     }
 
     dispose() {
@@ -2687,14 +2705,7 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
 
             javascript.javascriptGenerator.forBlock['when_multiplayer_starts'] = function(block, generator) {
                 const doCode = generator.statementToCode(block, 'DO');
-                // We'll add a marker to the code to indicate that multiplayer should be initialized.
-                return `// JULES_MULTIPLAYER_START
-sceneManager.multiplayerManager.peer.on('open', (id) => {
-    (async () => {
-${doCode}
-    })();
-});
-`;
+                return `// JULES_MULTIPLAYER_START\n${doCode}`;
             };
 
             javascript.javascriptGenerator.forBlock['multiplayer_get_id'] = function(block, generator) {
@@ -3350,49 +3361,11 @@ if (thisMesh) {
             sceneManager.clear();
 
             try {
-                let multiplayerCode = '';
                 const multiplayerMarker = "// JULES_MULTIPLAYER_START";
-                const openListenerMarker = "sceneManager.multiplayerManager.peer.on('open', (id) => {";
-
                 if (codeToRun.includes(multiplayerMarker)) {
-                    sceneManager.multiplayerManager.initialize();
-
-                    // Extract the multiplayer-specific code
-                    const startIndex = codeToRun.indexOf(openListenerMarker);
-                    if (startIndex !== -1) {
-                        let braceCount = 0;
-                        let endIndex = -1;
-                        for (let i = startIndex + openListenerMarker.length; i < codeToRun.length; i++) {
-                            if (codeToRun[i] === '{') {
-                                braceCount++;
-                            } else if (codeToRun[i] === '}') {
-                                if (braceCount === 0) {
-                                    endIndex = i;
-                                    break;
-                                }
-                                braceCount--;
-                            }
-                        }
-
-                        if (endIndex !== -1) {
-                            multiplayerCode = codeToRun.substring(startIndex + openListenerMarker.length, endIndex);
-                            // We need to find the closing });\n of the event listener to remove it all
-                            const listenerEndIndex = codeToRun.indexOf('});', endIndex);
-                            if (listenerEndIndex !== -1) {
-                                codeToRun = codeToRun.substring(0, startIndex) + codeToRun.substring(listenerEndIndex + 4);
-                            }
-                        }
-                    }
-
-                    if (multiplayerCode) {
-                        sceneManager.multiplayerManager.peer.on('open', (id) => {
-                             const AsyncFunction = Object.getPrototypeOf(async function(){}).constructor;
-                             const userGeneratedCode = new AsyncFunction('sceneManager', multiplayerCode);
-                             userGeneratedCode(sceneManager);
-                        });
-                    }
+                    await new Promise(resolve => setTimeout(resolve, 1000)); // Wait for 1 second
+                    await sceneManager.multiplayerManager.initialize();
                 }
-
 
                 const AsyncFunction = Object.getPrototypeOf(async function(){}).constructor;
                 const userGeneratedCode = new AsyncFunction('sceneManager', codeToRun);
