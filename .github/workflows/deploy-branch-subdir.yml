@@ -1,0 +1,57 @@
+# Workflow Title
+name: Deploy Feature Branch Previews to Subdirectory
+
+# This workflow runs on pushes to any branch *except* 'main' or 'master'
+on:
+  push:
+    branches-ignore:
+      - main
+      - master
+
+# Define the deployment job
+jobs:
+  build-and-deploy-preview:
+    runs-on: ubuntu-latest
+    
+    # 1. Define the target directory using the branch name (e.g., branches/feature/my-new-feature)
+    env:
+      TARGET_DIR: branches/${{ github.ref_name }}
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        # Fetch history is required for the deployment action to perform git operations
+        with:
+          fetch-depth: 0 
+
+      - name: Setup Node.js (Example build setup)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies and Build Project
+        # Replace 'npm run build' with your specific build command
+        # This step is assumed to generate static files into the './dist' directory
+        run: |
+          npm install
+          npm run build
+        
+      - name: Log the Expected Preview URL
+        # This displays the likely URL in the GitHub Actions log
+        run: |
+          echo "Deployment Target: ${{ env.TARGET_DIR }}"
+          echo "The preview URL will be: https://<USERNAME>.github.io/<REPO>/${{ env.TARGET_DIR }}/"
+
+      - name: Deploy to GitHub Pages Subdirectory
+        # Use peaceiris/actions-gh-pages for precise subdirectory deployment
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          # The directory containing the static files to upload
+          publish_dir: ./dist 
+          # The branch your GitHub Pages is configured to read from (e.g., gh-pages or main)
+          publish_branch: gh-pages 
+          # The specific subdirectory within the publishing branch where the artifact lands
+          destination_dir: ${{ env.TARGET_DIR }}
+          # Use a clear commit message
+          commit_message: Deploy branch ${{ github.ref_name }} preview to ${{ env.TARGET_DIR }}
