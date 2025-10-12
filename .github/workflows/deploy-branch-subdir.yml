@@ -50,7 +50,7 @@ jobs:
           # The directory containing the static files to upload
           publish_dir: ./dist 
           # The branch your GitHub Pages is configured to read from (e.g., gh-pages or main)
-          publish_branch: gh-pages 
+          publish_branch: main
           # The specific subdirectory within the publishing branch where the artifact lands
           destination_dir: ${{ env.TARGET_DIR }}
           # Use a clear commit message
