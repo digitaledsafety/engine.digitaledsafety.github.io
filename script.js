@@ -136,12 +136,12 @@ class ProjectManager {
 
             // 4. Create and trigger download
             const jsonString = JSON.stringify(projectData, null, 2);
-            const blob = new Blob([jsonString], { type: 'application/json' });
+            const blob = new Blob([jsonString], { type: 'text/plain' });
             const url = URL.createObjectURL(blob);
 
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'my-project.json';
+            a.download = 'my-project.txt';
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -291,7 +291,7 @@ class ProjectManager {
             };
 
             const jsonString = JSON.stringify(projectData, null, 2);
-            const file = new File([jsonString], 'project.json', { type: 'application/json' });
+            const file = new File([jsonString], 'project.txt', { type: 'text/plain' });
 
             if (navigator.share && navigator.canShare({ files: [file] })) {
                 await navigator.share({
