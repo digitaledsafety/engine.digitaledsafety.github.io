@@ -15,7 +15,7 @@ jobs:
     
     # 1. Define the target directory using the branch name (e.g., branches/feature/my-new-feature)
     env:
-      TARGET_DIR: branches/${{ replace(github.ref_name, '/', '-') }}
+      TARGET_DIR: branches/${{ github.ref_name }}
 
     steps:
       - name: Checkout Repository
