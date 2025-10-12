@@ -242,7 +242,7 @@ class ProjectManager {
         return new Promise(resolve => {
             const input = document.createElement('input');
             input.type = 'file';
-            input.accept = '.json';
+            input.accept = '.txt';
             input.onchange = e => {
                 const file = e.target.files[0];
                 if (file) {
