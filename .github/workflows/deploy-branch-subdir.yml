@@ -15,7 +15,7 @@ jobs:
     
     # 1. Define the target directory using the branch name (e.g., branches/feature/my-new-feature)
     env:
-      TARGET_DIR: /branches/${{ github.ref_name }}
+      TARGET_DIR: branches/${{ github.ref_name }}
 
     steps:
       - name: Checkout Repository
@@ -36,7 +36,7 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           # The directory containing the static files to upload
-          publish_dir: ./dist
+          publish_dir: ./
           # The branch your GitHub Pages is configured to read from (e.g., gh-pages or main)
           publish_branch: main
           # The specific subdirectory within the publishing branch where the artifact lands
