@@ -94,6 +94,175 @@ class AssetManager {
     }
 }
 
+class ProjectManager {
+    constructor(assetManager, workspace, sceneManager) {
+        this.assetManager = assetManager;
+        this.workspace = workspace;
+        this.sceneManager = sceneManager;
+    }
+
+    async saveProject() {
+        try {
+            // 1. Get Workspace Data
+            const workspaceState = Blockly.serialization.workspaces.save(this.workspace);
+
+            // 2. Get Assets and convert to Base64
+            const assets = await this.assetManager.getAllAssets();
+            const serializableAssets = [];
+
+            for (const asset of assets) {
+                let dataB64;
+                if (asset.data instanceof Blob) { // For models, images
+                    dataB64 = await this._blobToBase64(asset.data);
+                } else if (asset.data instanceof ArrayBuffer) { // For audio
+                    dataB64 = this._arrayBufferToBase64(asset.data);
+                } else {
+                    console.warn(`Asset ${asset.name} has unknown data type, skipping serialization.`);
+                    continue;
+                }
+                serializableAssets.push({
+                    name: asset.name,
+                    type: asset.type,
+                    data: dataB64
+                });
+            }
+
+            // 3. Combine into a project object
+            const projectData = {
+                workspace: workspaceState,
+                assets: serializableAssets,
+                version: '1.0'
+            };
+
+            // 4. Create and trigger download
+            const jsonString = JSON.stringify(projectData, null, 2);
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'my-project.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            console.log('Project saved successfully!');
+
+        } catch (error) {
+            console.error('Failed to save project:', error);
+            alert('Error saving project. See console for details.');
+        }
+    }
+
+    // --- Helper methods for serialization ---
+
+    _arrayBufferToBase64(buffer) {
+        let binary = '';
+        const bytes = new Uint8Array(buffer);
+        const len = bytes.byteLength;
+        for (let i = 0; i < len; i++) {
+            binary += String.fromCharCode(bytes[i]);
+        }
+        return window.btoa(binary);
+    }
+
+    _blobToBase64(blob) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result.split(',')[1]); // Remove the data URI prefix
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+        });
+    }
+
+    async loadProject() {
+        try {
+            const file = await this._selectFile();
+            const content = await this._readFile(file);
+            const projectData = JSON.parse(content);
+
+            if (!projectData.workspace || !projectData.assets) {
+                throw new Error('Invalid project file format.');
+            }
+
+            // 1. Clear current scene and assets
+            this.sceneManager.clear();
+            await this._clearAllAssets();
+            this.workspace.clear();
+
+            // 2. Load Assets
+            for (const asset of projectData.assets) {
+                const data = this._base64ToBlob(asset.data, asset.type);
+                await this.assetManager.addAsset(new File([data], asset.name, { type: asset.type }));
+            }
+            // The asset view needs to be re-rendered to show the new assets
+            loadAssetsIntoView();
+
+
+            // 3. Load Workspace
+            Blockly.serialization.workspaces.load(projectData.workspace, this.workspace);
+
+            // 4. Run the loaded project
+            doRun();
+
+            console.log('Project loaded successfully!');
+
+        } catch (error) {
+            console.error('Failed to load project:', error);
+            alert('Error loading project. See console for details.');
+        }
+    }
+
+    _base64ToBlob(b64Data, contentType = '', sliceSize = 512) {
+        const byteCharacters = atob(b64Data);
+        const byteArrays = [];
+
+        for (let offset = 0; offset < byteCharacters.length; offset += sliceSize) {
+            const slice = byteCharacters.slice(offset, offset + sliceSize);
+            const byteNumbers = new Array(slice.length);
+            for (let i = 0; i < slice.length; i++) {
+                byteNumbers[i] = slice.charCodeAt(i);
+            }
+            const byteArray = new Uint8Array(byteNumbers);
+            byteArrays.push(byteArray);
+        }
+
+        return new Blob(byteArrays, { type: contentType });
+    }
+
+    async _clearAllAssets() {
+        const allAssets = await this.assetManager.getAllAssets();
+        for (const asset of allAssets) {
+            await this.assetManager.deleteAsset(asset.name);
+        }
+    }
+
+    _selectFile() {
+        return new Promise(resolve => {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.onchange = e => {
+                const file = e.target.files[0];
+                if (file) {
+                    resolve(file);
+                }
+            };
+            input.click();
+        });
+    }
+
+    _readFile(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsText(file);
+        });
+    }
+}
+
 // Initialize Blockly with Drag-and-Drop Enabled
 
 var toolbox = {
@@ -3263,18 +3432,6 @@ if (thisMesh) {
             } 
         }
 
-        function saveWorkspace() {
-            var workspace = Blockly.getMainWorkspace();
-            var state = Blockly.serialization.workspaces.save(workspace);
-            console.log(state);
-            localStorage.setItem('myProgram', JSON.stringify(state));
-        }
-
-        function loadWorkspace(button) {
-            const state = localStorage.getItem('myProgram');
-            var workspace = Blockly.getMainWorkspace();
-            Blockly.serialization.workspaces.load(JSON.parse(state), workspace);
-        }
 
         function loadWorkspaceDefault() {
             let state = {
@@ -3529,6 +3686,7 @@ if (thisMesh) {
         const canvas = document.getElementById('gameCanvas');
         const assetManager = new AssetManager();
         let sceneManager = new BabylonSceneManager(canvas);
+        const projectManager = new ProjectManager(assetManager, workspace, sceneManager);
 
         assetManager.init().then(() => {
             console.log("Asset manager initialized");
@@ -3594,10 +3752,10 @@ if (thisMesh) {
             doRun();
         });
         document.getElementById('saveButton').addEventListener('click', () => {
-            saveWorkspace();
+            projectManager.saveProject();
         });
         document.getElementById('loadButton').addEventListener('click', () => {
-            loadWorkspace();
+            projectManager.loadProject();
         });
 
         document.getElementById('toggleToolboxButton').addEventListener('click', () => {
