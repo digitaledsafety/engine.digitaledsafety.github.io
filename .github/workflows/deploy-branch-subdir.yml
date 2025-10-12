@@ -23,18 +23,6 @@ jobs:
         # Fetch history is required for the deployment action to perform git operations
         with:
           fetch-depth: 0 
-
-      - name: Setup Node.js (Example build setup)
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Install dependencies and Build Project
-        # Replace 'npm run build' with your specific build command
-        # This step is assumed to generate static files into the './dist' directory
-        run: |
-          npm install
-          npm run build
         
       - name: Log the Expected Preview URL
         # This displays the likely URL in the GitHub Actions log
