@@ -261,6 +261,54 @@ class ProjectManager {
             reader.readAsText(file);
         });
     }
+
+    async shareProject() {
+        try {
+            const workspaceState = Blockly.serialization.workspaces.save(this.workspace);
+            const assets = await this.assetManager.getAllAssets();
+            const serializableAssets = [];
+
+            for (const asset of assets) {
+                let dataB64;
+                if (asset.data instanceof Blob) {
+                    dataB64 = await this._blobToBase64(asset.data);
+                } else if (asset.data instanceof ArrayBuffer) {
+                    dataB64 = this._arrayBufferToBase64(asset.data);
+                } else {
+                    continue;
+                }
+                serializableAssets.push({
+                    name: asset.name,
+                    type: asset.type,
+                    data: dataB64
+                });
+            }
+
+            const projectData = {
+                workspace: workspaceState,
+                assets: serializableAssets,
+                version: '1.0'
+            };
+
+            const jsonString = JSON.stringify(projectData, null, 2);
+            const file = new File([jsonString], 'project.json', { type: 'application/json' });
+
+            if (navigator.share && navigator.canShare({ files: [file] })) {
+                await navigator.share({
+                    files: [file],
+                    title: 'My Project',
+                    text: 'Check out my project!',
+                });
+            } else {
+                this.saveProject();
+            }
+        } catch (error) {
+            console.error('Error sharing project:', error);
+            if (error.name !== 'AbortError') {
+                alert('Error sharing project. See console for details.');
+            }
+        }
+    }
 }
 
 // Initialize Blockly with Drag-and-Drop Enabled
@@ -3765,19 +3813,7 @@ if (thisMesh) {
         });
 
         document.getElementById('shareButton').addEventListener('click', () => {
-            const workspace = Blockly.getMainWorkspace();
-            const state = Blockly.serialization.workspaces.save(workspace);
-            const jsonState = JSON.stringify(state);
-            const base64State = btoa(jsonState);
-            const url = new URL(window.location.href);
-            url.searchParams.set('project', base64State);
-            console.log('Shareable URL:', url.href);
-            navigator.clipboard.writeText(url.href).then(() => {
-                alert('Shareable link copied to clipboard!');
-            }, (err) => {
-                console.error('Could not copy text: ', err);
-                alert('Failed to copy link. Please copy it manually from the console.');
-            });
+            projectManager.shareProject();
         });
 
         document.getElementById('fullscreenBtn').addEventListener('click', () => {
