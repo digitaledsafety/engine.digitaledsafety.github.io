@@ -633,6 +633,10 @@ var toolbox = {
                     kind: 'block',
                     type: 'set_gravity',
                 },
+                {
+                    kind: 'block',
+                    type: 'set_background',
+                },
             ]
         },
 
@@ -1466,6 +1470,10 @@ class BabylonSceneManager {
         this.initAutoHide();
         this.runRenderLoop();
         
+    }
+
+    setBackground(color) {
+        this.scene.clearColor = BABYLON.Color4.FromHexString(color);
     }
 
     async initAudioEngine() {
@@ -3064,6 +3072,22 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                 "colour": "#5B80A5",
                 "tooltip": "Gets the text from a GUI input field.",
                 "helpUrl": ""
+            },
+            {
+                "type": "set_background",
+                "message0": "set background color to %1",
+                "args0": [
+                    {
+                        "type": "field_input",
+                        "name": "COLOR",
+                        "text": "#000000"
+                    }
+                ],
+                "previousStatement": null,
+                "nextStatement": null,
+                "colour": 180,
+                "tooltip": "Sets the background color of the scene.",
+                "helpUrl": ""
             }
         ]);
 
@@ -3443,6 +3467,11 @@ if (thisMesh) {
                 const name = block.getFieldValue('NAME');
                 const code = `sceneManager.uiManager.getInputText('${name}')`;
                 return [code, generator.ORDER_ATOMIC];
+            };
+
+            javascript.javascriptGenerator.forBlock['set_background'] = function(block, generator) {
+                const color = block.getFieldValue('COLOR');
+                return `sceneManager.setBackground('${color}');\n`;
             };
         }
 
