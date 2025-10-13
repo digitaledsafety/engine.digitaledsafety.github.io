@@ -472,6 +472,29 @@ var toolbox = {
         },
         {
             kind: 'category',
+            name: 'Console',
+            categorystyle: 'text_category',
+            contents: [
+                {
+                    kind: 'block',
+                    type: 'console_log',
+                },
+                {
+                    kind: 'block',
+                    type: 'console_warn',
+                },
+                {
+                    kind: 'block',
+                    type: 'console_error',
+                },
+                {
+                    kind: 'block',
+                    type: 'console_clear',
+                },
+            ],
+        },
+        {
+            kind: 'category',
             name: 'Player',
             categorystyle: 'logic_category',
             contents: [
@@ -3064,6 +3087,61 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                 "colour": "#5B80A5",
                 "tooltip": "Gets the text from a GUI input field.",
                 "helpUrl": ""
+            },
+            // Console Blocks
+            {
+                "type": "console_log",
+                "message0": "console log %1",
+                "args0": [
+                    {
+                        "type": "input_value",
+                        "name": "VALUE"
+                    }
+                ],
+                "previousStatement": null,
+                "nextStatement": null,
+                "colour": "#5B80A5",
+                "tooltip": "Logs a value to the browser console.",
+                "helpUrl": ""
+            },
+            {
+                "type": "console_warn",
+                "message0": "console warn %1",
+                "args0": [
+                    {
+                        "type": "input_value",
+                        "name": "VALUE"
+                    }
+                ],
+                "previousStatement": null,
+                "nextStatement": null,
+                "colour": "#A5745B",
+                "tooltip": "Logs a warning to the browser console.",
+                "helpUrl": ""
+            },
+            {
+                "type": "console_error",
+                "message0": "console error %1",
+                "args0": [
+                    {
+                        "type": "input_value",
+                        "name": "VALUE"
+                    }
+                ],
+                "previousStatement": null,
+                "nextStatement": null,
+                "colour": "#A55B5B",
+                "tooltip": "Logs an error to the browser console.",
+                "helpUrl": ""
+            },
+            {
+                "type": "console_clear",
+                "message0": "console clear",
+                "previousStatement": null,
+                "nextStatement": null,
+                "colour": "#4C97FF",
+                "tooltip": "Clears the browser console.",
+                "helpUrl": ""
             }
         ]);
 
@@ -3443,6 +3521,26 @@ if (thisMesh) {
                 const name = block.getFieldValue('NAME');
                 const code = `sceneManager.uiManager.getInputText('${name}')`;
                 return [code, generator.ORDER_ATOMIC];
+            };
+
+            // --- Console Block Generators ---
+            javascript.javascriptGenerator.forBlock['console_log'] = function(block, generator) {
+                const value = generator.valueToCode(block, 'VALUE', generator.ORDER_ATOMIC) || 'null';
+                return `console.log(${value});\n`;
+            };
+
+            javascript.javascriptGenerator.forBlock['console_warn'] = function(block, generator) {
+                const value = generator.valueToCode(block, 'VALUE', generator.ORDER_ATOMIC) || 'null';
+                return `console.warn(${value});\n`;
+            };
+
+            javascript.javascriptGenerator.forBlock['console_error'] = function(block, generator) {
+                const value = generator.valueToCode(block, 'VALUE', generator.ORDER_ATOMIC) || 'null';
+                return `console.error(${value});\n`;
+            };
+
+            javascript.javascriptGenerator.forBlock['console_clear'] = function(block, generator) {
+                return `console.clear();\n`;
             };
         }
 
