@@ -1,1 +1,0 @@
-# blockly-3d
