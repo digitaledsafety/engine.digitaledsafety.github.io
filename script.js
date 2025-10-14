@@ -3119,7 +3119,7 @@ if (thisMesh) {
                 const y = generator.valueToCode(block, 'Y', generator.ORDER_ATOMIC) || 0;
                 const z = generator.valueToCode(block, 'Z', generator.ORDER_ATOMIC) || 0;
                 // Generate a unique name for the box to avoid conflicts.
-                const name = `box_${Blockly.utils.idGenerator.genUid()}`;
+                const name = `box_${Blockly.utils.id.genUid()}`;
                 const code = `sceneManager.createBox('${name}', ${x}, ${y}, ${z})`;
                 return [code, generator.ORDER_ATOMIC];
             };
@@ -3129,7 +3129,7 @@ if (thisMesh) {
                 const y = generator.valueToCode(block, 'Y', generator.ORDER_ATOMIC) || 0;
                 const z = generator.valueToCode(block, 'Z', generator.ORDER_ATOMIC) || 0;
                 // Generate a unique name for the sphere to avoid conflicts.
-                const name = `sphere_${Blockly.utils.idGenerator.genUid()}`;
+                const name = `sphere_${Blockly.utils.id.genUid()}`;
                 const code = `sceneManager.createSphere('${name}', ${x}, ${y}, ${z})`;
                 return [code, generator.ORDER_ATOMIC];
             };
@@ -3258,7 +3258,7 @@ if (thisMesh) {
                 const text = generator.valueToCode(block, 'TEXT', generator.ORDER_ATOMIC) || "''";
                 const hAlign = parseInt(block.getFieldValue('H_ALIGN'));
                 const vAlign = parseInt(block.getFieldValue('V_ALIGN'));
-                const name = `text_block_${Blockly.utils.idGenerator.genUid()}`;
+                const name = `text_block_${Blockly.utils.id.genUid()}`;
 
                 let top, left;
                 const topBlock = block.getInputTargetBlock('TOP');
@@ -3295,7 +3295,7 @@ if (thisMesh) {
             javascript.javascriptGenerator.forBlock['gui_create_input_text'] = function(block, generator) {
                 const hAlign = parseInt(block.getFieldValue('H_ALIGN'));
                 const vAlign = parseInt(block.getFieldValue('V_ALIGN'));
-                const name = `input_text_${Blockly.utils.idGenerator.genUid()}`;
+                const name = `input_text_${Blockly.utils.id.genUid()}`;
 
                 let top, left;
                 const topBlock = block.getInputTargetBlock('TOP');
@@ -3432,6 +3432,22 @@ if (thisMesh) {
                         { "type": "on_button_press", "x": 50, "y": 550, "fields": { "BUTTON": "Right" }, "inputs": { "DO": { "block": { "type": "player_move", "fields": { "DIRECTION": "RIGHT" }, "inputs": { "SPEED": { "block": { "type": "math_number", "fields": { "NUM": 5 } } } } } } } },
                         { "type": "on_button_press", "x": 50, "y": 650, "fields": { "BUTTON": "Up" }, "inputs": { "DO": { "block": { "type": "player_move", "fields": { "DIRECTION": "FORWARD" }, "inputs": { "SPEED": { "block": { "type": "math_number", "fields": { "NUM": 5 } } } } } } } },
                         { "type": "on_button_press", "x": 50, "y": 750, "fields": { "BUTTON": "Down" }, "inputs": { "DO": { "block": { "type": "player_move", "fields": { "DIRECTION": "BACKWARD" }, "inputs": { "SPEED": { "block": { "type": "math_number", "fields": { "NUM": 5 } } } } } } } },
+                        {
+                            "type": "variables_set", "x": 400, "y": 50,
+                            "fields": { "VAR": { "name": "coin_mesh", "id": "coin_mesh_var"} },
+                            "inputs": {
+                                "VALUE": {
+                                    "block": {
+                                        "type": "create_box",
+                                        "inputs": {
+                                            "X": { "block": { "type": "math_number", "fields": { "NUM": 5 } } },
+                                            "Y": { "block": { "type": "math_number", "fields": { "NUM": 2 } } },
+                                            "Z": { "block": { "type": "math_number", "fields": { "NUM": 0 } } }
+                                        }
+                                    }
+                                }
+                            }
+                        },
                         {
                             "type": "on_collision", "x": 400, "y": 200,
                             "inputs": {
