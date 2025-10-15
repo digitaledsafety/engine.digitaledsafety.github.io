@@ -1566,10 +1566,9 @@ class BabylonSceneManager {
     }
 
     // High-level API for cleaner code generation
-    createBox(name, x, y, z) {
-        const boxMesh = BABYLON.MeshBuilder.CreateBox(name, {}, this.scene);
+    createBox(x, y, z) {
+        const boxMesh = BABYLON.MeshBuilder.CreateBox("box", {}, this.scene);
         boxMesh.position.set(x, y, z);
-        this.objects[name] = boxMesh;
         return boxMesh;
     }
 
@@ -1706,16 +1705,15 @@ class BabylonSceneManager {
         }
     }
 
-    createGround(name, width, height) {
-        const groundMesh = BABYLON.MeshBuilder.CreateGround(name, { width: width, height: height }, this.scene);
-        this.objects[name] = groundMesh;
-        this.setGroundPhysics(name); // Automatically add physics
+    createGround(width, height) {
+        const groundMesh = BABYLON.MeshBuilder.CreateGround("ground", { width: width, height: height }, this.scene);
+        this.setGroundPhysics(groundMesh); // Automatically add physics
         return groundMesh;
     }
 
-    setGroundPhysics(name) {
-        if (this.objects[name]) {
-            this.objects[name].physicsImpostor = new BABYLON.PhysicsImpostor(this.objects[name], BABYLON.PhysicsImpostor.PlaneImpostor, { mass: 0, restitution: 0.9 }, this.scene);
+    setGroundPhysics(target) {
+        if (target) {
+            target.physicsImpostor = new BABYLON.PhysicsImpostor(target, BABYLON.PhysicsImpostor.PlaneImpostor, { mass: 0, restitution: 0.9 }, this.scene);
         }
     }
 
@@ -2546,16 +2544,14 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
             },
             {
                 type: 'create_ground',
-                message0: 'Create ground named %1 with width %2 and height %3',
+                message0: 'create ground with width %1 and height %2',
                 args0: [
-                    { type: 'field_input', name: 'NAME', text: 'ground' },
                     { type: 'input_value', name: 'WIDTH', check: 'Number' },
                     { type: 'input_value', name: 'HEIGHT', check: 'Number' },
                 ],
-                previousStatement: null,
-                nextStatement: null,
+                output: "Mesh",
                 colour: 180,
-                tooltip: 'Creates a ground mesh with specified width and height',
+                tooltip: 'Creates a ground mesh with specified width and height and returns it.',
             },
             {
                 type: 'set_ground_material',
@@ -3098,10 +3094,10 @@ if (thisMesh) {
             };
 
             javascript.javascriptGenerator.forBlock['create_ground'] = function (block, generator) {
-                const name = block.getFieldValue('NAME');
                 const width = generator.valueToCode(block, 'WIDTH', generator.ORDER_ATOMIC) || 10;
                 const height = generator.valueToCode(block, 'HEIGHT', generator.ORDER_ATOMIC) || 10;
-                return `sceneManager.createGround('${name}', ${width}, ${height});\n`;
+                const code = `sceneManager.createGround(${width}, ${height})`;
+                return [code, generator.ORDER_ATOMIC];
             };
 
             javascript.javascriptGenerator.forBlock['set_ground_material'] = function (block, generator) {
@@ -3118,9 +3114,7 @@ if (thisMesh) {
                 const x = generator.valueToCode(block, 'X', generator.ORDER_ATOMIC) || 0;
                 const y = generator.valueToCode(block, 'Y', generator.ORDER_ATOMIC) || 0;
                 const z = generator.valueToCode(block, 'Z', generator.ORDER_ATOMIC) || 0;
-                // Generate a unique name for the box to avoid conflicts.
-                const name = `box_${Blockly.utils.id.genUid()}`;
-                const code = `sceneManager.createBox('${name}', ${x}, ${y}, ${z})`;
+                const code = `sceneManager.createBox(${x}, ${y}, ${z})`;
                 return [code, generator.ORDER_ATOMIC];
             };
 
@@ -3373,18 +3367,26 @@ if (thisMesh) {
                         { "name": "score", "id": "score_var" },
                         { "name": "player_mesh", "id": "player_mesh_var" },
                         { "name": "coin_mesh", "id": "coin_mesh_var" },
-                        { "name": "score_text", "id": "score_text_var" }
+                        { "name": "score_text", "id": "score_text_var" },
+                        { "name": "ground_mesh", "id": "ground_mesh_var" }
                     ],
                     "blocks": [
                         {
                             "type": "set_isometric_camera",
                             "next": {
                                 "block": {
-                                    "type": "create_ground",
-                                    "fields": { "NAME": "ground" },
+                                    "type": "variables_set",
+                                    "fields": { "VAR": { "name": "ground_mesh", "id": "ground_mesh_var"} },
                                     "inputs": {
-                                        "WIDTH": { "block": { "type": "math_number", "fields": { "NUM": 20 } } },
-                                        "HEIGHT": { "block": { "type": "math_number", "fields": { "NUM": 20 } } }
+                                        "VALUE": {
+                                            "block": {
+                                                "type": "create_ground",
+                                                "inputs": {
+                                                    "WIDTH": { "block": { "type": "math_number", "fields": { "NUM": 20 } } },
+                                                    "HEIGHT": { "block": { "type": "math_number", "fields": { "NUM": 20 } } }
+                                                }
+                                            }
+                                        }
                                     },
                                     "next": {
                                         "block": {
@@ -3446,7 +3448,29 @@ if (thisMesh) {
                                         }
                                     }
                                 }
+                            },
+                            "next": {
+                                "block": {
+                                    "type": "change_object_color",
+                                    "inputs": {
+                                        "OBJECT": { "block": { "type": "variables_get", "fields": { "VAR": { "name": "coin_mesh", "id": "coin_mesh_var"} } } }
+                                    },
+                                    "fields": { "COLOR": "#FFD700" },
+                                    "next": {
+                                        "block": {
+                                            "type": "enable_physics",
+                                            "inputs": {
+                                                "OBJECT": { "block": { "type": "variables_get", "fields": { "VAR": { "name": "coin_mesh", "id": "coin_mesh_var"} } } },
+                                                "MASS": { "block": { "type": "math_number", "fields": { "NUM": 0 } } }
+                                            }
+                                        }
+                                    }
+                                }
                             }
+                        },
+                        {
+                            "type": "on_button_press", "x": 50, "y": 350, "fields": { "BUTTON": "A" },
+                            "inputs": { "DO": { "block": { "type": "player_jump", "inputs": { "FORCE": { "block": { "type": "math_number", "fields": { "NUM": 8 } } } } } } }
                         },
                         {
                             "type": "on_collision", "x": 400, "y": 200,
@@ -3491,15 +3515,22 @@ if (thisMesh) {
                         },
                         {
                             "type": "variables_set", "x": 800, "y": 50,
-                            "fields": { "VAR": { "name": "score_text", "id": "score_text_var"} },
-                            "inputs": {
-                                "VALUE": {
-                                    "block": {
-                                        "type": "gui_create_text_block", "fields": { "H_ALIGN": "0", "V_ALIGN": "0" },
-                                        "inputs": {
-                                            "TEXT": { "block": { "type": "text", "fields": { "TEXT": "Score: 0" } } },
-                                            "TOP": { "block": { "type": "text", "fields": { "TEXT": "20px" } } },
-                                            "LEFT": { "block": { "type": "text", "fields": { "TEXT": "20px" } } }
+                            "fields": { "VAR": { "name": "score", "id": "score_var"} },
+                            "inputs": { "VALUE": { "block": { "type": "math_number", "fields": { "NUM": 0 } } } },
+                            "next": {
+                                "block": {
+                                    "type": "variables_set",
+                                    "fields": { "VAR": { "name": "score_text", "id": "score_text_var"} },
+                                    "inputs": {
+                                        "VALUE": {
+                                            "block": {
+                                                "type": "gui_create_text_block", "fields": { "H_ALIGN": "0", "V_ALIGN": "0" },
+                                                "inputs": {
+                                                    "TEXT": { "block": { "type": "text", "fields": { "TEXT": "Score: 0" } } },
+                                                    "TOP": { "block": { "type": "text", "fields": { "TEXT": "20px" } } },
+                                                    "LEFT": { "block": { "type": "text", "fields": { "TEXT": "20px" } } }
+                                                }
+                                            }
                                         }
                                     }
                                 }
@@ -3528,9 +3559,10 @@ if (thisMesh) {
                 const AsyncFunction = Object.getPrototypeOf(async function(){}).constructor;
                 const userGeneratedCode = new AsyncFunction('sceneManager', 'assetManager', codeToRun);
                 await userGeneratedCode(sceneManager, assetManager);
-                console.log("JULES_VERIFICATION: SCENE_READY");
             } catch (error) {
                 console.error('Error executing code:', error);
+            } finally {
+                console.log("JULES_VERIFICATION: SCENE_READY");
             }
         }
 
@@ -3778,9 +3810,11 @@ if (thisMesh) {
                     console.error("Failed to load project from URL:", e);
                     alert("Could not load project from URL. Loading default project instead.");
                     loadWorkspaceDefault();
+                    doRun();
                 }
             } else {
                 loadWorkspaceDefault();
+                doRun();
             }
         }
 
