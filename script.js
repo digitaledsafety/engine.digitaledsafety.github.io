@@ -3123,7 +3123,7 @@ if (thisMesh) {
                 const y = generator.valueToCode(block, 'Y', generator.ORDER_ATOMIC) || 0;
                 const z = generator.valueToCode(block, 'Z', generator.ORDER_ATOMIC) || 0;
                 // Generate a unique name for the sphere to avoid conflicts.
-                const name = `sphere_${Blockly.utils.id.genUid()}`;
+                const name = `sphere_${Blockly.utils.idGenerator.genUid()}`;
                 const code = `sceneManager.createSphere('${name}', ${x}, ${y}, ${z})`;
                 return [code, generator.ORDER_ATOMIC];
             };
@@ -3252,7 +3252,7 @@ if (thisMesh) {
                 const text = generator.valueToCode(block, 'TEXT', generator.ORDER_ATOMIC) || "''";
                 const hAlign = parseInt(block.getFieldValue('H_ALIGN'));
                 const vAlign = parseInt(block.getFieldValue('V_ALIGN'));
-                const name = `text_block_${Blockly.utils.id.genUid()}`;
+                const name = `text_block_${Blockly.utils.idGenerator.genUid()}`;
 
                 let top, left;
                 const topBlock = block.getInputTargetBlock('TOP');
@@ -3289,7 +3289,7 @@ if (thisMesh) {
             javascript.javascriptGenerator.forBlock['gui_create_input_text'] = function(block, generator) {
                 const hAlign = parseInt(block.getFieldValue('H_ALIGN'));
                 const vAlign = parseInt(block.getFieldValue('V_ALIGN'));
-                const name = `input_text_${Blockly.utils.id.genUid()}`;
+                const name = `input_text_${Blockly.utils.idGenerator.genUid()}`;
 
                 let top, left;
                 const topBlock = block.getInputTargetBlock('TOP');
