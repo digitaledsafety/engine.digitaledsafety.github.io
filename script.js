@@ -3579,227 +3579,27 @@ if (thisMesh) {
         }
 
 
-        function loadWorkspaceDefault() {
-            let state = {
-                "blocks": {
-                    "languageVersion": 0,
-                    "variables": [
-                        { "name": "score", "id": "score_var" },
-                        { "name": "player_mesh", "id": "player_mesh_var" },
-                        { "name": "coin_mesh", "id": "coin_mesh_var" }
-                    ],
-                    "blocks": [
-                        // Setup Scene
-                        {
-                            "type": "set_isometric_camera",
-                            "next": {
-                                "block": {
-                                    "type": "create_ground",
-                                    "fields": { "NAME": "ground" },
-                                    "inputs": {
-                                        "WIDTH": { "block": { "type": "math_number", "fields": { "NUM": 20 } } },
-                                        "HEIGHT": { "block": { "type": "math_number", "fields": { "NUM": 20 } } }
-                                    },
-                                    "next": {
-                                        "block": {
-                                            "type": "variables_set",
-                                            "fields": { "VAR": { "name": "player_mesh", "id": "player_mesh_var"} },
-                                            "inputs": {
-                                                "VALUE": {
-                                                    "block": {
-                                                        "type": "create_box",
-                                                        "fields": { "NAME": "player" },
-                                                        "inputs": {
-                                                            "X": { "block": { "type": "math_number", "fields": { "NUM": 0 } } },
-                                                            "Y": { "block": { "type": "math_number", "fields": { "NUM": 5 } } },
-                                                            "Z": { "block": { "type": "math_number", "fields": { "NUM": 0 } } }
-                                                        }
-                                                    }
-                                                }
-                                            },
-                                            "next": {
-                                                "block": {
-                                                    "type": "enable_physics",
-                                                    "inputs": {
-                                                        "NAME": { "block": { "type": "variables_get", "fields": { "VAR": { "name": "player_mesh", "id": "player_mesh_var"} } } },
-                                                        "MASS": { "block": { "type": "math_number", "fields": { "NUM": 1 } } }
-                                                    },
-                                                    "next": {
-                                                        "block": {
-                                                            "type": "set_as_player",
-                                                            "inputs": { "OBJECT": { "block": { "type": "variables_get", "fields": { "VAR": { "name": "player_mesh", "id": "player_mesh_var"} } } } },
-                                                            "next": {
-                                                                "block": {
-                                                                    "type": "camera_follow",
-                                                                    "inputs": { "OBJECT": { "block": { "type": "variables_get", "fields": { "VAR": { "name": "player_mesh", "id": "player_mesh_var"} } } } }
-                                                                }
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        },
-                        // Controls
-                        {
-                            "type": "on_button_press", "x": 50, "y": 350, "fields": { "BUTTON": "A" },
-                            "inputs": { "DO": { "block": { "type": "player_jump", "inputs": { "FORCE": { "block": { "type": "math_number", "fields": { "NUM": 8 } } } } } } }
-                        },
-                        {
-                            "type": "on_button_press", "x": 50, "y": 450, "fields": { "BUTTON": "Left" },
-                            "inputs": { "DO": { "block": { "type": "player_move", "fields": { "DIRECTION": "LEFT" }, "inputs": { "SPEED": { "block": { "type": "math_number", "fields": { "NUM": 5 } } } } } } }
-                        },
-                        {
-                            "type": "on_button_press", "x": 50, "y": 550, "fields": { "BUTTON": "Right" },
-                            "inputs": { "DO": { "block": { "type": "player_move", "fields": { "DIRECTION": "RIGHT" }, "inputs": { "SPEED": { "block": { "type": "math_number", "fields": { "NUM": 5 } } } } } } }
-                        },
-                        {
-                            "type": "on_button_press", "x": 50, "y": 650, "fields": { "BUTTON": "Up" },
-                            "inputs": { "DO": { "block": { "type": "player_move", "fields": { "DIRECTION": "FORWARD" }, "inputs": { "SPEED": { "block": { "type": "math_number", "fields": { "NUM": 5 } } } } } } }
-                        },
-                        {
-                            "type": "on_button_press", "x": 50, "y": 750, "fields": { "BUTTON": "Down" },
-                            "inputs": { "DO": { "block": { "type": "player_move", "fields": { "DIRECTION": "BACKWARD" }, "inputs": { "SPEED": { "block": { "type": "math_number", "fields": { "NUM": 5 } } } } } } }
-                        },
-                        // Coin and Score
-                        {
-                            "type": "variables_set", "x": 400, "y": 50,
-                            "fields": { "VAR": { "name": "coin_mesh", "id": "coin_mesh_var"} },
-                            "inputs": {
-                                "VALUE": {
-                                    "block": {
-                                        "type": "create_box",
-                                        "fields": { "NAME": "coin" },
-                                        "inputs": {
-                                            "X": { "block": { "type": "math_number", "fields": { "NUM": 5 } } },
-                                            "Y": { "block": { "type": "math_number", "fields": { "NUM": 2 } } },
-                                            "Z": { "block": { "type": "math_number", "fields": { "NUM": 0 } } }
-                                        }
-                                    }
-                                }
-                            },
-                             "next": {
-                                 "block": {
-                                     "type": "change_object_color",
-                                     "inputs": {
-                                         "NAME": { "block": { "type": "variables_get", "fields": { "VAR": { "name": "coin_mesh", "id": "coin_mesh_var"} } } }
-                                     },
-                                     "fields": { "COLOR": "#FFD700" },
-                                     "next": {
-                                         "block": {
-                                             "type": "enable_physics",
-                                             "inputs": {
-                                                 "NAME": { "block": { "type": "variables_get", "fields": { "VAR": { "name": "coin_mesh", "id": "coin_mesh_var"} } } },
-                                                 "MASS": { "block": { "type": "math_number", "fields": { "NUM": 0 } } }
-                                             }
-                                         }
-                                     }
-                                 }
-                             }
-                        },
-                        {
-                            "type": "on_collision", "x": 400, "y": 200,
-                            "inputs": {
-                                "OBJECT1": { "block": { "type": "variables_get", "fields": { "VAR": { "name": "player_mesh", "id": "player_mesh_var"} } } },
-                                "OBJECT2": { "block": { "type": "variables_get", "fields": { "VAR": { "name": "coin_mesh", "id": "coin_mesh_var"} } } },
-                                "DO": {
-                                    "block": {
-                                        "type": "variables_set",
-                                        "fields": { "VAR": { "name": "score", "id": "score_var"} },
-                                        "inputs": {
-                                            "VALUE": {
-                                                "block": {
-                                                    "type": "math_arithmetic", "fields": { "OP": "ADD" },
-                                                    "inputs": {
-                                                        "A": { "block": { "type": "variables_get", "fields": { "VAR": { "name": "score", "id": "score_var"} } } },
-                                                        "B": { "block": { "type": "math_number", "fields": { "NUM": 1 } } }
-                                                    }
-                                                }
-                                            }
-                                        },
-                                        "next": {
-                                            "block": {
-                                                "type": "gui_set_text", "fields": { "NAME": "scoreText" },
-                                                "inputs": {
-                                                    "TEXT": {
-                                                        "block": {
-                                                            "type": "text_join", "extraState": { "itemCount": 2 },
-                                                            "inputs": {
-                                                                "ADD0": { "block": { "type": "text", "fields": { "TEXT": "Score: " } } },
-                                                                "ADD1": { "block": { "type": "variables_get", "fields": { "VAR": { "name": "score", "id": "score_var"} } } }
-                                                            }
-                                                        }
-                                                    }
-                                                },
-                                                "next": {
-                                                    "block": {
-                                                        "type": "play_note",
-                                                        "fields": { "NOTE": "261.63" },
-                                                        "inputs": {
-                                                            "DURATION": {
-                                                                "block": {
-                                                                    "type": "math_number",
-                                                                    "fields": { "NUM": 0.1 }
-                                                                }
-                                                            }
-                                                        },
-                                                        "next": {
-                                                            "block": {
-                                                                "type": "move_object",
-                                                                "inputs": {
-                                                                    "NAME": { "block": { "type": "variables_get", "fields": { "VAR": { "name": "coin_mesh", "id": "coin_mesh_var"} } } },
-                                                                    "X": { "block": { "type": "math_random_int", "inputs": { "FROM": { "block": { "type": "math_number", "fields": { "NUM": -9 } } }, "TO": { "block": { "type": "math_number", "fields": { "NUM": 9 } } } } } },
-                                                                    "Y": { "block": { "type": "math_number", "fields": { "NUM": 2 } } },
-                                                                    "Z": { "block": { "type": "math_random_int", "inputs": { "FROM": { "block": { "type": "math_number", "fields": { "NUM": -9 } } }, "TO": { "block": { "type": "math_number", "fields": { "NUM": 9 } } } } } }
-                                                                }
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        },
-                        {
-                            "type": "variables_set", "x": 800, "y": 50,
-                            "fields": { "VAR": { "name": "score", "id": "score_var"} },
-                            "inputs": { "VALUE": { "block": { "type": "math_number", "fields": { "NUM": 0 } } } },
-                            "next": {
-                                "block": {
-                                    "type": "gui_create_text_block",
-                                    "fields": {
-                                        "NAME": "scoreText",
-                                        "H_ALIGN": "0",
-                                        "V_ALIGN": "0"
-                                    },
-                                    "inputs": {
-                                        "TEXT": {
-                                            "block": {
-                                                "type": "text_join", "extraState": { "itemCount": 2 },
-                                                "inputs": {
-                                                    "ADD0": { "block": { "type": "text", "fields": { "TEXT": "Score: " } } },
-                                                    "ADD1": { "block": { "type": "variables_get", "fields": { "VAR": { "name": "score", "id": "score_var"} } } }
-                                                }
-                                            }
-                                        },
-                                        "TOP": { "block": { "type": "text", "fields": { "TEXT": "20px" } } },
-                                        "LEFT": { "block": { "type": "text", "fields": { "TEXT": "20px" } } }
-                                    }
-                                }
-                            }
-                        }
-                    ]
+function loadWorkspaceDefault() {
+    let state = {
+        "blocks": {
+            "languageVersion": 0,
+            "blocks": [
+                {
+                    "type": "create_box",
+                    "fields": { "NAME": "test_box" },
+                    "inputs": {
+                        "X": { "block": { "type": "math_number", "fields": { "NUM": 0 } } },
+                        "Y": { "block": { "type": "math_number", "fields": { "NUM": 1 } } },
+                        "Z": { "block": { "type": "math_number", "fields": { "NUM": 0 } } }
+                    }
                 }
-            };
-            var workspace = Blockly.getMainWorkspace();
-            Blockly.serialization.workspaces.load(state, workspace);
-            doRun();
+            ]
         }
+    };
+    var workspace = Blockly.getMainWorkspace();
+    Blockly.serialization.workspaces.load(state, workspace);
+    doRun();
+}
 
         async function doRun() {
             let codeToRun = '';
@@ -3818,9 +3618,10 @@ if (thisMesh) {
                 const AsyncFunction = Object.getPrototypeOf(async function(){}).constructor;
                 const userGeneratedCode = new AsyncFunction('sceneManager', 'assetManager', codeToRun);
                 await userGeneratedCode(sceneManager, assetManager);
-                console.log("JULES_VERIFICATION: SCENE_READY");
             } catch (error) {
                 console.error('Error executing code:', error);
+            } finally {
+                console.log("JULES_VERIFICATION: SCENE_READY");
             }
         }
 
