@@ -413,6 +413,22 @@ var toolbox = {
 
         {
             kind: 'category',
+            name: 'Events',
+            categorystyle: 'loop_category',
+            contents: [
+                {
+                    kind: 'block',
+                    type: 'broadcast_message',
+                },
+                {
+                    kind: 'block',
+                    type: 'when_i_receive_message',
+                },
+            ]
+        },
+
+        {
+            kind: 'category',
             name: 'GUI',
             categorystyle: 'text_category',
             contents: [
@@ -1482,6 +1498,8 @@ class BabylonSceneManager {
         this.uiElements = [];
         this.inactivityTimer = null;
         this.uiManager = new UIManager(this.scene);
+        this.messageQueue = [];
+        this.messageListeners = {};
 
         this.initScene();
         this.initInputListeners();
@@ -1489,6 +1507,17 @@ class BabylonSceneManager {
         this.initAutoHide();
         this.runRenderLoop();
         
+    }
+
+    broadcast(message) {
+        this.messageQueue.push(message);
+    }
+
+    registerMessageHandler(message, callback) {
+        if (!this.messageListeners[message]) {
+            this.messageListeners[message] = [];
+        }
+        this.messageListeners[message].push(callback);
     }
 
     async initAudioEngine() {
@@ -1933,6 +1962,13 @@ class BabylonSceneManager {
             const deltaTime = currentTime - lastTime;
             lastTime = currentTime;
 
+            while (this.messageQueue.length > 0) {
+                const message = this.messageQueue.shift();
+                if (this.messageListeners[message]) {
+                    this.messageListeners[message].forEach(callback => callback());
+                }
+            }
+
             // Reset movement direction at the start of the frame
             this.moveDirection.set(0, 0, 0);
 
@@ -2033,6 +2069,8 @@ class BabylonSceneManager {
         this.perFrameFunctions = [];
         this.buttonPressActions = {};
         this.inputState = { keys: {} }; // Reset state on clear
+        this.messageQueue = [];
+        this.messageListeners = {};
     }
 
     dispose() {
@@ -3142,6 +3180,46 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                 "colour": "#4C97FF",
                 "tooltip": "Clears the browser console.",
                 "helpUrl": ""
+            },
+            // Event Blocks
+            {
+                "type": "broadcast_message",
+                "message0": "broadcast %1",
+                "args0": [
+                    {
+                        "type": "field_input",
+                        "name": "MESSAGE",
+                        "text": "message"
+                    }
+                ],
+                "previousStatement": null,
+                "nextStatement": null,
+                "colour": "%{BKY_LOOPS_HUE}",
+                "tooltip": "Broadcasts a message to all objects.",
+                "helpUrl": ""
+            },
+            {
+                "type": "when_i_receive_message",
+                "message0": "when I receive %1 %2 do %3",
+                "args0": [
+                    {
+                        "type": "field_input",
+                        "name": "MESSAGE",
+                        "text": "message"
+                    },
+                    {
+                        "type": "input_dummy"
+                    },
+                    {
+                        "type": "input_statement",
+                        "name": "DO"
+                    }
+                ],
+                "previousStatement": null,
+                "nextStatement": null,
+                "colour": "%{BKY_LOOPS_HUE}",
+                "tooltip": "Executes code when a specific message is received.",
+                "helpUrl": ""
             }
         ]);
 
@@ -3541,6 +3619,19 @@ if (thisMesh) {
 
             javascript.javascriptGenerator.forBlock['console_clear'] = function(block, generator) {
                 return `console.clear();\n`;
+            };
+
+            // --- Event Block Generators ---
+            javascript.javascriptGenerator.forBlock['broadcast_message'] = function(block, generator) {
+                const message = block.getFieldValue('MESSAGE');
+                return `sceneManager.broadcast('${message}');\n`;
+            };
+
+            javascript.javascriptGenerator.forBlock['when_i_receive_message'] = function(block, generator) {
+                const message = block.getFieldValue('MESSAGE');
+                const doCode = generator.statementToCode(block, 'DO');
+                const callback = `function() {\n${doCode}\n}`;
+                return `sceneManager.registerMessageHandler('${message}', ${callback});\n`;
             };
         }
 
