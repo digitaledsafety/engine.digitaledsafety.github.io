@@ -390,10 +390,10 @@ var toolbox = {
                             kind: 'block',
                             type: 'select_object',
                         },
-                        // { // attach_script_to_object - REMOVED
-                        //     kind: 'block',
-                        //     type: 'attach_script_to_object',
-                        // },
+                        {
+                            kind: 'block',
+                            type: 'attach_script_to_object',
+                        },
                         {
                             kind: 'block',
                             type: 'event_on_click',
@@ -2700,29 +2700,29 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                 "tooltip": "Selects an object from the scene by its name.",
                 "helpUrl": ""
             },
-            // { // attach_script_to_object JSON Definition - REMOVED
-            //     "type": "attach_script_to_object",
-            //     "message0": "attach script to %1 %2 do %3",
-            //     "args0": [
-            //         {
-            //             "type": "input_value",
-            //             "name": "OBJECT_SELECTOR",
-            //             "check": "String"
-            //         },
-            //         {
-            //             "type": "input_dummy"
-            //         },
-            //         {
-            //             "type": "input_statement",
-            //             "name": "SCRIPT_CODE"
-            //         }
-            //     ],
-            //     "previousStatement": null,
-            //     "nextStatement": null,
-            //     "colour": "%{BKY_LOGIC_HUE}",
-            //     "tooltip": "Attaches a script to the specified object.",
-            //     "helpUrl": ""
-            // },
+            {
+                "type": "attach_script_to_object",
+                "message0": "attach script to %1 %2 do %3",
+                "args0": [
+                    {
+                        "type": "input_value",
+                        "name": "OBJECT_SELECTOR",
+                        "check": "String"
+                    },
+                    {
+                        "type": "input_dummy"
+                    },
+                    {
+                        "type": "input_statement",
+                        "name": "SCRIPT_CODE"
+                    }
+                ],
+                "previousStatement": null,
+                "nextStatement": null,
+                "colour": "%{BKY_LOGIC_HUE}",
+                "tooltip": "Attaches a script to the specified object.",
+                "helpUrl": ""
+            },
             // Phase 2 Blockly Blocks
             {
                 "type": "event_on_click",
@@ -3179,6 +3179,22 @@ if (thisMesh) {
             javascript.javascriptGenerator.forBlock['select_object'] = function(block, generator) {
                 const objectName = block.getFieldValue('OBJECT_NAME');
                 return [`'${objectName}'`, generator.ORDER_ATOMIC];
+            };
+
+            javascript.javascriptGenerator.forBlock['attach_script_to_object'] = function(block, generator) {
+                const objectName = generator.valueToCode(block, 'OBJECT_SELECTOR', generator.ORDER_ATOMIC) || 'null';
+                const scriptCode = generator.statementToCode(block, 'SCRIPT_CODE');
+                const code = `
+(function() {
+    const thisMesh = sceneManager.objects[${objectName}];
+    if (thisMesh) {
+        ${scriptCode}
+    } else {
+        // console.warn("Object " + ${objectName} + " not found for attached script.");
+    }
+})();
+`;
+                return code;
             };
 
             // --- Player and Camera Block Generators ---
