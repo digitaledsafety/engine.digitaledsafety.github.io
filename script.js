@@ -516,7 +516,7 @@ var toolbox = {
         {
             kind: 'category',
             name: 'Camera',
-            categorystyle: 'math_category',
+            categorystyle: 'scene_category',
             contents: [
                 {
                     kind: 'block',
@@ -540,7 +540,7 @@ var toolbox = {
         {
             kind: 'category',
             name: 'Objects',
-            categorystyle: 'math_category',
+            categorystyle: 'motion_category',
             contents: [
                 {
                     "kind": "category",
@@ -622,7 +622,7 @@ var toolbox = {
         {
             kind: 'category',
             name: 'Scene',
-            categorystyle: 'math_category',
+            categorystyle: 'scene_category',
             contents: [
                 {
                     kind: 'block',
@@ -662,7 +662,7 @@ var toolbox = {
         {
             kind: 'category',
             name: 'Physics',
-            categorystyle: 'math_category',
+            categorystyle: 'physics_category',
             contents: [
                 {
                     kind: 'block',
@@ -682,7 +682,7 @@ var toolbox = {
         {
             kind: 'category',
             name: 'Assets',
-            categorystyle: 'variable_category',
+            categorystyle: 'assets_category',
             contents: [
                 {
                     kind: 'block',
@@ -713,7 +713,7 @@ var toolbox = {
         {
             kind: 'category',
             name: 'Gameplay',
-            categorystyle: 'logic_category',
+            categorystyle: 'gameplay_category',
             contents: [
                 {
                     kind: 'block',
@@ -2110,41 +2110,53 @@ class UIManager {
 Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-education-safety', {
     'base': Blockly.Themes.Classic,
     'categoryStyles': {
-        'logic_category': { 'colour': '#4C97FF' },
-        'loop_category': { 'colour': '#5BA55B' },
-        'math_category': { 'colour': '#A55B80' },
-        'text_category': { 'colour': '#5B80A5' },
-        'list_category': { 'colour': '#745BA5' },
-        'colour_category': { 'colour': '#A5745B' },
-        'variable_category': { 'colour': '#A55B5B' },
-        'procedure_category': { 'colour': '#8A5BA5' },
-        'audio_category': { 'colour': '#5B80A5' }
+        'logic_category': { 'colour': '#4C97FF' },      // A vibrant blue for logic
+        'loop_category': { 'colour': '#FFBF00' },       // A bright yellow for loops, like Scratch
+        'math_category': { 'colour': '#59C059' },       // A friendly green for math
+        'text_category': { 'colour': '#9966FF' },       // A gentle purple for text
+        'list_category': { 'colour': '#FF6680' },       // A distinct pink/red for lists
+        'colour_category': { 'colour': '#CF63CF' },
+        'variable_category': { 'colour': '#FF8C1A' },   // A bold orange for variables
+        'procedure_category': { 'colour': '#FF6347' },  // Tomato red for functions
+        'audio_category': { 'colour': '#5B80A5' },      // Kept the original, can be changed
+        'motion_category': { 'colour': '#4C97FF' },     // Blue for motion/objects
+        'scene_category': { 'colour': '#59C059' },      // Green for scene elements
+        'physics_category': { 'colour': '#A55B80' },    // Kept original for physics
+        'gameplay_category': { 'colour': '#FF6347' },   // Red for gameplay actions
+        'assets_category': { 'colour': '#FF8C1A' }      // Orange for assets
     },
     'blockStyles': {
         'logic_blocks': { 'colourPrimary': '#4C97FF', 'colourSecondary': '#6CA7FF', 'colourTertiary': '#3C87EF' },
-        'loop_blocks': { 'colourPrimary': '#5BA55B', 'colourSecondary': '#7BB57B', 'colourTertiary': '#4B954B' },
-        'math_blocks': { 'colourPrimary': '#A55B80', 'colourSecondary': '#B57B90', 'colourTertiary': '#954B70' },
-        'list_blocks': { 'colourPrimary': '#745BA5', 'colourSecondary': '#947BB5', 'colourTertiary': '#644B95' },
-        'variable_blocks': { 'colourPrimary': '#A55B5B', 'colourSecondary': '#B57B7B', 'colourTertiary': '#954B4B' },
-        'procedure_blocks': { 'colourPrimary': '#8A5BA5', 'colourSecondary': '#A07BB5', 'colourTertiary': '#7A4B95' }
+        'loop_blocks': { 'colourPrimary': '#FFBF00', 'colourSecondary': '#FFD44C', 'colourTertiary': '#E6AC00' },
+        'math_blocks': { 'colourPrimary': '#59C059', 'colourSecondary': '#73C873', 'colourTertiary': '#4FAA4F' },
+        'text_blocks': { 'colourPrimary': '#9966FF', 'colourSecondary': '#AD85FF', 'colourTertiary': '#8A4DFF' },
+        'list_blocks': { 'colourPrimary': '#FF6680', 'colourSecondary': '#FF8095', 'colourTertiary': '#FF4D6A' },
+        'variable_blocks': { 'colourPrimary': '#FF8C1A', 'colourSecondary': '#FFA347', 'colourTertiary': '#E67E00' },
+        'procedure_blocks': { 'colourPrimary': '#FF6347', 'colourSecondary': '#FF7D66', 'colourTertiary': '#E65A40' },
+        'motion_blocks': { 'colourPrimary': '#4C97FF', 'colourSecondary': '#6CA7FF', 'colourTertiary': '#3C87EF' },
+        'scene_blocks': { 'colourPrimary': '#59C059', 'colourSecondary': '#73C873', 'colourTertiary': '#4FAA4F' },
+        'physics_blocks': { 'colourPrimary': '#A55B80', 'colourSecondary': '#B57B90', 'colourTertiary': '#954B70' },
+        'gameplay_blocks': { 'colourPrimary': '#FF6347', 'colourSecondary': '#FF7D66', 'colourTertiary': '#E65A40' },
+        'assets_blocks': { 'colourPrimary': '#FF8C1A', 'colourSecondary': '#FFA347', 'colourTertiary': '#E67E00' }
     },
     'componentStyles': {
-        'workspaceBackgroundColour': '#F0F0F0',
-        'toolboxBackgroundColour': '#E0E0E0',
-        'toolboxForegroundColour': '#333333',
-        'flyoutBackgroundColour': '#D0D0D0',
-        'flyoutForegroundColour': '#333333',
-        'scrollbarColour': '#B0B0B0',
+        'workspaceBackgroundColour': '#F9F9F9',
+        'toolboxBackgroundColour': '#FFFFFF',
+        'toolboxForegroundColour': '#585858',
+        'flyoutBackgroundColour': '#F0F0F0',
+        'flyoutForegroundColour': '#424242',
+        'scrollbarColour': '#D4D4D4',
         'insertionMarkerColour': '#FFCC00',
+        'insertionMarkerOpacity': 0.5
     },
-    'fontStyle': { 'family': 'Arial, sans-serif', 'weight': 'normal', 'size': 12 }
+    'fontStyle': { 'family': '"Helvetica Neue", "Arial", sans-serif', 'weight': '500', 'size': 11 }
 });
 
 
         const workspace = Blockly.inject('blocklyDiv', {
             toolbox: toolbox,
             theme: Blockly.Themes.DigitalEducationSafety,
-            renderer: 'thrasos',            
+            renderer: 'zelos',
             zoom: {
                 controls: true,
                 wheel: true,
@@ -2473,6 +2485,7 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                     { type: 'input_value', name: 'Y', check: 'Number' },
                     { type: 'input_value', name: 'Z', check: 'Number' },
                 ],
+                "inputsInline": true,
                 output: "Mesh",
                 colour: 160,
                 tooltip: 'Creates a box at the specified position and returns it.',
@@ -2486,6 +2499,7 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                     { type: 'input_value', name: 'Y', check: 'Number' },
                     { type: 'input_value', name: 'Z', check: 'Number' },
                 ],
+                "inputsInline": true,
                 output: "Mesh",
                 colour: 160,
                 tooltip: 'Creates a sphere at the specified position and returns it.',
@@ -2499,6 +2513,7 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                     { type: 'input_value', name: 'Y', check: 'Number' },
                     { type: 'input_value', name: 'Z', check: 'Number' },
                 ],
+                "inputsInline": true,
                 previousStatement: null,
                 nextStatement: null,
                 colour: 210,
@@ -2513,6 +2528,7 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                     { type: 'input_value', name: 'Y', check: 'Number' },
                     { type: 'input_value', name: 'Z', check: 'Number' },
                 ],
+                "inputsInline": true,
                 previousStatement: null,
                 nextStatement: null,
                 colour: 65,
@@ -2525,6 +2541,7 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                     { type: 'input_value', name: 'NAME' },
                     { type: 'field_input', name: 'COLOR', text: '#ff0000' },
                 ],
+                "inputsInline": true,
                 previousStatement: null,
                 nextStatement: null,
                 colour: 210,
@@ -2539,6 +2556,7 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                     { type: 'input_value', name: 'Y', check: 'Number' },
                     { type: 'input_value', name: 'Z', check: 'Number' },
                 ],
+                "inputsInline": true,
                 previousStatement: null,
                 nextStatement: null,
                 colour: 120,
@@ -2556,6 +2574,7 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                     { type: 'input_value', name: 'Y2', check: 'Number' },
                     { type: 'input_value', name: 'Z2', check: 'Number' },
                 ],
+                "inputsInline": true,
                 previousStatement: null,
                 nextStatement: null,
                 colour: 300,
@@ -2568,6 +2587,7 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                     { type: 'input_value', name: 'NAME' },
                     { type: 'input_value', name: 'MASS', check: 'Number' },
                 ],
+                "inputsInline": true,
                 previousStatement: null,
                 nextStatement: null,
                 colour: 120,
@@ -2585,6 +2605,7 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                     { type: 'input_value', name: 'PY', check: 'Number' },
                     { type: 'input_value', name: 'PZ', check: 'Number' },
                 ],
+                "inputsInline": true,
                 previousStatement: null,
                 nextStatement: null,
                 colour: 120,
@@ -2598,6 +2619,7 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                     { type: 'input_value', name: 'GY', check: 'Number' },
                     { type: 'input_value', name: 'GZ', check: 'Number' },
                 ],
+                "inputsInline": true,
                 previousStatement: null,
                 nextStatement: null,
                 colour: 120,
@@ -2619,6 +2641,7 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                         ],
                     },
                 ],
+                "inputsInline": true,
                 previousStatement: null,
                 nextStatement: null,
                 colour: 120,
@@ -2635,6 +2658,7 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                         variable: 'camera',
                     },
                 ],
+                "inputsInline": true,
                 previousStatement: null,
                 nextStatement: null,
                 colour: 180,
@@ -2648,6 +2672,7 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                     { type: 'input_value', name: 'WIDTH', check: 'Number' },
                     { type: 'input_value', name: 'HEIGHT', check: 'Number' },
                 ],
+                "inputsInline": true,
                 previousStatement: null,
                 nextStatement: null,
                 colour: 180,
@@ -2660,6 +2685,7 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                     { type: 'field_input', name: 'MATERIAL', text: 'material' },
                     { type: 'field_input', name: 'NAME', text: 'ground' },
                 ],
+                "inputsInline": true,
                 previousStatement: null,
                 nextStatement: null,
                 colour: 180,
@@ -2679,6 +2705,7 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                         ],
                     },
                 ],
+                "inputsInline": true,
                 previousStatement: null,
                 nextStatement: null,
                 colour: 180,
