@@ -3967,7 +3967,7 @@ if (thisMesh) {
                 document.msExitFullscreen();
             }
         }
-    );
+    });
 
     document.addEventListener('fullscreenchange', resizeCanvas);
     document.addEventListener('webkitfullscreenchange', resizeCanvas);
@@ -4105,4 +4105,4 @@ if (thisMesh) {
     }
 
     loadProjectFromUrl();
-});
+
