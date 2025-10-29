@@ -3896,209 +3896,213 @@ if (thisMesh) {
             // The toolbox will be updated dynamically by the block definitions.
         }
 
-        // --- Dropdown Menu Logic ---
-        document.getElementById('menuButton').addEventListener('click', function() {
-            document.getElementById('dropdownMenu').classList.toggle('show');
-        });
+document.addEventListener('DOMContentLoaded', () => {
+    // --- Dropdown Menu Logic ---
+    document.getElementById('menuButton').addEventListener('click', function() {
+        document.getElementById('dropdownMenu').classList.toggle('show');
+    });
 
-        // Close the dropdown if the user clicks outside of it
-        window.addEventListener('click', function(event) {
-            if (!event.target.matches('.btn-menu-toggle')) {
-                var dropdowns = document.getElementsByClassName("dropdown-content");
-                for (var i = 0; i < dropdowns.length; i++) {
-                    var openDropdown = dropdowns[i];
-                    if (openDropdown.classList.contains('show')) {
-                        openDropdown.classList.remove('show');
-                    }
+    // Close the dropdown if the user clicks outside of it
+    window.addEventListener('click', function(event) {
+        if (!event.target.matches('.btn-menu-toggle')) {
+            var dropdowns = document.getElementsByClassName("dropdown-content");
+            for (var i = 0; i < dropdowns.length; i++) {
+                var openDropdown = dropdowns[i];
+                if (openDropdown.classList.contains('show')) {
+                    openDropdown.classList.remove('show');
                 }
             }
-        });
+        }
+    });
 
-        // Add event listener to the dropdown container to close the menu on button click
-        document.getElementById('dropdownMenu').addEventListener('click', function(event) {
-            if (event.target.tagName === 'BUTTON') {
-                document.getElementById('dropdownMenu').classList.remove('show');
-            }
-        });
+    // Add event listener to the dropdown container to close the menu on button click
+    document.getElementById('dropdownMenu').addEventListener('click', function(event) {
+        if (event.target.tagName === 'BUTTON') {
+            document.getElementById('dropdownMenu').classList.remove('show');
+        }
+    });
 
-        document.getElementById('runButton').addEventListener('click', () => {
-            doRun();
-        });
-        document.getElementById('saveButton').addEventListener('click', () => {
-            projectManager.saveProject();
-        });
-        document.getElementById('loadButton').addEventListener('click', () => {
-            projectManager.loadProject();
-        });
-
-        document.getElementById('toggleToolboxButton').addEventListener('click', () => {
-            const blocklyDiv = document.getElementById('blocklyDiv');
-            blocklyDiv.classList.toggle('toolbox-collapsed');
-            Blockly.svgResize(workspace);
-        });
-
-        document.getElementById('shareButton').addEventListener('click', () => {
-            projectManager.shareProject();
-        });
-
-        document.getElementById('fullscreenBtn').addEventListener('click', () => {
-            const canvasContainer = document.querySelector('.canvas-container');
-            if (!document.fullscreenElement && !document.mozFullScreenElement && !document.webkitFullscreenElement && !document.msFullscreenElement) {
-                if (canvasContainer.requestFullscreen) {
-                    canvasContainer.requestFullscreen();
-                } else if (canvasContainer.mozRequestFullScreen) { /* Firefox */
-                    canvasContainer.mozRequestFullScreen();
-                } else if (canvasContainer.webkitRequestFullscreen) { /* Chrome, Safari & Opera */
-                    canvasContainer.webkitRequestFullscreen();
-                } else if (canvasContainer.msRequestFullscreen) { /* IE/Edge */
-                    canvasContainer.msRequestFullscreen();
-                }
-            } else {
-                if (document.exitFullscreen) {
-                    document.exitFullscreen();
-                } else if (document.mozCancelFullScreen) { /* Firefox */
-                    document.mozCancelFullScreen();
-                } else if (document.webkitExitFullscreen) { /* Chrome, Safari and Opera */
-                    document.webkitExitFullscreen();
-                } else if (document.msExitFullscreen) { /* IE/Edge */
-                    document.msExitFullscreen();
-                }
-            }
-        });
-
-        document.addEventListener('fullscreenchange', resizeCanvas);
-        document.addEventListener('webkitfullscreenchange', resizeCanvas);
-        document.addEventListener('mozfullscreenchange', resizeCanvas);
-        document.addEventListener('MSFullscreenChange', resizeCanvas);
-
-
-        window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
-
-        // --- Monaco Editor & View Switching Logic ---
+    document.getElementById('runButton').addEventListener('click', () => {
+        doRun();
+    });
+    document.getElementById('saveButton').addEventListener('click', () => {
+        projectManager.saveProject();
+    });
+    document.getElementById('loadButton').addEventListener('click', () => {
+        projectManager.loadProject();
+    });
+    document.getElementById('docsButton').addEventListener('click', () => {
+        window.open('docs/Home.md', '_blank');
+    });
+    document.getElementById('toggleToolboxButton').addEventListener('click', () => {
         const blocklyDiv = document.getElementById('blocklyDiv');
-        const monacoEditorContainer = document.getElementById('monacoEditorContainer');
-        const showBlocksButton = document.getElementById('showBlocksButton');
-        const showJsButton = document.getElementById('showJsButton');
-        let monacoEditorInstance = null;
-        let currentView = 'blockly'; // 'blockly' or 'javascript'
+        blocklyDiv.classList.toggle('toolbox-collapsed');
+        Blockly.svgResize(workspace);
+    });
 
-        // Initialize Monaco Editor
-        require.config({ paths: { 'vs': 'https://cdn.jsdelivr.net/npm/monaco-editor@0.49.0/min/vs' }});
-        require(['vs/editor/editor.main'], function() {
-            monacoEditorInstance = monaco.editor.create(monacoEditorContainer, {
-                language: 'javascript',
-                theme: 'vs-light', // Or 'vs-dark'
-                readOnly: false, // Allow editing
-                automaticLayout: true // Adjusts editor layout on container resize
-            });
-            // Initial population when editor is ready
-            if (currentView === 'javascript') {
-                populateMonacoWithBlocklyCode();
+    document.getElementById('shareButton').addEventListener('click', () => {
+        projectManager.shareProject();
+    });
+
+    document.getElementById('fullscreenBtn').addEventListener('click', () => {
+        const canvasContainer = document.querySelector('.canvas-container');
+        if (!document.fullscreenElement && !document.mozFullScreenElement && !document.webkitFullscreenElement && !document.msFullscreenElement) {
+            if (canvasContainer.requestFullscreen) {
+                canvasContainer.requestFullscreen();
+            } else if (canvasContainer.mozRequestFullScreen) { /* Firefox */
+                canvasContainer.mozRequestFullScreen();
+            } else if (canvasContainer.webkitRequestFullscreen) { /* Chrome, Safari & Opera */
+                canvasContainer.webkitRequestFullscreen();
+            } else if (canvasContainer.msRequestFullscreen) { /* IE/Edge */
+                canvasContainer.msRequestFullscreen();
             }
-        });
+        } else {
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            } else if (document.mozCancelFullScreen) { /* Firefox */
+                document.mozCancelFullScreen();
+            } else if (document.webkitExitFullscreen) { /* Chrome, Safari and Opera */
+                document.webkitExitFullscreen();
+            } else if (document.msExitFullscreen) { /* IE/Edge */
+                document.msExitFullscreen();
+            }
+        }
+    });
 
-        function populateMonacoWithBlocklyCode() {
+    document.addEventListener('fullscreenchange', resizeCanvas);
+    document.addEventListener('webkitfullscreenchange', resizeCanvas);
+    document.addEventListener('mozfullscreenchange', resizeCanvas);
+    document.addEventListener('MSFullscreenChange', resizeCanvas);
+
+
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    // --- Monaco Editor & View Switching Logic ---
+    const blocklyDiv = document.getElementById('blocklyDiv');
+    const monacoEditorContainer = document.getElementById('monacoEditorContainer');
+    const showBlocksButton = document.getElementById('showBlocksButton');
+    const showJsButton = document.getElementById('showJsButton');
+    let monacoEditorInstance = null;
+    let currentView = 'blockly'; // 'blockly' or 'javascript'
+
+    // Initialize Monaco Editor
+    require.config({ paths: { 'vs': 'https://cdn.jsdelivr.net/npm/monaco-editor@0.49.0/min/vs' }});
+    require(['vs/editor/editor.main'], function() {
+        monacoEditorInstance = monaco.editor.create(monacoEditorContainer, {
+            language: 'javascript',
+            theme: 'vs-light', // Or 'vs-dark'
+            readOnly: false, // Allow editing
+            automaticLayout: true // Adjusts editor layout on container resize
+        });
+        // Initial population when editor is ready
+        if (currentView === 'javascript') {
+            populateMonacoWithBlocklyCode();
+        }
+    });
+
+    function populateMonacoWithBlocklyCode() {
+        if (monacoEditorInstance) {
+            const blocklyJsCode = generateCode(); // generateCode() is already defined
+            monacoEditorInstance.setValue(blocklyJsCode);
+        }
+    }
+
+    showBlocksButton.addEventListener('click', () => {
+        if (currentView === 'javascript') {
+            blocklyDiv.style.display = 'block';
+            monacoEditorContainer.style.display = 'none';
+            currentView = 'blockly';
+            // Potentially trigger a resize/refresh for Blockly if needed
+            Blockly.svgResize(workspace);
+            console.log("Switched to Blockly view");
+        }
+    });
+
+    showJsButton.addEventListener('click', () => {
+        if (currentView === 'blockly') {
+            populateMonacoWithBlocklyCode(); // Update Monaco content before showing
+            blocklyDiv.style.display = 'none';
+            monacoEditorContainer.style.display = 'block';
+            currentView = 'javascript';
             if (monacoEditorInstance) {
-                const blocklyJsCode = generateCode(); // generateCode() is already defined
-                monacoEditorInstance.setValue(blocklyJsCode);
+                 // It's good practice to explicitly tell Monaco to layout itself
+                 // when its container becomes visible or changes size,
+                 // especially if automaticLayout isn't perfectly handling all cases.
+                monacoEditorInstance.layout();
             }
+            console.log("Switched to JavaScript view");
         }
+    });
 
-        showBlocksButton.addEventListener('click', () => {
-            if (currentView === 'javascript') {
-                blocklyDiv.style.display = 'block';
-                monacoEditorContainer.style.display = 'none';
-                currentView = 'blockly';
-                // Potentially trigger a resize/refresh for Blockly if needed
-                Blockly.svgResize(workspace);
-                console.log("Switched to Blockly view");
-            }
-        });
+    // Adjust save/load/run if they need to be aware of the current view
+    // For now, run will always use Blockly code, save/load workspace.
+    // This will be updated in later steps.
 
-        showJsButton.addEventListener('click', () => {
-            if (currentView === 'blockly') {
-                populateMonacoWithBlocklyCode(); // Update Monaco content before showing
-                blocklyDiv.style.display = 'none';
-                monacoEditorContainer.style.display = 'block';
-                currentView = 'javascript';
-                if (monacoEditorInstance) {
-                     // It's good practice to explicitly tell Monaco to layout itself
-                     // when its container becomes visible or changes size,
-                     // especially if automaticLayout isn't perfectly handling all cases.
-                    monacoEditorInstance.layout();
-                }
-                console.log("Switched to JavaScript view");
-            }
-        });
+    // --- Main View Switching Logic ---
+    const codeViewButton = document.getElementById('codeViewButton');
+    const assetsViewButton = document.getElementById('assetsViewButton');
+    const codeView = document.getElementById('code-view');
+    const assetsView = document.getElementById('assets-view');
 
-        // Adjust save/load/run if they need to be aware of the current view
-        // For now, run will always use Blockly code, save/load workspace.
-        // This will be updated in later steps.
+    function showView(viewToShow) {
+        // Hide all views
+        codeView.style.display = 'none';
+        assetsView.style.display = 'none';
 
-        // --- Main View Switching Logic ---
-        const codeViewButton = document.getElementById('codeViewButton');
-        const assetsViewButton = document.getElementById('assetsViewButton');
-        const codeView = document.getElementById('code-view');
-        const assetsView = document.getElementById('assets-view');
+        // Deactivate all buttons
+        codeViewButton.classList.remove('active');
+        assetsViewButton.classList.remove('active');
 
-        function showView(viewToShow) {
-            // Hide all views
-            codeView.style.display = 'none';
-            assetsView.style.display = 'none';
-
-            // Deactivate all buttons
-            codeViewButton.classList.remove('active');
-            assetsViewButton.classList.remove('active');
-
-            // Show the selected view and activate its button
-            if (viewToShow === 'code') {
-                codeView.style.display = 'block';
-                codeViewButton.classList.add('active');
-            } else if (viewToShow === 'assets') {
-                assetsView.style.display = 'block';
-                assetsViewButton.classList.add('active');
-            }
+        // Show the selected view and activate its button
+        if (viewToShow === 'code') {
+            codeView.style.display = 'block';
+            codeViewButton.classList.add('active');
+        } else if (viewToShow === 'assets') {
+            assetsView.style.display = 'block';
+            assetsViewButton.classList.add('active');
         }
+    }
 
-        codeViewButton.addEventListener('click', () => showView('code'));
-        assetsViewButton.addEventListener('click', () => showView('assets'));
+    codeViewButton.addEventListener('click', () => showView('code'));
+    assetsViewButton.addEventListener('click', () => showView('assets'));
 
-        // Set the initial view
-        showView('code');
+    // Set the initial view
+    showView('code');
 
 
-        // --- Touch Control Event Listeners ---
-        const touchJump = document.getElementById('touch-jump');
+    // --- Touch Control Event Listeners ---
+    const touchJump = document.getElementById('touch-jump');
 
-        const handleTouch = (key, isPressed) => {
-            sceneManager.inputState.keys[key] = isPressed;
-        };
+    const handleTouch = (key, isPressed) => {
+        sceneManager.inputState.keys[key] = isPressed;
+    };
 
-        // Jump Button
-        touchJump.addEventListener('touchstart', (e) => { e.preventDefault(); handleTouch(' ', true); }, { passive: false });
-        touchJump.addEventListener('touchend', (e) => { e.preventDefault(); handleTouch(' ', false); }, { passive: false });
-        touchJump.addEventListener('touchcancel', (e) => { e.preventDefault(); handleTouch(' ', false); }, { passive: false });
+    // Jump Button
+    touchJump.addEventListener('touchstart', (e) => { e.preventDefault(); handleTouch(' ', true); }, { passive: false });
+    touchJump.addEventListener('touchend', (e) => { e.preventDefault(); handleTouch(' ', false); }, { passive: false });
+    touchJump.addEventListener('touchcancel', (e) => { e.preventDefault(); handleTouch(' ', false); }, { passive: false });
 
-        function loadProjectFromUrl() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const projectData = urlParams.get('project');
+    function loadProjectFromUrl() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const projectData = urlParams.get('project');
 
-            if (projectData) {
-                try {
-                    const decodedState = atob(projectData);
-                    const jsonState = JSON.parse(decodedState);
-                    const workspace = Blockly.getMainWorkspace();
-                    Blockly.serialization.workspaces.load(jsonState, workspace);
-                    doRun();
-                } catch (e) {
-                    console.error("Failed to load project from URL:", e);
-                    alert("Could not load project from URL. Loading default project instead.");
-                    loadWorkspaceDefault();
-                }
-            } else {
+        if (projectData) {
+            try {
+                const decodedState = atob(projectData);
+                const jsonState = JSON.parse(decodedState);
+                const workspace = Blockly.getMainWorkspace();
+                Blockly.serialization.workspaces.load(jsonState, workspace);
+                doRun();
+            } catch (e) {
+                console.error("Failed to load project from URL:", e);
+                alert("Could not load project from URL. Loading default project instead.");
                 loadWorkspaceDefault();
             }
+        } else {
+            loadWorkspaceDefault();
         }
+    }
 
-        loadProjectFromUrl();
+    loadProjectFromUrl();
+});
