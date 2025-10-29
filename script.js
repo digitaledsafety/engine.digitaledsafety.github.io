@@ -3896,7 +3896,7 @@ if (thisMesh) {
             // The toolbox will be updated dynamically by the block definitions.
         }
 
-document.addEventListener('DOMContentLoaded', () => {
+
     // --- Dropdown Menu Logic ---
     document.getElementById('menuButton').addEventListener('click', function() {
         document.getElementById('dropdownMenu').classList.toggle('show');
@@ -3967,7 +3967,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.msExitFullscreen();
             }
         }
-    });
+    );
 
     document.addEventListener('fullscreenchange', resizeCanvas);
     document.addEventListener('webkitfullscreenchange', resizeCanvas);
