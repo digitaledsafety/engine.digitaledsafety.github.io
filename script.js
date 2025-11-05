@@ -534,6 +534,10 @@ var toolbox = {
                     kind: 'block',
                     type: 'camera_follow',
                 },
+                {
+                    kind: 'block',
+                    type: 'camera_zoom',
+                },
             ]
         },
 
@@ -1835,6 +1839,12 @@ class BabylonSceneManager {
         }
     }
 
+    cameraZoom(value) {
+        if (this.scene.activeCamera && typeof this.scene.activeCamera.radius === 'number') {
+            this.scene.activeCamera.radius = Math.max(1, this.scene.activeCamera.radius - value);
+        }
+    }
+
     setIsometricCamera() {
         let camera = this.scene.activeCamera;
         if (camera) {
@@ -2987,6 +2997,22 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                 "helpUrl": ""
             },
             {
+                "type": "camera_zoom",
+                "message0": "zoom camera by %1",
+                "args0": [
+                    {
+                        "type": "input_value",
+                        "name": "ZOOM",
+                        "check": "Number"
+                    }
+                ],
+                "previousStatement": null,
+                "nextStatement": null,
+                "colour": "#A55B80",
+                "tooltip": "Zooms the camera in or out.",
+                "helpUrl": ""
+            },
+            {
                 "type": "play_sound_url",
                 "message0": "play sound from URL %1",
                 "args0": [
@@ -3217,6 +3243,11 @@ if (thisMesh) {
             javascript.javascriptGenerator.forBlock['camera_follow'] = function(block, generator) {
                 const objectName = generator.valueToCode(block, 'OBJECT', generator.ORDER_ATOMIC) || 'null';
                 return `sceneManager.cameraFollow(${objectName});\n`;
+            };
+
+            javascript.javascriptGenerator.forBlock['camera_zoom'] = function(block, generator) {
+                const zoomValue = generator.valueToCode(block, 'ZOOM', generator.ORDER_ATOMIC) || 0;
+                return `sceneManager.cameraZoom(${zoomValue});\n`;
             };
 
             // --- Gameplay Block Generators ---
