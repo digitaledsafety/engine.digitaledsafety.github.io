@@ -4032,7 +4032,7 @@ if (thisMesh) {
         projectManager.loadProject();
     });
     document.getElementById('docsButton').addEventListener('click', () => {
-        window.open('docs/Home.md', '_blank');
+        window.open('docs/Home.html', '_blank');
     });
     document.getElementById('toggleToolboxButton').addEventListener('click', () => {
         const blocklyDiv = document.getElementById('blocklyDiv');
