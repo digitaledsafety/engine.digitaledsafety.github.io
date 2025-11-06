@@ -4213,7 +4213,7 @@ if (thisMesh) {
             }
         } catch (e) {
             console.error("Failed to load project from URL or Jekyll data:", e);
-            alert("Could not load project. Loading default project instead.");
+            //alert("Could not load project. Loading default project instead.");
             loadWorkspaceDefault();
         }
     }
