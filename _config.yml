@@ -1,0 +1,4 @@
+collections:
+  workspaces:
+    output: true
+    permalink: /:collection/:name/

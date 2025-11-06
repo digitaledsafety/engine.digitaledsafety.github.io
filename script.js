@@ -141,7 +141,7 @@ class ProjectManager {
 
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'my-project.txt';
+            a.download = `project-${Date.now()}.txt`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -152,6 +152,71 @@ class ProjectManager {
         } catch (error) {
             console.error('Failed to save project:', error);
             alert('Error saving project. See console for details.');
+        }
+    }
+
+    async publishProject() {
+        try {
+            // 1. Get Workspace Data
+            const workspaceState = Blockly.serialization.workspaces.save(this.workspace);
+
+            // 2. Get Assets and convert to Base64
+            const assets = await this.assetManager.getAllAssets();
+            const serializableAssets = [];
+
+            for (const asset of assets) {
+                let dataB64;
+                if (asset.data instanceof Blob) { // For models, images
+                    dataB64 = await this._blobToBase64(asset.data);
+                } else if (asset.data instanceof ArrayBuffer) { // For audio
+                    dataB64 = this._arrayBufferToBase64(asset.data);
+                } else {
+                    console.warn(`Asset ${asset.name} has unknown data type, skipping serialization.`);
+                    continue;
+                }
+                serializableAssets.push({
+                    name: asset.name,
+                    type: asset.type,
+                    data: dataB64
+                });
+            }
+
+            // 3. Combine into a project object
+            const projectData = {
+                workspace: workspaceState,
+                assets: serializableAssets,
+                version: '1.0'
+            };
+
+            // 4. Create Jekyll-compatible markdown file content
+            const jsonString = JSON.stringify(projectData, null, 2);
+            const uniqueId = `workspace-${Date.now()}`;
+            const markdownContent = `---
+layout: "default"
+title: "${uniqueId}"
+workspace_data: |
+${jsonString}
+---
+`;
+
+            // 5. Create and trigger download
+            const blob = new Blob([markdownContent], { type: 'text/markdown' });
+            const url = URL.createObjectURL(blob);
+
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${uniqueId}.md`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            console.log('Project published successfully!');
+            alert(`Project published as ${uniqueId}.md. Please add this file to the _workspaces directory in your project repository.`);
+
+        } catch (error) {
+            console.error('Failed to publish project:', error);
+            alert('Error publishing project. See console for details.');
         }
     }
 
@@ -176,38 +241,39 @@ class ProjectManager {
         });
     }
 
+    async loadProjectData(projectData) {
+        if (!projectData.workspace || !projectData.assets) {
+            throw new Error('Invalid project data format.');
+        }
+
+        // 1. Clear current scene and assets
+        this.sceneManager.clear();
+        await this._clearAllAssets();
+        this.workspace.clear();
+
+        // 2. Load Assets
+        for (const asset of projectData.assets) {
+            const data = this._base64ToBlob(asset.data, asset.type);
+            await this.assetManager.addAsset(new File([data], asset.name, { type: asset.type }));
+        }
+        // The asset view needs to be re-rendered to show the new assets
+        loadAssetsIntoView();
+
+        // 3. Load Workspace
+        Blockly.serialization.workspaces.load(projectData.workspace, this.workspace);
+
+        // 4. Run the loaded project
+        doRun();
+
+        console.log('Project data loaded successfully!');
+    }
+
     async loadProject() {
         try {
             const file = await this._selectFile();
             const content = await this._readFile(file);
             const projectData = JSON.parse(content);
-
-            if (!projectData.workspace || !projectData.assets) {
-                throw new Error('Invalid project file format.');
-            }
-
-            // 1. Clear current scene and assets
-            this.sceneManager.clear();
-            await this._clearAllAssets();
-            this.workspace.clear();
-
-            // 2. Load Assets
-            for (const asset of projectData.assets) {
-                const data = this._base64ToBlob(asset.data, asset.type);
-                await this.assetManager.addAsset(new File([data], asset.name, { type: asset.type }));
-            }
-            // The asset view needs to be re-rendered to show the new assets
-            loadAssetsIntoView();
-
-
-            // 3. Load Workspace
-            Blockly.serialization.workspaces.load(projectData.workspace, this.workspace);
-
-            // 4. Run the loaded project
-            doRun();
-
-            console.log('Project loaded successfully!');
-
+            await this.loadProjectData(projectData);
         } catch (error) {
             console.error('Failed to load project:', error);
             alert('Error loading project. See console for details.');
@@ -3959,6 +4025,9 @@ if (thisMesh) {
     document.getElementById('saveButton').addEventListener('click', () => {
         projectManager.saveProject();
     });
+    document.getElementById('publishButton').addEventListener('click', () => {
+        projectManager.publishProject();
+    });
     document.getElementById('loadButton').addEventListener('click', () => {
         projectManager.loadProject();
     });
@@ -4114,23 +4183,37 @@ if (thisMesh) {
     touchJump.addEventListener('touchend', (e) => { e.preventDefault(); handleTouch(' ', false); }, { passive: false });
     touchJump.addEventListener('touchcancel', (e) => { e.preventDefault(); handleTouch(' ', false); }, { passive: false });
 
-    function loadProjectFromUrl() {
+    async function loadProjectFromUrl() {
         const urlParams = new URLSearchParams(window.location.search);
-        const projectData = urlParams.get('project');
+        const projectParam = urlParams.get('project');
+        const workspaceDataEl = document.getElementById('workspace-data');
 
-        if (projectData) {
-            try {
-                const decodedState = atob(projectData);
-                const jsonState = JSON.parse(decodedState);
-                const workspace = Blockly.getMainWorkspace();
-                Blockly.serialization.workspaces.load(jsonState, workspace);
-                doRun();
-            } catch (e) {
-                console.error("Failed to load project from URL:", e);
-                alert("Could not load project from URL. Loading default project instead.");
+        try {
+            if (workspaceDataEl && workspaceDataEl.textContent.trim()) {
+                // Loading from a published Jekyll page
+                const projectData = JSON.parse(workspaceDataEl.textContent);
+                await projectManager.loadProjectData(projectData);
+
+            } else if (projectParam) {
+                // Loading from a base64 URL parameter
+                const decodedState = atob(projectParam);
+                const projectData = JSON.parse(decodedState);
+                // Note: Legacy URL sharing might only contain workspace data.
+                // We ensure it fits the new structure before loading.
+                const fullProjectData = {
+                    workspace: projectData.workspace || projectData, // Handle old format
+                    assets: projectData.assets || [],
+                    version: projectData.version || '0.9' // Mark as legacy if no version
+                };
+                await projectManager.loadProjectData(fullProjectData);
+
+            } else {
+                // No project data found, load the default
                 loadWorkspaceDefault();
             }
-        } else {
+        } catch (e) {
+            console.error("Failed to load project from URL or Jekyll data:", e);
+            alert("Could not load project. Loading default project instead.");
             loadWorkspaceDefault();
         }
     }
