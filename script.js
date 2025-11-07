@@ -195,7 +195,7 @@ class ProjectManager {
             const markdownContent = `---
 layout: "default"
 title: "${uniqueId}"
-workspace_data: ${base64WorkspaceData}
+workspace_data: "${base64WorkspaceData}"
 ---
 `;
 
