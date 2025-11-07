@@ -2,3 +2,19 @@ collections:
   workspaces:
     output: true
     permalink: /:collection/:name/
+    defaults:
+      -
+        scope:
+          path: ""
+        values:
+          layout: "default"
+
+  docs:
+    output: true
+    permalink: /:collection/:name/
+    defaults:
+      -
+        scope:
+          path: ""
+        values:
+          layout: "docs"

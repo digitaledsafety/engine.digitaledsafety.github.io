@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ page.title | default: "Documentation" }}</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            line-height: 1.6;
+            margin: 0 auto;
+            max-width: 800px;
+            padding: 2em;
+        }
+        nav {
+            margin-bottom: 2em;
+        }
+        nav a {
+            margin-right: 1em;
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="/docs/Home.html">Home</a>
+        <a href="/docs/Installation.html">Installation</a>
+        <a href="/docs/Usage.html">Usage</a>
+        <a href="/docs/Assets.html">Assets</a>
+    </nav>
+    <main>
+        {{ content }}
+    </main>
+</body>
+</html>
