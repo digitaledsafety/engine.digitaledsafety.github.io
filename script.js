@@ -190,12 +190,12 @@ class ProjectManager {
 
             // 4. Create Jekyll-compatible markdown file content
             const jsonString = JSON.stringify(projectData, null, 2);
+            const base64WorkspaceData = btoa(jsonString); // web-safe base64 encoding
             const uniqueId = `workspace-${Date.now()}`;
             const markdownContent = `---
 layout: "default"
 title: "${uniqueId}"
-workspace_data: |
-${jsonString}
+workspace_data: ${base64WorkspaceData}
 ---
 `;
 
@@ -4191,7 +4191,8 @@ if (thisMesh) {
         try {
             if (workspaceDataEl && workspaceDataEl.textContent.trim()) {
                 // Loading from a published Jekyll page
-                const projectData = JSON.parse(workspaceDataEl.textContent);
+                const decodedData = atob(workspaceDataEl.textContent.trim());
+                const projectData = JSON.parse(decodedData);
                 await projectManager.loadProjectData(projectData);
 
             } else if (projectParam) {
