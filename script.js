@@ -208,21 +208,40 @@ title: "${uniqueId}"
 workspace_data: "${base64WorkspaceData}"
 ---
 `;
+            const GITHUB_TOKEN = 'YOUR_GITHUB_TOKEN_HERE'; // Replace with a real token for testing
 
-            // 5. Create and trigger download
-            const blob = new Blob([markdownContent], { type: 'text/markdown' });
-            const url = URL.createObjectURL(blob);
+            if (!GITHUB_TOKEN || GITHUB_TOKEN === 'YOUR_GITHUB_TOKEN_HERE') {
+                alert('Please replace "YOUR_GITHUB_TOKEN_HERE" in script.js with your GitHub personal access token.');
+                return;
+            }
 
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${uniqueId}.md`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
+            const fileName = `${uniqueId}.md`;
+            const repoOwner = 'digitaledsafety';
+            const repoName = 'engine';
+            const apiUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/contents/_workspaces/${fileName}`;
 
-            console.log('Project published successfully!');
-            alert(`Project published as ${uniqueId}.md. Please add this file to the _workspaces directory in your project repository.`);
+            const response = await fetch(apiUrl, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `token ${GITHUB_TOKEN}`,
+                    'Accept': 'application/vnd.github.v3+json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    message: `feat: Add new workspace ${fileName}`,
+                    content: btoa(markdownContent) // Base64 encode the markdown content
+                })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                console.log('File created successfully:', data);
+                alert(`Project published successfully! You can view it at: ${data.content.html_url}`);
+            } else {
+                const error = await response.json();
+                console.error('Failed to publish project:', error);
+                alert(`Error publishing project: ${error.message}`);
+            }
 
         } catch (error) {
             console.error('Failed to publish project:', error);
