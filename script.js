@@ -5,10 +5,15 @@ class AssetManager {
         this.DB_NAME = 'AssetDB';
         this.DB_VERSION = 1;
         this.OBJECT_STORE_NAME = 'assets';
+        this.initPromise = null;
     }
 
-    async init() {
-        return new Promise((resolve, reject) => {
+    init() {
+        if (this.initPromise) {
+            return this.initPromise;
+        }
+
+        this.initPromise = new Promise((resolve, reject) => {
             const request = indexedDB.open(this.DB_NAME, this.DB_VERSION);
 
             request.onupgradeneeded = (event) => {
@@ -18,9 +23,8 @@ class AssetManager {
                 }
             };
 
-            request.onsuccess = async (event) => {
+            request.onsuccess = (event) => {
                 this.db = event.target.result;
-                await this.loadAssetsIntoCache();
                 resolve();
             };
 
@@ -29,9 +33,11 @@ class AssetManager {
                 reject(event.target.errorCode);
             };
         });
+        return this.initPromise;
     }
 
     async addAsset(file) {
+        await this.init();
         const data = file.type.startsWith('audio/') ? await file.arrayBuffer() : file;
         const asset = {
             name: file.name,
@@ -54,6 +60,7 @@ class AssetManager {
     }
 
     async getAsset(name) {
+        await this.init();
         return new Promise((resolve, reject) => {
             const transaction = this.db.transaction([this.OBJECT_STORE_NAME], 'readonly');
             const store = transaction.objectStore(this.OBJECT_STORE_NAME);
@@ -65,6 +72,7 @@ class AssetManager {
     }
 
     async getAllAssets() {
+        await this.init();
         return new Promise((resolve, reject) => {
             const transaction = this.db.transaction([this.OBJECT_STORE_NAME], 'readonly');
             const store = transaction.objectStore(this.OBJECT_STORE_NAME);
@@ -76,6 +84,7 @@ class AssetManager {
     }
 
     async deleteAsset(name) {
+        await this.init();
         return new Promise((resolve, reject) => {
             const transaction = this.db.transaction([this.OBJECT_STORE_NAME], 'readwrite');
             const store = transaction.objectStore(this.OBJECT_STORE_NAME);
@@ -90,6 +99,7 @@ class AssetManager {
     }
 
     async loadAssetsIntoCache() {
+        await this.init();
         this.assets = await this.getAllAssets();
     }
 }
