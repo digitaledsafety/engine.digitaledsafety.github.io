@@ -36,13 +36,41 @@ class AssetManager {
         return this.initPromise;
     }
 
-    async addAsset(file) {
+    async addAsset(fileOrUrl) {
         await this.init();
-        const data = file.type.startsWith('audio/') ? await file.arrayBuffer() : file;
+
+        let assetData;
+        let assetName;
+        let assetType;
+
+        if (typeof fileOrUrl === 'string') {
+            // Handle URL
+            const url = fileOrUrl;
+            assetName = url.substring(url.lastIndexOf('/') + 1);
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const blob = await response.blob();
+                assetType = blob.type;
+                assetData = assetType.startsWith('audio/') ? await blob.arrayBuffer() : blob;
+            } catch (error) {
+                console.error('Failed to fetch asset from URL:', error);
+                return; // Exit if fetching fails
+            }
+        } else {
+            // Handle File object
+            const file = fileOrUrl;
+            assetName = file.name;
+            assetType = file.type;
+            assetData = assetType.startsWith('audio/') ? await file.arrayBuffer() : file;
+        }
+
         const asset = {
-            name: file.name,
-            type: file.type,
-            data: data
+            name: assetName,
+            type: assetType,
+            data: assetData
         };
 
         return new Promise((resolve, reject) => {
@@ -3984,6 +4012,17 @@ if (thisMesh) {
             loadAssetsIntoView();
         });
 
+        const addAssetByUrlButton = document.getElementById('add-asset-by-url');
+        addAssetByUrlButton.addEventListener('click', async () => {
+            const urlInput = document.getElementById('asset-url-input');
+            const url = urlInput.value;
+            if (url) {
+                await assetManager.addAsset(url);
+                urlInput.value = '';
+                loadAssetsIntoView();
+            }
+        });
+
         async function loadAssetsIntoView() {
             const assetList = document.getElementById('asset-list');
             assetList.innerHTML = '';
@@ -4226,6 +4265,7 @@ if (thisMesh) {
             console.error("Failed to load project from URL or Jekyll data:", e);
             //alert("Could not load project. Loading default project instead.");
             loadWorkspaceDefault();
+            doRun();
         }
     }
 
