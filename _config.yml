@@ -18,6 +18,3 @@ collections:
           path: ""
         values:
           layout: "docs"
-
-exclude:
-  - tests
