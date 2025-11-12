@@ -2126,6 +2126,10 @@ class BabylonSceneManager {
         this.scene.dispose();
         this.engine.dispose();
     }
+
+    getMeshNames() {
+        return Object.keys(this.objects);
+    }
 }
 
 class UIManager {
@@ -3720,7 +3724,9 @@ if (thisMesh) {
                     "variables": [
                         { "name": "score", "id": "score_var" },
                         { "name": "player_mesh", "id": "player_mesh_var" },
-                        { "name": "coin_mesh", "id": "coin_mesh_var" }
+                        { "name": "coin_list", "id": "coin_list_var" },
+                        { "name": "i", "id": "i_var" },
+                        { "name": "collided_object", "id": "collided_object_var" }
                     ],
                     "blocks": [
                         // Setup Scene
@@ -3801,44 +3807,74 @@ if (thisMesh) {
                         // Coin and Score
                         {
                             "type": "variables_set", "x": 400, "y": 50,
-                            "fields": { "VAR": { "name": "coin_mesh", "id": "coin_mesh_var"} },
-                            "inputs": {
-                                "VALUE": {
-                                    "block": {
-                                        "type": "create_box",
-                                        "fields": { "NAME": "coin" },
-                                        "inputs": {
-                                            "X": { "block": { "type": "math_number", "fields": { "NUM": 5 } } },
-                                            "Y": { "block": { "type": "math_number", "fields": { "NUM": 2 } } },
-                                            "Z": { "block": { "type": "math_number", "fields": { "NUM": 0 } } }
+                            "fields": { "VAR": { "name": "coin_list", "id": "coin_list_var"} },
+                            "inputs": { "VALUE": { "block": { "type": "lists_create_with", "extraState": { "itemCount": 0 } } } },
+                            "next": {
+                                "block": {
+                                    "type": "controls_for",
+                                    "fields": { "VAR": { "name": "i", "id": "i_var" } },
+                                    "inputs": {
+                                        "FROM": { "block": { "type": "math_number", "fields": { "NUM": 1 } } },
+                                        "TO": { "block": { "type": "math_number", "fields": { "NUM": 10 } } },
+                                        "BY": { "block": { "type": "math_number", "fields": { "NUM": 1 } } },
+                                        "DO": {
+                                            "block": {
+                                                "type": "lists_setIndex",
+                                                "fields": { "MODE": "INSERT", "WHERE": "LAST" },
+                                                "inputs": {
+                                                    "LIST": { "block": { "type": "variables_get", "fields": { "VAR": { "name": "coin_list", "id": "coin_list_var"} } } },
+                                                    "TO": {
+                                                        "block": {
+                                                            "type": "create_box",
+                                                            "fields": {
+                                                                "NAME": "coin"
+                                                            },
+                                                            "inputs": {
+                                                                "X": { "block": { "type": "math_random_int", "inputs": { "FROM": { "block": { "type": "math_number", "fields": { "NUM": -9 } } }, "TO": { "block": { "type": "math_number", "fields": { "NUM": 9 } } } } } },
+                                                                "Y": { "block": { "type": "math_number", "fields": { "NUM": 2 } } },
+                                                                "Z": { "block": { "type": "math_random_int", "inputs": { "FROM": { "block": { "type": "math_number", "fields": { "NUM": -9 } } }, "TO": { "block": { "type": "math_number", "fields": { "NUM": 9 } } } } } }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    },
+                                    "next": {
+                                        "block": {
+                                            "type": "controls_forEach",
+                                            "fields": { "VAR": { "name": "collided_object", "id": "collided_object_var" } },
+                                            "inputs": {
+                                                "LIST": { "block": { "type": "variables_get", "fields": { "VAR": { "name": "coin_list", "id": "coin_list_var" } } } },
+                                                "DO": {
+                                                    "block": {
+                                                        "type": "change_object_color",
+                                                        "inputs": {
+                                                            "NAME": { "block": { "type": "variables_get", "fields": { "VAR": { "name": "collided_object", "id": "collided_object_var" } } } }
+                                                        },
+                                                        "fields": { "COLOR": "#FFD700" },
+                                                        "next": {
+                                                            "block": {
+                                                                "type": "enable_physics",
+                                                                "inputs": {
+                                                                    "NAME": { "block": { "type": "variables_get", "fields": { "VAR": { "name": "collided_object", "id": "collided_object_var" } } } },
+                                                                    "MASS": { "block": { "type": "math_number", "fields": { "NUM": 0 } } }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
                                         }
                                     }
                                 }
-                            },
-                             "next": {
-                                 "block": {
-                                     "type": "change_object_color",
-                                     "inputs": {
-                                         "NAME": { "block": { "type": "variables_get", "fields": { "VAR": { "name": "coin_mesh", "id": "coin_mesh_var"} } } }
-                                     },
-                                     "fields": { "COLOR": "#FFD700" },
-                                     "next": {
-                                         "block": {
-                                             "type": "enable_physics",
-                                             "inputs": {
-                                                 "NAME": { "block": { "type": "variables_get", "fields": { "VAR": { "name": "coin_mesh", "id": "coin_mesh_var"} } } },
-                                                 "MASS": { "block": { "type": "math_number", "fields": { "NUM": 0 } } }
-                                             }
-                                         }
-                                     }
-                                 }
-                             }
+                            }
                         },
                         {
-                            "type": "on_collision", "x": 400, "y": 200,
+                            "type": "on_collision", "x": 400, "y": 450,
                             "inputs": {
                                 "OBJECT1": { "block": { "type": "variables_get", "fields": { "VAR": { "name": "player_mesh", "id": "player_mesh_var"} } } },
-                                "OBJECT2": { "block": { "type": "variables_get", "fields": { "VAR": { "name": "coin_mesh", "id": "coin_mesh_var"} } } },
+                                "OBJECT2": { "block": { "type": "variables_get", "fields": { "VAR": { "name": "coin_list", "id": "coin_list_var"} } } },
                                 "DO": {
                                     "block": {
                                         "type": "variables_set",
@@ -3882,12 +3918,9 @@ if (thisMesh) {
                                                         },
                                                         "next": {
                                                             "block": {
-                                                                "type": "move_object",
+                                                                "type": "destroy_object",
                                                                 "inputs": {
-                                                                    "NAME": { "block": { "type": "variables_get", "fields": { "VAR": { "name": "coin_mesh", "id": "coin_mesh_var"} } } },
-                                                                    "X": { "block": { "type": "math_random_int", "inputs": { "FROM": { "block": { "type": "math_number", "fields": { "NUM": -9 } } }, "TO": { "block": { "type": "math_number", "fields": { "NUM": 9 } } } } } },
-                                                                    "Y": { "block": { "type": "math_number", "fields": { "NUM": 2 } } },
-                                                                    "Z": { "block": { "type": "math_random_int", "inputs": { "FROM": { "block": { "type": "math_number", "fields": { "NUM": -9 } } }, "TO": { "block": { "type": "math_number", "fields": { "NUM": 9 } } } } } }
+                                                                    "OBJECT": { "block": { "type": "variables_get", "fields": { "VAR": { "name": "collided_object", "id": "collided_object_var" } } } }
                                                                 }
                                                             }
                                                         }
@@ -3946,15 +3979,20 @@ if (thisMesh) {
                 return;
             }
 
-            sceneManager.clear();
+            if (sceneManager) {
+                sceneManager.dispose();
+            }
+            sceneManager = new BabylonSceneManager(canvas);
+            window.sceneManager = sceneManager; // Expose for debugging and testing
 
             try {
                 const AsyncFunction = Object.getPrototypeOf(async function(){}).constructor;
                 const userGeneratedCode = new AsyncFunction('sceneManager', 'assetManager', codeToRun);
                 await userGeneratedCode(sceneManager, assetManager);
-                console.log("JULES_VERIFICATION: SCENE_READY");
             } catch (error) {
                 console.error('Error executing code:', error);
+            } finally {
+                console.log("JULES_VERIFICATION: SCENE_READY");
             }
         }
 
