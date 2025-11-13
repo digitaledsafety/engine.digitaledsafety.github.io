@@ -21,3 +21,4 @@ collections:
 
 exclude:
   - tests
+  - vendor/

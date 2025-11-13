@@ -4369,3 +4369,25 @@ function enterPresentationMode() {
 }
     loadProjectFromUrl();
 
+    // --- Mobile Bottom Nav Logic ---
+    document.addEventListener('DOMContentLoaded', () => {
+        const container = document.querySelector('.container');
+        const workspaceTab = document.getElementById('workspace-tab');
+        const previewTab = document.getElementById('preview-tab');
+
+        if (workspaceTab && previewTab && container) {
+            workspaceTab.addEventListener('click', () => {
+                container.classList.remove('mobile-preview-active');
+                workspaceTab.classList.add('active');
+                previewTab.classList.remove('active');
+            });
+
+            previewTab.addEventListener('click', () => {
+                container.classList.add('mobile-preview-active');
+                previewTab.classList.add('active');
+                workspaceTab.classList.remove('active');
+                // We need to resize the canvas when it becomes visible, especially after being hidden
+                setTimeout(resizeCanvas, 0);
+            });
+        }
+    });
