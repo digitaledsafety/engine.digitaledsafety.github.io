@@ -222,22 +222,68 @@
             display: none !important;
         }
 
+        #bottom-nav {
+            display: none; /* Hidden by default */
+        }
+
         /* Show and arrange for Mobile */
         @media (max-width: 768px) {
+            body {
+                padding-bottom: 50px; /* Space for the bottom nav */
+            }
+
+            #bottom-nav {
+                display: flex;
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                width: 100%;
+                height: 50px;
+                background-color: #333;
+                z-index: 1002;
+            }
+
+            .nav-tab {
+                flex: 1;
+                background-color: #555;
+                color: white;
+                border: none;
+                font-size: 16px;
+                cursor: pointer;
+                border-top: 2px solid transparent;
+            }
+
+            .nav-tab.active {
+                background-color: #007bff;
+                border-top: 2px solid #fff;
+            }
+
             #jump-button-container {
                 display: block;
             }
             .container {
                 flex-direction: column;
+                height: 100%;
             }
             .canvas-container {
-                flex: none;
-                height: 50%;
+                display: none; /* Hidden by default on mobile */
+                flex: 1;
+                height: 100%;
             }
 
             .controls {
-                flex: none;
-                height: 50%;
+                display: flex; /* Shown by default on mobile */
+                flex: 1;
+                height: 100%;
+            }
+
+            /* State when preview is active */
+            .container.mobile-preview-active .canvas-container {
+                display: flex;
+            }
+
+            .container.mobile-preview-active .controls {
+                display: none;
             }
         }
 
@@ -315,6 +361,10 @@
 
     <!-- Monaco Editor CDN -->
     <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.49.0/min/vs/loader.js"></script>
+    <div id="bottom-nav">
+        <button id="workspace-tab" class="nav-tab active">Workspace</button>
+        <button id="preview-tab" class="nav-tab">Preview</button>
+    </div>
     <script src="script.js" defer></script>
 </body>
 </html>
