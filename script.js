@@ -1675,6 +1675,17 @@ class BabylonSceneManager {
 
             manager.on('removed', (evt, nipple) => {
                 nipple.off('start move end');
+                this.joystick_state.up = false;
+                this.joystick_state.down = false;
+                this.joystick_state.left = false;
+                this.joystick_state.right = false;
+                this.joystick_state.pressed = false;
+                this.joystick_state.angle = 0;
+                this.joystick_state.force = 0;
+                // Re-attach camera controls when the joystick is removed
+                if (this.scene.activeCamera) {
+                    this.scene.activeCamera.attachControl(this.canvas, true);
+                }
             });
         }
     }
