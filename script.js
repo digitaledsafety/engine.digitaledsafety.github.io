@@ -59,6 +59,34 @@ class AssetManager {
         });
     }
 
+    async addAssetFromURL(url) {
+        const proxyUrl = `https://proxy.fxio.workers.dev/corsproxy/?apiurl=${encodeURIComponent(url)}`;
+        try {
+            const response = await fetch(proxyUrl);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const blob = await response.blob();
+            const fileName = url.substring(url.lastIndexOf('/') + 1);
+
+            let mimeType = 'application/octet-stream';
+            const extension = fileName.split('.').pop().toLowerCase();
+            if (extension === 'glb' || extension === 'gltf') {
+                mimeType = `model/${extension}`;
+            } else if (['png', 'jpg', 'jpeg', 'gif'].includes(extension)) {
+                mimeType = `image/${extension}`;
+            } else if (['mp3', 'wav', 'ogg'].includes(extension)) {
+                mimeType = `audio/${extension}`;
+            }
+
+            const file = new File([blob], fileName, { type: mimeType });
+            return this.addAsset(file);
+        } catch (error) {
+            console.error('Failed to fetch asset from URL:', error);
+            throw error;
+        }
+    }
+
     async getAsset(name) {
         await this.init();
         return new Promise((resolve, reject) => {
@@ -4093,6 +4121,24 @@ if (thisMesh) {
                 await assetManager.addAsset(file);
             }
             loadAssetsIntoView();
+        });
+
+        const addAssetFromUrlButton = document.getElementById('add-asset-from-url-button');
+        const assetUrlInput = document.getElementById('asset-url-input');
+
+        addAssetFromUrlButton.addEventListener('click', async () => {
+            const url = assetUrlInput.value;
+            if (!url) {
+                alert('Please enter a URL.');
+                return;
+            }
+            try {
+                await assetManager.addAssetFromURL(url);
+                loadAssetsIntoView();
+                assetUrlInput.value = '';
+            } catch (error) {
+                alert('Failed to load asset from URL. Please check the URL and try again. See console for more details.');
+            }
         });
 
         async function loadAssetsIntoView() {
