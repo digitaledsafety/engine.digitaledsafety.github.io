@@ -4248,10 +4248,22 @@ if (thisMesh) {
         }
     });
 
-    document.addEventListener('fullscreenchange', resizeCanvas);
-    document.addEventListener('webkitfullscreenchange', resizeCanvas);
-    document.addEventListener('mozfullscreenchange', resizeCanvas);
-    document.addEventListener('MSFullscreenChange', resizeCanvas);
+    document.addEventListener('fullscreenchange', () => {
+        document.body.classList.toggle('fullscreen-active', !!document.fullscreenElement);
+        resizeCanvas();
+    });
+    document.addEventListener('webkitfullscreenchange', () => {
+        document.body.classList.toggle('fullscreen-active', !!document.webkitFullscreenElement);
+        resizeCanvas();
+    });
+    document.addEventListener('mozfullscreenchange', () => {
+        document.body.classList.toggle('fullscreen-active', !!document.mozFullScreenElement);
+        resizeCanvas();
+    });
+    document.addEventListener('MSFullscreenChange', () => {
+        document.body.classList.toggle('fullscreen-active', !!document.msFullscreenElement);
+        resizeCanvas();
+    });
 
 
     window.addEventListener('resize', resizeCanvas);
@@ -4427,7 +4439,7 @@ function enterPresentationMode() {
 }
     loadProjectFromUrl();
 
-    // --- Mobile Bottom Nav Logic ---
+    // --- Bottom Nav Logic ---
     document.addEventListener('DOMContentLoaded', () => {
         const container = document.querySelector('.container');
         const workspaceTab = document.getElementById('workspace-tab');
@@ -4435,13 +4447,13 @@ function enterPresentationMode() {
 
         if (workspaceTab && previewTab && container) {
             workspaceTab.addEventListener('click', () => {
-                container.classList.remove('mobile-preview-active');
+                container.classList.remove('preview-active');
                 workspaceTab.classList.add('active');
                 previewTab.classList.remove('active');
             });
 
             previewTab.addEventListener('click', () => {
-                container.classList.add('mobile-preview-active');
+                container.classList.add('preview-active');
                 previewTab.classList.add('active');
                 workspaceTab.classList.remove('active');
                 // We need to resize the canvas when it becomes visible, especially after being hidden
