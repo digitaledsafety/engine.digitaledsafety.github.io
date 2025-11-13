@@ -240,8 +240,19 @@
                 height: 50%;
             }
         }
+
+        /* Presentation Mode Styles */
+        body.presentation-mode .controls {
+            display: none;
+        }
+        body.presentation-mode .container {
+            display: block;
+        }
+        body.presentation-mode .canvas-container {
+            width: 100vw;
+            height: 100vh;
+        }
     </style>
-    <link rel="stylesheet" href="/presentation.css">
 </head>
 
 <body>
