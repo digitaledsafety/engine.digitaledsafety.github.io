@@ -4309,6 +4309,10 @@ if (thisMesh) {
         const projectParam = urlParams.get('project');
         const workspaceDataEl = document.getElementById('workspace-data');
 
+        if (urlParams.has('fullscreen')) {
+            enterPresentationMode();
+        }
+
         try {
             if (workspaceDataEl && workspaceDataEl.textContent.trim()) {
                 // Loading from a published Jekyll page
@@ -4340,5 +4344,28 @@ if (thisMesh) {
         }
     }
 
+function enterPresentationMode() {
+    document.body.classList.add('presentation-mode');
+
+    // Expand canvas and resize engine
+    const canvasContainer = document.querySelector('.canvas-container');
+    if (canvasContainer) {
+        // The CSS will handle the sizing, but we need to tell Babylon to resize its engine
+        setTimeout(() => {
+            resizeCanvas();
+        }, 100); // A small delay to allow CSS to apply
+
+        // Request fullscreen
+        if (canvasContainer.requestFullscreen) {
+            canvasContainer.requestFullscreen();
+        } else if (canvasContainer.mozRequestFullScreen) { /* Firefox */
+            canvasContainer.mozRequestFullScreen();
+        } else if (canvasContainer.webkitRequestFullscreen) { /* Chrome, Safari & Opera */
+            canvasContainer.webkitRequestFullscreen();
+        } else if (canvasContainer.msRequestFullscreen) { /* IE/Edge */
+            canvasContainer.msRequestFullscreen();
+        }
+    }
+}
     loadProjectFromUrl();
 
