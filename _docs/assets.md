@@ -1,3 +1,8 @@
+---
+layout: "docs"
+title: "assets"
+---
+
 # Assets
 
 You can use 3D models, images, and sounds to make your creations more interesting. Here are some resources for finding and creating assets.

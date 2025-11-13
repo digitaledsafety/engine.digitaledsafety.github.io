@@ -1,3 +1,8 @@
+---
+layout: "docs"
+title: "usage"
+---
+
 # Usage
 
 This guide explains how to use the block-based coding environment to create 3D scenes and interactions.

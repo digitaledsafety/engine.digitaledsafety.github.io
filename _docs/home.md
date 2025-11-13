@@ -1,3 +1,8 @@
+---
+layout: "docs"
+title: "home"
+---
+
 # Welcome to the Wiki!
 
 This wiki provides documentation for the block-based coding environment.

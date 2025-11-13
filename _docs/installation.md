@@ -1,3 +1,8 @@
+---
+layout: "docs"
+title: "installation"
+---
+
 # Installation
 
 To run this project locally, you'll need a modern web browser and a local web server.
