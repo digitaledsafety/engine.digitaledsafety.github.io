@@ -466,10 +466,6 @@ var toolbox = {
                             kind: 'block',
                             type: 'select_object',
                         },
-                        // { // attach_script_to_object - REMOVED
-                        //     kind: 'block',
-                        //     type: 'attach_script_to_object',
-                        // },
                         {
                             kind: 'block',
                             type: 'event_on_click',
@@ -1794,28 +1790,56 @@ class BabylonSceneManager {
     }
 
     onCollision(target1, target2, callback) {
-        let name1, name2;
+        let obj1Mesh;
         if (typeof target1 === 'string') {
-            name1 = target1;
-        } else if (target1 && typeof target1 === 'object' && target1.name) {
-            name1 = target1.name;
-        }
-        if (typeof target2 === 'string') {
-            name2 = target2;
-        } else if (target2 && typeof target2 === 'object' && target2.name) {
-            name2 = target2.name;
+            obj1Mesh = this.objects[target1];
+        } else if (target1 && typeof target1 === 'object') {
+            obj1Mesh = target1;
         }
 
-        let obj1Mesh = this.objects[name1];
-        let obj2Mesh = this.objects[name2];
+        if (!obj1Mesh || !obj1Mesh.physicsImpostor) {
+            console.warn("onCollision: target1 is not a valid physics object.", target1);
+            return;
+        };
 
-        if (obj1Mesh && obj2Mesh && obj1Mesh.physicsImpostor && obj2Mesh.physicsImpostor) {
-            obj1Mesh.physicsImpostor.registerOnPhysicsCollide(obj2Mesh.physicsImpostor, (main, collided) => {
-                // Check if the collided object is the one we are interested in
-                if (collided.object === obj2Mesh) {
-                    callback();
+        // Handle single target object
+        if (!Array.isArray(target2)) {
+            let obj2Mesh;
+            if (typeof target2 === 'string') {
+                obj2Mesh = this.objects[target2];
+            } else if (target2 && typeof target2 === 'object') {
+                obj2Mesh = target2;
+            }
+
+            if (obj2Mesh && obj2Mesh.physicsImpostor) {
+                obj1Mesh.physicsImpostor.registerOnPhysicsCollide(obj2Mesh.physicsImpostor, (main, collided) => {
+                    callback(collided.object);
+                });
+            } else {
+                 console.warn("onCollision: target2 is not a valid physics object.", target2);
+            }
+        }
+        // Handle target list
+        else {
+            // Convert list of names/objects to a list of impostors
+            const targetImpostors = target2.map(item => {
+                let mesh;
+                if (typeof item === 'string') {
+                    mesh = this.objects[item];
+                } else if (item && typeof item === 'object') {
+                    mesh = item;
                 }
-            });
+                return mesh ? mesh.physicsImpostor : null;
+            }).filter(impostor => impostor != null); // Filter out nulls
+
+            if (targetImpostors.length > 0) {
+                obj1Mesh.physicsImpostor.registerOnPhysicsCollide(targetImpostors, (main, collided) => {
+                    // The collided object's mesh is what we want to pass to the callback.
+                    callback(collided.object);
+                });
+            } else {
+                console.warn("onCollision: target2 list contains no valid physics objects.", target2);
+            }
         }
     }
 
@@ -2817,29 +2841,6 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                 "tooltip": "Selects an object from the scene by its name.",
                 "helpUrl": ""
             },
-            // { // attach_script_to_object JSON Definition - REMOVED
-            //     "type": "attach_script_to_object",
-            //     "message0": "attach script to %1 %2 do %3",
-            //     "args0": [
-            //         {
-            //             "type": "input_value",
-            //             "name": "OBJECT_SELECTOR",
-            //             "check": "String"
-            //         },
-            //         {
-            //             "type": "input_dummy"
-            //         },
-            //         {
-            //             "type": "input_statement",
-            //             "name": "SCRIPT_CODE"
-            //         }
-            //     ],
-            //     "previousStatement": null,
-            //     "nextStatement": null,
-            //     "colour": "%{BKY_LOGIC_HUE}",
-            //     "tooltip": "Attaches a script to the specified object.",
-            //     "helpUrl": ""
-            // },
             // Phase 2 Blockly Blocks
             {
                 "type": "event_on_click",
@@ -3010,11 +3011,13 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                 "args0": [
                     {
                         "type": "input_value",
-                        "name": "OBJECT1"
+                        "name": "OBJECT1",
+                        "check": ["String", "Mesh"]
                     },
                     {
                         "type": "input_value",
-                        "name": "OBJECT2"
+                        "name": "OBJECT2",
+                        "check": ["Array", "String", "Mesh"]
                     },
                     {
                         "type": "input_dummy"
@@ -3027,8 +3030,11 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                 "previousStatement": null,
                 "nextStatement": null,
                 "colour": "#5BA55B",
-                "tooltip": "Executes code when two objects collide.",
-                "helpUrl": ""
+                "tooltip": "Executes code when two objects collide. Can check against a single object or a list of objects.",
+                "helpUrl": "",
+                "extraState": {
+                    "hasCollidedObjectVar": true
+                }
             },
             {
                 "type": "destroy_object",
@@ -3335,7 +3341,16 @@ if (thisMesh) {
                 const obj1 = generator.valueToCode(block, 'OBJECT1', generator.ORDER_ATOMIC) || 'null';
                 const obj2 = generator.valueToCode(block, 'OBJECT2', generator.ORDER_ATOMIC) || 'null';
                 const doCode = generator.statementToCode(block, 'DO');
-                const callback = `function() {\n${doCode}\n}`;
+
+                // The 'collided_object' variable is made available within the 'DO' statement.
+                // We need to ensure that the variable is properly declared and scoped.
+                const collidedObjectVar = generator.nameDB_.getName('collided_object', Blockly.VARIABLE_CATEGORY_NAME);
+                const callback = `function(${collidedObjectVar}) {
+                    // This function will be called with the collided object.
+                    // We can then execute the DO code.
+                    ${doCode}
+                }`;
+                // The generated code should call the onCollision method with the callback.
                 return `sceneManager.onCollision(${obj1}, ${obj2}, ${callback});\n`;
             };
 
@@ -3726,7 +3741,8 @@ if (thisMesh) {
                         { "name": "player_mesh", "id": "player_mesh_var" },
                         { "name": "coin_list", "id": "coin_list_var" },
                         { "name": "i", "id": "i_var" },
-                        { "name": "collided_object", "id": "collided_object_var" }
+                        { "name": "collided_object", "id": "collided_object_var" },
+                        { "name": "new_coin", "id": "new_coin_var" }
                     ],
                     "blocks": [
                         // Setup Scene
@@ -3783,6 +3799,68 @@ if (thisMesh) {
                                 }
                             }
                         },
+                        {
+                            "type": "on_collision", "x": 400, "y": 450,
+                            "inputs": {
+                                "OBJECT1": { "block": { "type": "variables_get", "fields": { "VAR": { "name": "player_mesh", "id": "player_mesh_var"} } } },
+                                "OBJECT2": { "block": { "type": "variables_get", "fields": { "VAR": { "name": "coin_list", "id": "coin_list_var"} } } },
+                                "DO": {
+                                    "block": {
+                                        "type": "variables_set",
+                                        "fields": { "VAR": { "name": "score", "id": "score_var"} },
+                                        "inputs": {
+                                            "VALUE": {
+                                                "block": {
+                                                    "type": "math_arithmetic", "fields": { "OP": "ADD" },
+                                                    "inputs": {
+                                                        "A": { "block": { "type": "variables_get", "fields": { "VAR": { "name": "score", "id": "score_var"} } } },
+                                                        "B": { "block": { "type": "math_number", "fields": { "NUM": 1 } } }
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        "next": {
+                                            "block": {
+                                                "type": "gui_set_text", "fields": { "NAME": "scoreText" },
+                                                "inputs": {
+                                                    "TEXT": {
+                                                        "block": {
+                                                            "type": "text_join", "extraState": { "itemCount": 2 },
+                                                            "inputs": {
+                                                                "ADD0": { "block": { "type": "text", "fields": { "TEXT": "Score: " } } },
+                                                                "ADD1": { "block": { "type": "variables_get", "fields": { "VAR": { "name": "score", "id": "score_var"} } } }
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                "next": {
+                                                    "block": {
+                                                        "type": "play_note",
+                                                        "fields": { "NOTE": "261.63" },
+                                                        "inputs": {
+                                                            "DURATION": {
+                                                                "block": {
+                                                                    "type": "math_number",
+                                                                    "fields": { "NUM": 0.1 }
+                                                                }
+                                                            }
+                                                        },
+                                                        "next": {
+                                                            "block": {
+                                                                "type": "destroy_object",
+                                                                "inputs": {
+                                                                    "OBJECT": { "block": { "type": "variables_get", "fields": { "VAR": { "name": "collided_object", "id": "collided_object_var" } } } }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
                         // Controls
                         {
                             "type": "on_button_press", "x": 50, "y": 350, "fields": { "BUTTON": "A" },
@@ -3819,16 +3897,13 @@ if (thisMesh) {
                                         "BY": { "block": { "type": "math_number", "fields": { "NUM": 1 } } },
                                         "DO": {
                                             "block": {
-                                                "type": "lists_setIndex",
-                                                "fields": { "MODE": "INSERT", "WHERE": "LAST" },
+                                                "type": "variables_set",
+                                                "fields": {"VAR": {"name": "new_coin", "id": "new_coin_var"}},
                                                 "inputs": {
-                                                    "LIST": { "block": { "type": "variables_get", "fields": { "VAR": { "name": "coin_list", "id": "coin_list_var"} } } },
-                                                    "TO": {
+                                                    "VALUE": {
                                                         "block": {
                                                             "type": "create_box",
-                                                            "fields": {
-                                                                "NAME": "coin"
-                                                            },
+                                                            "fields": { "NAME": "coin" },
                                                             "inputs": {
                                                                 "X": { "block": { "type": "math_random_int", "inputs": { "FROM": { "block": { "type": "math_number", "fields": { "NUM": -9 } } }, "TO": { "block": { "type": "math_number", "fields": { "NUM": 9 } } } } } },
                                                                 "Y": { "block": { "type": "math_number", "fields": { "NUM": 2 } } },
@@ -3836,29 +3911,30 @@ if (thisMesh) {
                                                             }
                                                         }
                                                     }
-                                                }
-                                            }
-                                        }
-                                    },
-                                    "next": {
-                                        "block": {
-                                            "type": "controls_forEach",
-                                            "fields": { "VAR": { "name": "collided_object", "id": "collided_object_var" } },
-                                            "inputs": {
-                                                "LIST": { "block": { "type": "variables_get", "fields": { "VAR": { "name": "coin_list", "id": "coin_list_var" } } } },
-                                                "DO": {
+                                                },
+                                                "next": {
                                                     "block": {
-                                                        "type": "change_object_color",
+                                                        "type": "enable_physics",
                                                         "inputs": {
-                                                            "NAME": { "block": { "type": "variables_get", "fields": { "VAR": { "name": "collided_object", "id": "collided_object_var" } } } }
+                                                            "NAME": { "block": { "type": "variables_get", "fields": { "VAR": { "name": "new_coin", "id": "new_coin_var" } } } },
+                                                            "MASS": { "block": { "type": "math_number", "fields": { "NUM": 0 } } }
                                                         },
-                                                        "fields": { "COLOR": "#FFD700" },
                                                         "next": {
                                                             "block": {
-                                                                "type": "enable_physics",
+                                                                "type": "change_object_color",
+                                                                "fields": { "COLOR": "#FFD700" },
                                                                 "inputs": {
-                                                                    "NAME": { "block": { "type": "variables_get", "fields": { "VAR": { "name": "collided_object", "id": "collided_object_var" } } } },
-                                                                    "MASS": { "block": { "type": "math_number", "fields": { "NUM": 0 } } }
+                                                                    "NAME": { "block": { "type": "variables_get", "fields": { "VAR": { "name": "new_coin", "id": "new_coin_var" } } } }
+                                                                },
+                                                                "next": {
+                                                                    "block": {
+                                                                        "type": "lists_setIndex",
+                                                                        "fields": { "MODE": "INSERT", "WHERE": "LAST" },
+                                                                        "inputs": {
+                                                                            "LIST": { "block": { "type": "variables_get", "fields": { "VAR": { "name": "coin_list", "id": "coin_list_var"} } } },
+                                                                            "TO": { "block": { "type": "variables_get", "fields": { "VAR": { "name": "new_coin", "id": "new_coin_var" } } } }
+                                                                        }
+                                                                    }
                                                                 }
                                                             }
                                                         }
