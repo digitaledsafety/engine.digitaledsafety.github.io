@@ -49,18 +49,19 @@
             flex: 1;
             display: flex;
             flex-direction: column;
-            padding: 10px;
             overflow-y: auto;
             background-color: #eaeaea;
             position: relative;
         }
 
         .blockly-workspace {
-            height: 80%;
-            min-height: 85vh;
+            height: 100%;
             background-color: #f8f8f8;
             border: 1px solid #ddd;
-            margin-bottom: 10px;
+        }
+
+        #code-view, #assets-view {
+            height: 100%;
         }
 
         #gameCanvas {
@@ -76,7 +77,6 @@
             cursor: pointer;
             border-radius: 5px;
             color: white;
-            background-color: grey;
         }
 
         .btn.btn-run {
@@ -271,7 +271,6 @@
             background-color: #007bff;
         }
 
-
         .container {
             height: 100%;
             width: 100%;
@@ -333,13 +332,6 @@
             </div>
         </div>
         <div class="controls">
-            <div class="editor-toggle-buttons" style="margin-bottom: 10px;">
-                <button id="toggleToolboxButton" class="btn btn-toggle-toolbox">☰</button>
-                <button id="codeViewButton" class="btn btn-icon active" title="Code">👩‍💻</button>
-                <button id="assetsViewButton" class="btn btn-icon" title="Assets">📦</button>   
-                <button id="showBlocksButton" class="btn" style="background-color: #6c757d;">Show Blocks</button>
-                <button id="showJsButton" class="btn" style="background-color: #6c757d;">Show JavaScript</button>                
-            </div>            
             <div id="code-view">
                 <div id="blocklyDiv" class="blockly-workspace digital-education-safety-theme"></div>
                 <div id="monacoEditorContainer" class="editor-container"
@@ -372,6 +364,11 @@
             <div class="dropdown-menu-container">
                 <button id="menuButton" class="btn btn-icon btn-menu-toggle" title="More actions">⋮</button>
                 <div id="dropdownMenu" class="dropdown-content">
+                    <button id="toggleToolboxButton" class="btn btn-toggle-toolbox" title="Toggle Toolbox">☰ Hide Toolbox</button>
+                    <button id="codeViewButton" class="btn btn-icon active" title="Code">👩‍💻 Code</button>
+                    <button id="assetsViewButton" class="btn btn-icon" title="Assets">📦Assets </button>
+                    <button id="showBlocksButton" class="btn" title="Show Blocks">Blocks</button>
+                    <button id="showJsButton" class="btn" title="Show JavaScript">JavaScript</button>
                     <button id="saveButton" class="btn btn-icon" title="Save">💾 Save</button>
                     <button id="publishButton" class="btn btn-icon" title="Publish">🚀 Publish</button>
                     <button id="loadButton" class="btn btn-icon" title="Load">📂 Load</button>
