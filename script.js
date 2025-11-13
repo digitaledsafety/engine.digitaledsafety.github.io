@@ -1586,6 +1586,7 @@ class BabylonSceneManager {
         this.uiElements = [];
         this.inactivityTimer = null;
         this.uiManager = new UIManager(this.scene);
+        this.processedCollisions = new Set();
 
         this.initScene();
         this.initInputListeners();
@@ -1830,6 +1831,21 @@ class BabylonSceneManager {
             return;
         };
 
+        const collisionCallback = (main, collided) => {
+            // Create a unique key for the collision pair to prevent multiple triggers per frame.
+            // Sort unique IDs to ensure the key is the same regardless of collision order (A-B vs B-A).
+            const ids = [main.object.uniqueId, collided.object.uniqueId].sort();
+            const collisionKey = `${ids[0]}-${ids[1]}`;
+
+            // If we've already processed this collision in this frame, ignore it.
+            if (this.processedCollisions.has(collisionKey)) {
+                return;
+            }
+            // Otherwise, record it and fire the user's callback.
+            this.processedCollisions.add(collisionKey);
+            callback(collided.object);
+        };
+
         // Handle single target object
         if (!Array.isArray(target2)) {
             let obj2Mesh;
@@ -1840,9 +1856,7 @@ class BabylonSceneManager {
             }
 
             if (obj2Mesh && obj2Mesh.physicsImpostor) {
-                obj1Mesh.physicsImpostor.registerOnPhysicsCollide(obj2Mesh.physicsImpostor, (main, collided) => {
-                    callback(collided.object);
-                });
+                obj1Mesh.physicsImpostor.registerOnPhysicsCollide(obj2Mesh.physicsImpostor, collisionCallback);
             } else {
                  console.warn("onCollision: target2 is not a valid physics object.", target2);
             }
@@ -1861,10 +1875,7 @@ class BabylonSceneManager {
             }).filter(impostor => impostor != null); // Filter out nulls
 
             if (targetImpostors.length > 0) {
-                obj1Mesh.physicsImpostor.registerOnPhysicsCollide(targetImpostors, (main, collided) => {
-                    // The collided object's mesh is what we want to pass to the callback.
-                    callback(collided.object);
-                });
+                obj1Mesh.physicsImpostor.registerOnPhysicsCollide(targetImpostors, collisionCallback);
             } else {
                 console.warn("onCollision: target2 list contains no valid physics objects.", target2);
             }
@@ -2064,6 +2075,7 @@ class BabylonSceneManager {
     runRenderLoop() {
         let lastTime = performance.now();
         this.engine.runRenderLoop(() => {
+            this.processedCollisions.clear();
             const currentTime = performance.now();
             const deltaTime = currentTime - lastTime;
             lastTime = currentTime;
