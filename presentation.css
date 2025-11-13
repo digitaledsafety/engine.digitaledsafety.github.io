@@ -1,0 +1,12 @@
+
+body.presentation-mode .interactive-ui,
+body.presentation-mode .main-controls,
+body.presentation-mode .view-controls,
+body.presentation-mode .code-views {
+    display: none !important;
+}
+
+body.presentation-mode .right-pane {
+    width: 100vw;
+    height: 100vh;
+}
