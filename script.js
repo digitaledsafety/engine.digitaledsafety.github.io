@@ -1618,7 +1618,7 @@ class BabylonSceneManager {
                 mode: 'dynamic',
                 color: 'grey',
                 size: 120,
-                fadeTime: 0
+                fadeTime: 250
             });
 
             manager.on('added', (evt, nipple) => {
@@ -1655,21 +1655,6 @@ class BabylonSceneManager {
 
                 nipple.on('start', () => {
                     this.joystick_state.pressed = true;
-                });
-
-                nipple.on('end', () => {
-                    this.joystick_state.up = false;
-                    this.joystick_state.down = false;
-                    this.joystick_state.left = false;
-                    this.joystick_state.right = false;
-                    this.joystick_state.pressed = false;
-                    this.joystick_state.angle = 0;
-                    this.joystick_state.force = 0;
-
-                    // Re-attach camera controls when the joystick is released
-                    if (this.scene.activeCamera) {
-                        this.scene.activeCamera.attachControl(this.canvas, true);
-                    }
                 });
             });
 
