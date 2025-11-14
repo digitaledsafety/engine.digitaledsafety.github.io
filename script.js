@@ -1609,23 +1609,35 @@ class BabylonSceneManager {
     }
 
     initJoystick() {
-        const joystickZone = document.getElementById('joystick-zone');
+        const canvasContainer = document.querySelector('.canvas-container');
 
         // Only initialize the joystick if the touch UI is likely active (based on CSS media queries).
-        if (joystickZone && window.matchMedia('(max-width: 768px)').matches) {
+        if (canvasContainer && window.matchMedia('(max-width: 768px)').matches) {
             const manager = nipplejs.create({
-                zone: joystickZone,
+                zone: canvasContainer,
                 mode: 'dynamic',
                 color: 'grey',
                 size: 120,
-                fadeTime: 250
+                fadeTime: 0
             });
 
+            let activeNipple = null;
+
             manager.on('added', (evt, nipple) => {
-                // Detach camera controls when the joystick is active to prevent conflicts
-                if (this.scene.activeCamera) {
-                    this.scene.activeCamera.detachControl(this.canvas);
+                // If there's already an active nipple, or if the tap is outside the bottom-left quadrant, destroy it.
+                const isInLeftHalf = nipple.position.x < canvasContainer.offsetWidth / 2;
+                const isInBottomHalf = nipple.position.y > canvasContainer.offsetHeight / 2;
+
+                if (activeNipple || !isInLeftHalf || !isInBottomHalf) {
+                    nipple.destroy();
+                    return;
                 }
+
+                activeNipple = nipple;
+
+                nipple.on('start', () => {
+                    this.joystick_state.pressed = true;
+                });
 
                 nipple.on('move', (evt, data) => {
                     const angle = data.angle.radian;
@@ -1653,24 +1665,18 @@ class BabylonSceneManager {
                     }
                 });
 
-                nipple.on('start', () => {
-                    this.joystick_state.pressed = true;
-                });
-            });
+                nipple.on('end', () => {
+                    this.joystick_state.up = false;
+                    this.joystick_state.down = false;
+                    this.joystick_state.left = false;
+                    this.joystick_state.right = false;
+                    this.joystick_state.pressed = false;
+                    this.joystick_state.angle = 0;
+                    this.joystick_state.force = 0;
 
-            manager.on('removed', (evt, nipple) => {
-                nipple.off('start move end');
-                this.joystick_state.up = false;
-                this.joystick_state.down = false;
-                this.joystick_state.left = false;
-                this.joystick_state.right = false;
-                this.joystick_state.pressed = false;
-                this.joystick_state.angle = 0;
-                this.joystick_state.force = 0;
-                // Re-attach camera controls when the joystick is removed
-                if (this.scene.activeCamera) {
-                    this.scene.activeCamera.attachControl(this.canvas, true);
-                }
+                    // Release the active nipple lock
+                    activeNipple = null;
+                });
             });
         }
     }
