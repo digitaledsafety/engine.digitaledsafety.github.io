@@ -2750,7 +2750,7 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                 type: 'apply_force',
                 message0: 'Apply force to %1 x: %2 y: %3 z: %4 at point x: %5 y: %6 z: %7',
                 args0: [
-                    { type: 'input_value', name: 'NAME' },
+                    { type: 'field_input', name: 'NAME', text: 'object' },
                     { type: 'input_value', name: 'FX', check: 'Number' },
                     { type: 'input_value', name: 'FY', check: 'Number' },
                     { type: 'input_value', name: 'FZ', check: 'Number' },
@@ -2895,7 +2895,7 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                     },
                     {
                         "type": "input_statement",
-                        "name": "DO"
+                        "name": "DO_CODE"
                     }
                 ],
                 "previousStatement": null,
@@ -2918,7 +2918,7 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                     },
                     {
                         "type": "input_statement",
-                        "name": "DO"
+                        "name": "DO_CODE"
                     }
                 ],
                 "previousStatement": null,
@@ -3328,14 +3328,14 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
             // --- Scripting Block Generators ---
             javascript.javascriptGenerator.forBlock['event_on_click'] = function(block, generator) {
                 const objectName = generator.valueToCode(block, 'OBJECT_SELECTOR', generator.ORDER_ATOMIC) || 'null';
-                const doCode = generator.statementToCode(block, 'DO');
+                const doCode = generator.statementToCode(block, 'DO_CODE');
                 const callback = `function(thisMesh) {\n${doCode}\n}`;
                 return `sceneManager.onClick(${objectName}, ${callback});\n`;
             };
 
             javascript.javascriptGenerator.forBlock['event_every_frame'] = function(block, generator) {
                 const objectName = generator.valueToCode(block, 'OBJECT_SELECTOR', generator.ORDER_ATOMIC) || 'null';
-                const doCode = generator.statementToCode(block, 'DO');
+                const doCode = generator.statementToCode(block, 'DO_CODE');
                 const callback = `function(thisMesh, deltaTime) {\n${doCode}\n}`;
                 return `sceneManager.everyFrame(${objectName}, ${callback});\n`;
             };
@@ -3573,7 +3573,7 @@ if (thisMesh) {
 
             javascript.javascriptGenerator.forBlock['apply_force'] = function (block, generator) {
                 // This is a more advanced physics function. A helper could be added if needed frequently.
-                const name = generator.valueToCode(block, 'NAME', generator.ORDER_ATOMIC) || 'null';
+                const name = block.getFieldValue('NAME');
                 const fx = generator.valueToCode(block, 'FX', generator.ORDER_ATOMIC) || 0;
                 const fy = generator.valueToCode(block, 'FY', generator.ORDER_ATOMIC) || 0;
                 const fz = generator.valueToCode(block, 'FZ', generator.ORDER_ATOMIC) || 0;
@@ -4659,18 +4659,6 @@ if (thisMesh) {
             }
             sceneManager = new BabylonSceneManager(canvas);
             window.sceneManager = sceneManager; // Expose for debugging and testing
-
-            // Programmatically switch to preview mode to ensure canvas is visible
-            const container = document.querySelector('.container');
-            const workspaceTab = document.getElementById('workspace-tab');
-            const previewTab = document.getElementById('preview-tab');
-            if (container && workspaceTab && previewTab) {
-                container.classList.add('preview-active');
-                previewTab.classList.add('active');
-                workspaceTab.classList.remove('active');
-                // A timeout is necessary to ensure the canvas is visible before resizing
-                setTimeout(resizeCanvas, 0);
-            }
 
             try {
                 const AsyncFunction = Object.getPrototypeOf(async function(){}).constructor;
