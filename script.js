@@ -1626,9 +1626,8 @@ class BabylonSceneManager {
             manager.on('added', (evt, nipple) => {
                 // If there's already an active nipple, or if the tap is outside the bottom-left quadrant, destroy it.
                 const isInLeftHalf = nipple.position.x < canvasContainer.offsetWidth / 2;
-                const isInBottomHalf = nipple.position.y > canvasContainer.offsetHeight / 2;
 
-                if (activeNipple || !isInLeftHalf || !isInBottomHalf) {
+                if (activeNipple || !isInLeftHalf ) {
                     nipple.destroy();
                     return;
                 }
@@ -1666,16 +1665,14 @@ class BabylonSceneManager {
                 });
 
                 nipple.on('end', () => {
+                    activeNipple = null;
+                    this.joystick_state.pressed = false;
                     this.joystick_state.up = false;
                     this.joystick_state.down = false;
                     this.joystick_state.left = false;
                     this.joystick_state.right = false;
-                    this.joystick_state.pressed = false;
                     this.joystick_state.angle = 0;
                     this.joystick_state.force = 0;
-
-                    // Release the active nipple lock
-                    activeNipple = null;
                 });
             });
         }
