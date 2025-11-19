@@ -1575,6 +1575,7 @@ class BabylonSceneManager {
             angle: 0,
             force: 0
         };
+        this.joystickManager = null;
         this.inputMap = {
             ' ': 'A',
             'a': 'Left',
@@ -1613,7 +1614,7 @@ class BabylonSceneManager {
 
         // Only initialize the joystick if the touch UI is likely active (based on CSS media queries).
         if (joystickZone && window.matchMedia('(max-width: 768px)').matches) {
-            const manager = nipplejs.create({
+            this.joystickManager = nipplejs.create({
                 zone: joystickZone,
                 mode: 'semi',
                 color: 'grey',
@@ -1621,7 +1622,7 @@ class BabylonSceneManager {
                 fadeTime: 0
             });
 
-            manager.on('added', (evt, nipple) => {
+            this.joystickManager.on('added', (evt, nipple) => {
                 // Detach camera controls when the joystick is active to prevent conflicts
                 if (this.scene.activeCamera) {
                     this.scene.activeCamera.detachControl(this.canvas);
@@ -1673,7 +1674,7 @@ class BabylonSceneManager {
                 });
             });
 
-            manager.on('removed', (evt, nipple) => {
+            this.joystickManager.on('removed', (evt, nipple) => {
                 nipple.off('start move end');
             });
         }
@@ -2161,7 +2162,10 @@ class BabylonSceneManager {
     }
 
     clear() {
-        
+        if (this.joystickManager) {
+            this.joystickManager.destroy();
+            this.joystickManager = null;
+        }
         this.uiManager.clear();
         this.scene.dispose();
         this.scene = new BABYLON.Scene(this.engine);
@@ -2183,6 +2187,10 @@ class BabylonSceneManager {
     }
 
     dispose() {
+        if (this.joystickManager) {
+            this.joystickManager.destroy();
+            this.joystickManager = null;
+        }
         this.uiManager.dispose();
         this.scene.dispose();
         this.engine.dispose();
