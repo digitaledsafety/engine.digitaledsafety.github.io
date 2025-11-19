@@ -1616,7 +1616,7 @@ class BabylonSceneManager {
         if (joystickZone && window.matchMedia('(max-width: 768px)').matches) {
             this.joystickManager = nipplejs.create({
                 zone: joystickZone,
-                mode: 'semi',
+                mode: 'dynamic',
                 color: 'grey',
                 size: 120,
                 fadeTime: 0
