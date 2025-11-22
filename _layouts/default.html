@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/x-icon" href="/engine/favicon.ico">
+    <link rel="icon" type="image/x-icon" href="{{ site.baseurl }}/favicon.ico">
     <script src="https://cdn.digitaleducationsafety.org/packages/babylon.js@8.36.1/babylon.js"></script>
     <script src="https://cdn.digitaleducationsafety.org/packages/babylon.js@8.36.1/babylon.gui.min.js"></script>
     <script src="https://cdn.digitaleducationsafety.org/packages/babylon.js@8.36.1/babylonjs.loaders.min.js"></script>
@@ -300,6 +300,56 @@
             }
         }
 
+        /* Hero Overlay Styles */
+        #hero-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            color: white;
+            text-align: center;
+            opacity: 1;
+            transition: opacity 0.5s ease-out;
+        }
+
+        #hero-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .hero-content {
+            max-width: 600px;
+            padding: 20px;
+        }
+
+        .hero-content h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+        }
+
+        .hero-content p {
+            font-size: 1.2em;
+            margin-bottom: 30px;
+        }
+
+        #start-button {
+            padding: 15px 30px;
+            font-size: 1.2em;
+            background-color: #007bff;
+            border-radius: 8px;
+            transition: background-color 0.3s;
+        }
+
+        #start-button:hover {
+            background-color: #0056b3;
+        }
+
         /* Presentation Mode and Fullscreen Styles */
         body.presentation-mode .controls,
         body.fullscreen-active .controls {
@@ -321,6 +371,13 @@
 </head>
 
 <body>
+    <div id="hero-overlay">
+        <div class="hero-content">
+            <h1>Welcome to the Creative Coding Environment</h1>
+            <p>Your journey into interactive 3D development starts here. Click the button below to begin.</p>
+            <button id="start-button" class="btn">Start Coding</button>
+        </div>
+    </div>
     {{ content }}
     <div id="workspace-data" style="display: none;">{{ page.workspace_data }}</div>
     <div class="container">
@@ -379,6 +436,6 @@
             </div>
         </div>
     </div>
-    <script src="/engine/script.js" defer></script>
+    <script src="{{ site.baseurl }}/script.js" defer></script>
 </body>
 </html>

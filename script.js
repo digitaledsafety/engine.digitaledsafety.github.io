@@ -1,3 +1,28 @@
+// --- Hero Overlay Logic ---
+document.addEventListener('DOMContentLoaded', () => {
+    const heroOverlay = document.getElementById('hero-overlay');
+    const startButton = document.getElementById('start-button');
+
+    // Make sure the elements exist before adding event listeners
+    if (heroOverlay && startButton) {
+        startButton.addEventListener('click', () => {
+            // It's possible sceneManager is not yet initialized when the DOM is ready,
+            // so we reference it via window scope inside the click handler.
+            if (window.sceneManager && window.sceneManager.audioContext && window.sceneManager.audioContext.state === 'suspended') {
+                window.sceneManager.audioContext.resume();
+            }
+
+            // Hide the overlay
+            heroOverlay.classList.add('hidden');
+
+            // Optional: completely remove the overlay from the DOM after the transition
+            setTimeout(() => {
+                heroOverlay.style.display = 'none';
+            }, 500); // Must match the CSS transition duration
+        });
+    }
+});
+
 class AssetManager {
     constructor() {
         this.db = null;
