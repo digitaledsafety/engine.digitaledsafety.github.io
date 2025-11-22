@@ -1,3 +1,5 @@
+baseurl: "/engine"
+
 collections:
   workspaces:
     output: true
