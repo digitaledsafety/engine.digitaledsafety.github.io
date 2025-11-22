@@ -547,6 +547,10 @@ var toolbox = {
                 },
                 {
                     kind: 'block',
+                    type: 'create_3d_text',
+                },
+                {
+                    kind: 'block',
                     type: 'gui_set_text',
                 },
                 {
@@ -675,7 +679,8 @@ var toolbox = {
                     "kind": "category",
                     "name": "Transform",
                     "contents": [
-                        { "kind": "block", "type": "position_model" }
+                        { "kind": "block", "type": "position_model" },
+                        { "kind": "block", "type": "scale_object" }
                     ]
                 },
                 {
@@ -1741,6 +1746,48 @@ class BabylonSceneManager {
         return sphereMesh;
     }
 
+    async createText(name, text, fontUrl, size = 1, resolution = 16, depth = 0.5) {
+        try {
+            const response = await fetch(fontUrl);
+            if (!response.ok) {
+                throw new Error(`Failed to fetch font data from ${fontUrl}`);
+            }
+            const fontData = await response.json();
+
+            const textMesh = BABYLON.MeshBuilder.CreateText(name, text, fontData, {
+                size: size,
+                resolution: resolution,
+                depth: depth
+            }, this.scene);
+
+            if (textMesh) {
+                this.objects[name] = textMesh;
+                // Center the mesh pivot
+                const boundingInfo = textMesh.getHierarchyBoundingVectors();
+                const center = boundingInfo.max.add(boundingInfo.min).scale(0.5);
+                textMesh.setPivotPoint(center);
+                return textMesh;
+            }
+            return null;
+        } catch (error) {
+            console.error('Error creating 3D text:', error);
+            return null;
+        }
+    }
+
+    scale(target, x, y, z) {
+        let name;
+        if (typeof target === 'string') {
+            name = target;
+        } else if (target && typeof target === 'object' && target.name) {
+            name = target.name;
+        }
+
+        if (name && this.objects[name]) {
+            this.objects[name].scaling = new BABYLON.Vector3(x, y, z);
+        }
+    }
+
     async importModel(name, url, x, y, z) {
         // Load model using SceneLoader
         let ext = "." + name.split('.').pop().toLowerCase();
@@ -2689,6 +2736,37 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                 tooltip: 'Creates a sphere at the specified position and returns it.',
             },
             {
+                "type": "create_3d_text",
+                "message0": "create 3D text %1 named %2",
+                "args0": [
+                    { "type": "input_value", "name": "TEXT", "check": "String" },
+                    { "type": "field_input", "name": "NAME", "text": "myText" }
+                ],
+                "message1": "font URL %1",
+                "args1": [
+                    { "type": "field_input", "name": "FONT_URL", "text": "https://assets.babylonjs.com/fonts/Droid Sans_Bold.json" }
+                ],
+                "output": "Mesh",
+                "colour": 160,
+                "tooltip": "Creates a 3D text mesh.",
+                "helpUrl": ""
+            },
+            {
+                "type": "scale_object",
+                "message0": "scale object %1 by x %2 y %3 z %4",
+                "args0": [
+                    { "type": "input_value", "name": "OBJECT" },
+                    { "type": "input_value", "name": "X", "check": "Number" },
+                    { "type": "input_value", "name": "Y", "check": "Number" },
+                    { "type": "input_value", "name": "Z", "check": "Number" }
+                ],
+                "inputsInline": true,
+                "previousStatement": null,
+                "nextStatement": null,
+                "colour": 210,
+                "tooltip": "Scales an object."
+            },
+            {
                 type: 'move_object',
                 message0: 'Move object %1 to x %2 y %3 z %4',
                 args0: [
@@ -3551,6 +3629,22 @@ if (thisMesh) {
                 const z = generator.valueToCode(block, 'Z', generator.ORDER_ATOMIC) || 0;
                 const code = `sceneManager.createSphere('${name}', ${x}, ${y}, ${z})`;
                 return [code, generator.ORDER_ATOMIC];
+            };
+
+            javascript.javascriptGenerator.forBlock['create_3d_text'] = function(block, generator) {
+                const text = generator.valueToCode(block, 'TEXT', generator.ORDER_ATOMIC) || "''";
+                const name = block.getFieldValue('NAME');
+                const fontUrl = block.getFieldValue('FONT_URL');
+                const code = `await sceneManager.createText('${name}', ${text}, '${fontUrl}')`;
+                return [code, generator.ORDER_ATOMIC];
+            };
+
+            javascript.javascriptGenerator.forBlock['scale_object'] = function(block, generator) {
+                const object = generator.valueToCode(block, 'OBJECT', generator.ORDER_ATOMIC) || 'null';
+                const x = generator.valueToCode(block, 'X', generator.ORDER_ATOMIC) || 1;
+                const y = generator.valueToCode(block, 'Y', generator.ORDER_ATOMIC) || 1;
+                const z = generator.valueToCode(block, 'Z', generator.ORDER_ATOMIC) || 1;
+                return `sceneManager.scale(${object}, ${x}, ${y}, ${z});\n`;
             };
 
             javascript.javascriptGenerator.forBlock['move_object'] = function (block, generator) {
