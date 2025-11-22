@@ -438,28 +438,5 @@
         </div>
     </div>
     <script src="{{ site.baseurl }}/script.js" defer></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.has('verify')) {
-                // Hide the welcome overlay
-                const heroOverlay = document.getElementById('hero-overlay');
-                if (heroOverlay) {
-                    heroOverlay.classList.add('hidden');
-                }
-
-                // Switch to the Preview tab
-                const container = document.querySelector('.container');
-                const workspaceTab = document.getElementById('workspace-tab');
-                const previewTab = document.getElementById('preview-tab');
-
-                if (container && workspaceTab && previewTab) {
-                    container.classList.add('preview-active');
-                    workspaceTab.classList.remove('active');
-                    previewTab.classList.add('active');
-                }
-            }
-        });
-    </script>
 </body>
 </html>
