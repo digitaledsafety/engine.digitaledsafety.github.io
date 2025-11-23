@@ -3757,7 +3757,7 @@ if (thisMesh) {
                 const text = generator.valueToCode(block, 'TEXT', generator.ORDER_ATOMIC) || "''";
                 const name = generator.valueToCode(block, 'NAME', generator.ORDER_ATOMIC) || "'myText'";
                 const fontUrl = block.getFieldValue('FONT_URL');
-                const code = `await sceneManager.createText('${name}', ${text}, '${fontUrl}')`;
+                const code = `await sceneManager.createText(${name}, ${text}, '${fontUrl}')`;
                 return [code, generator.ORDER_ATOMIC];
             };
 
