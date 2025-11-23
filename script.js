@@ -685,6 +685,10 @@ var toolbox = {
                 },
                 {
                     "kind": "block",
+                    "type": "get_property"
+                },
+                {
+                    "kind": "block",
                     "type": "save_3d_model_with_position",
                     "inputs": {
                         "POS_X": {
@@ -2286,6 +2290,27 @@ class BabylonSceneManager {
         return this.objects[name];
     }
 
+    getProperty(target, property) {
+        if (!target || !property) {
+            return null;
+        }
+        // Special handling for UI controls, which are not in the main 'objects' list
+        if (typeof target === 'string' && this.uiManager.controls[target]) {
+            target = this.uiManager.controls[target];
+        }
+
+        const propertyPath = property.split('.');
+        let current = target;
+
+        for (let i = 0; i < propertyPath.length; i++) {
+            if (current === null || current === undefined || typeof current[propertyPath[i]] === 'undefined') {
+                return null;
+            }
+            current = current[propertyPath[i]];
+        }
+        return current;
+    }
+
     animateProperty(target, property, from, to, duration, loop, loopMode) {
         const mesh = this._getMesh(target);
         if (!mesh) return;
@@ -2842,6 +2867,25 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                 "nextStatement": null,
                 "colour": 210,
                 "tooltip": "Scales an object."
+            },
+            {
+                "type": "get_property",
+                "message0": "get property %1 of object %2",
+                "args0": [
+                    {
+                        "type": "input_value",
+                        "name": "PROPERTY",
+                        "check": "String"
+                    },
+                    {
+                        "type": "input_value",
+                        "name": "OBJECT"
+                    }
+                ],
+                "output": null,
+                "colour": 230,
+                "tooltip": "Gets a property from an object.",
+                "helpUrl": ""
             },
             {
                 type: 'move_object',
@@ -3767,6 +3811,13 @@ if (thisMesh) {
                 const y = generator.valueToCode(block, 'Y', generator.ORDER_ATOMIC) || 1;
                 const z = generator.valueToCode(block, 'Z', generator.ORDER_ATOMIC) || 1;
                 return `sceneManager.scale(${object}, ${x}, ${y}, ${z});\n`;
+            };
+
+            javascript.javascriptGenerator.forBlock['get_property'] = function(block, generator) {
+                const object = generator.valueToCode(block, 'OBJECT', generator.ORDER_ATOMIC) || 'null';
+                const property = generator.valueToCode(block, 'PROPERTY', generator.ORDER_ATOMIC) || "''";
+                const code = `sceneManager.getProperty(${object}, ${property})`;
+                return [code, generator.ORDER_ATOMIC];
             };
 
             javascript.javascriptGenerator.forBlock['move_object'] = function (block, generator) {
