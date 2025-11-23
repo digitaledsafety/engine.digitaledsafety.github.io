@@ -2817,7 +2817,7 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                 "message0": "create 3D text %1 named %2",
                 "args0": [
                     { "type": "input_value", "name": "TEXT", "check": "String" },
-                    { "type": "field_input", "name": "NAME", "text": "myText" }
+                    { "type": "input_value", "name": "NAME", "check": "String" },
                 ],
                 "message1": "font URL %1",
                 "args1": [
@@ -3755,7 +3755,7 @@ if (thisMesh) {
 
             javascript.javascriptGenerator.forBlock['create_3d_text'] = function(block, generator) {
                 const text = generator.valueToCode(block, 'TEXT', generator.ORDER_ATOMIC) || "''";
-                const name = block.getFieldValue('NAME');
+                const name = generator.valueToCode(block, 'NAME', generator.ORDER_ATOMIC) || "'myText'";
                 const fontUrl = block.getFieldValue('FONT_URL');
                 const code = `await sceneManager.createText('${name}', ${text}, '${fontUrl}')`;
                 return [code, generator.ORDER_ATOMIC];
