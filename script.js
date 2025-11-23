@@ -749,6 +749,10 @@ var toolbox = {
                 {
                     kind: 'block',
                     type: 'animate_object',
+                },
+                {
+                    kind: 'block',
+                    type: 'stop_animation',
                 }
             ]
         },
@@ -2271,6 +2275,79 @@ class BabylonSceneManager {
     getMeshNames() {
         return Object.keys(this.objects);
     }
+
+    _getMesh(target) {
+        let name;
+        if (typeof target === 'string') {
+            name = target;
+        } else if (target && typeof target === 'object' && target.name) {
+            name = target.name;
+        }
+        return this.objects[name];
+    }
+
+    animateProperty(target, property, from, to, duration, loop, loopMode) {
+        const mesh = this._getMesh(target);
+        if (!mesh) return;
+
+        const frameRate = 30;
+        const totalFrames = frameRate * duration;
+
+        // Determine the data type of the property
+        let propertyType;
+        const propertyPath = property.split('.');
+        let temp = mesh;
+        for(let i = 0; i < propertyPath.length; i++) {
+            if(temp[propertyPath[i]] === undefined) {
+                console.error("Invalid property path");
+                return;
+            }
+            temp = temp[propertyPath[i]];
+        }
+
+        if (typeof temp === 'number') {
+            propertyType = BABYLON.Animation.ANIMATIONTYPE_FLOAT;
+        } else if (temp instanceof BABYLON.Vector3) {
+            propertyType = BABYLON.Animation.ANIMATIONTYPE_VECTOR3;
+        } else if (temp instanceof BABYLON.Color3) {
+            propertyType = BABYLON.Animation.ANIMATIONTYPE_COLOR3;
+        } else {
+            console.error("Unsupported animation property type");
+            return;
+        }
+
+        const bjsLoopMode = BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE;
+
+        const animation = new BABYLON.Animation(
+            "animation",
+            property,
+            frameRate,
+            propertyType,
+            bjsLoopMode
+        );
+
+        const keys = [];
+        keys.push({ frame: 0, value: from });
+        keys.push({ frame: totalFrames, value: to });
+        if (loopMode === 'PINGPONG') {
+            keys.push({ frame: totalFrames * 2, value: from });
+        }
+
+        animation.setKeys(keys);
+
+        // Stop any previous animations on the same property before starting a new one
+        this.scene.stopAnimation(mesh, property);
+
+        const endFrame = loopMode === 'PINGPONG' ? totalFrames * 2 : totalFrames;
+        this.scene.beginDirectAnimation(mesh, [animation], 0, endFrame, loop);
+    }
+
+    stopAnimation(target) {
+        const mesh = this._getMesh(target);
+        if (mesh) {
+            this.scene.stopAnimation(mesh);
+        }
+    }
 }
 
 class UIManager {
@@ -2825,22 +2902,67 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                 tooltip: 'Rotates an object by the specified angles',
             },
             {
-                type: 'animate_object',
-                message0: 'Animate %1 from x %2 y %3 z %4 to x %5 y %6 z %7',
-                args0: [
-                    { type: 'field_input', name: 'NAME', text: 'object' },
-                    { type: 'input_value', name: 'X1', check: 'Number' },
-                    { type: 'input_value', name: 'Y1', check: 'Number' },
-                    { type: 'input_value', name: 'Z1', check: 'Number' },
-                    { type: 'input_value', name: 'X2', check: 'Number' },
-                    { type: 'input_value', name: 'Y2', check: 'Number' },
-                    { type: 'input_value', name: 'Z2', check: 'Number' },
+                "type": "animate_object",
+                "message0": "animate property %1 of %2",
+                "args0": [
+                    {
+                        "type": "field_dropdown",
+                        "name": "PROPERTY",
+                        "options": [
+                            ["position.x", "position.x"],
+                            ["position.y", "position.y"],
+                            ["position.z", "position.z"],
+                            ["rotation.x", "rotation.x"],
+                            ["rotation.y", "rotation.y"],
+                            ["rotation.z", "rotation.z"],
+                            ["scaling.x", "scaling.x"],
+                            ["scaling.y", "scaling.y"],
+                            ["scaling.z", "scaling.z"]
+                        ]
+                    },
+                    {
+                        "type": "input_value",
+                        "name": "OBJECT"
+                    }
+                ],
+                "message1": "from %1 to %2 over %3 seconds",
+                "args1": [
+                    { "type": "input_value", "name": "FROM", "check": "Number" },
+                    { "type": "input_value", "name": "TO", "check": "Number" },
+                    { "type": "input_value", "name": "DURATION", "check": "Number" }
+                ],
+                "message2": "loop %1",
+                "args2": [
+                    {
+                        "type": "field_dropdown",
+                        "name": "LOOP",
+                        "options": [
+                            ["no", "NO"],
+                            ["yes", "YES"],
+                            ["ping-pong", "PINGPONG"]
+                        ]
+                    }
                 ],
                 "inputsInline": true,
-                previousStatement: null,
-                nextStatement: null,
-                colour: 300,
-                tooltip: 'Animates an object from one position to another',
+                "previousStatement": null,
+                "nextStatement": null,
+                "colour": 300,
+                "tooltip": "Animates a property of an object over a duration."
+            },
+            {
+                "type": "stop_animation",
+                "message0": "stop animation on %1",
+                "args0": [
+                    {
+                        "type": "input_value",
+                        "name": "OBJECT"
+                    }
+                ],
+                "inputsInline": true,
+                "previousStatement": null,
+                "nextStatement": null,
+                "colour": 300,
+                "tooltip": "Stops all animations on the specified object."
             },
             {
                 type: 'enable_physics',
@@ -3676,17 +3798,30 @@ if (thisMesh) {
                 return `sceneManager.rotate(${name}, ${x}, ${y}, ${z});\n`;
             };
 
-            javascript.javascriptGenerator.forBlock['animate_object'] = function (block, generator) {
-                 // This block is complex and would require a dedicated helper in the SceneManager.
-                 // For now, we'll leave its generation logic but acknowledge it's not fully abstracted.
-                const name = block.getFieldValue('NAME');
-                const x1 = generator.valueToCode(block, 'X1', generator.ORDER_ATOMIC) || 0;
-                const y1 = generator.valueToCode(block, 'Y1', generator.ORDER_ATOMIC) || 0;
-                const z1 = generator.valueToCode(block, 'Z1', generator.ORDER_ATOMIC) || 0;
-                const x2 = generator.valueToCode(block, 'X2', generator.ORDER_ATOMIC) || 0;
-                const y2 = generator.valueToCode(block, 'Y2', generator.ORDER_ATOMIC) || 0;
-                const z2 = generator.valueToCode(block, 'Z2', generator.ORDER_ATOMIC) || 0;
-                return `// Animation for '${name}' needs a dedicated helper function.\n`;
+            javascript.javascriptGenerator.forBlock['animate_object'] = function(block, generator) {
+                const object = generator.valueToCode(block, 'OBJECT', generator.ORDER_ATOMIC) || 'null';
+                const property = block.getFieldValue('PROPERTY');
+                const from = generator.valueToCode(block, 'FROM', generator.ORDER_ATOMIC) || 0;
+                const to = generator.valueToCode(block, 'TO', generator.ORDER_ATOMIC) || 0;
+                const duration = generator.valueToCode(block, 'DURATION', generator.ORDER_ATOMIC) || 1;
+                const loop = block.getFieldValue('LOOP');
+
+                let loopBool = false;
+                let loopMode = 'CYCLE'; // Default string
+
+                if (loop === 'YES') {
+                    loopBool = true;
+                } else if (loop === 'PINGPONG') {
+                    loopBool = true;
+                    loopMode = 'PINGPONG';
+                }
+
+                return `sceneManager.animateProperty(${object}, '${property}', ${from}, ${to}, ${duration}, ${loopBool}, '${loopMode}');\n`;
+            };
+
+            javascript.javascriptGenerator.forBlock['stop_animation'] = function(block, generator) {
+                const object = generator.valueToCode(block, 'OBJECT', generator.ORDER_ATOMIC) || 'null';
+                return `sceneManager.stopAnimation(${object});\n`;
             };
 
             javascript.javascriptGenerator.forBlock['enable_physics'] = function (block, generator) {
