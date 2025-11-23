@@ -2817,7 +2817,7 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                 "message0": "create 3D text %1 named %2",
                 "args0": [
                     { "type": "input_value", "name": "TEXT", "check": "String" },
-                    { "type": "input_value", "name": "NAME", "text": "myText" }
+                    { "type": "field_input", "name": "NAME", "text": "myText" }
                 ],
                 "message1": "font URL %1",
                 "args1": [
