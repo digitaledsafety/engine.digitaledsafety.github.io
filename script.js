@@ -2399,7 +2399,7 @@ class BabylonSceneManager {
             mesh.rotationQuaternion = BABYLON.Quaternion.FromEulerVector(mesh.rotation);
         }
 
-        const frameRate = 30;
+        const frameRate = 60;
         const totalFrames = frameRate * duration;
 
         const animation = new BABYLON.Animation(
@@ -2439,7 +2439,7 @@ class BabylonSceneManager {
         const mesh = this._getMesh(target);
         if (!mesh) return;
 
-        const frameRate = 30;
+        const frameRate = 60;
         const totalFrames = frameRate * duration;
 
         const animation = new BABYLON.Animation(
