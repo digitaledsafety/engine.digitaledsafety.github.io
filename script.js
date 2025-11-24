@@ -619,7 +619,7 @@ var toolbox = {
                 {
                     kind: 'block',
                     type: 'console_clear',
-                },
+                },              
             ],
         },
         {
@@ -1116,6 +1116,10 @@ var toolbox = {
                     kind: 'block',
                     type: 'math_atan2',
                 },
+                {
+                    kind: 'block',
+                    type: 'parse_number_from',
+                },                
             ],
         },
         {
