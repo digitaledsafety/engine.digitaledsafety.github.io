@@ -3782,7 +3782,23 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                 "colour": "#4C97FF",
                 "tooltip": "Clears the browser console.",
                 "helpUrl": ""
-            }
+            },
+            {
+                "type": "parse_number_from",
+                "message0": "parse number from %1",
+                "args0": [
+                    {
+                        "type": "input_value",
+                        "name": "STRING",
+                        "check": "String"
+                    }
+                ],
+                "output": "Number",
+                "colour": "%{BKY_MATH_HUE}",
+                "tooltip": "Converts a string to a number.",
+                "helpUrl": ""
+            },
+            
         ]);
 
         {
@@ -4295,6 +4311,12 @@ if (thisMesh) {
             javascript.javascriptGenerator.forBlock['console_clear'] = function(block, generator) {
                 return `console.clear();\n`;
             };
+            
+            javascript.javascriptGenerator.forBlock['parse_number_from'] = function(block, generator) {
+                const string = generator.valueToCode(block, 'STRING', generator.ORDER_ATOMIC) || "''";
+                const code = `parseFloat(${string});\n`;
+                return [code, generator.ORDER_ATOMIC];
+            };            
         }
 
         // Convert Blockly Code to JavaScript
