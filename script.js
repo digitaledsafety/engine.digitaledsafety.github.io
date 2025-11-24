@@ -2940,7 +2940,7 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                 type: 'create_box',
                 message0: 'Create box named %1 at x %2 y %3 z %4',
                 args0: [
-                    { type: 'field_input', name: 'NAME', text: 'box' },
+                    { type: 'input_value', name: "NAME", check: "String" },
                     { type: 'input_value', name: 'X', check: 'Number' },
                     { type: 'input_value', name: 'Y', check: 'Number' },
                     { type: 'input_value', name: 'Z', check: 'Number' },
@@ -2954,7 +2954,7 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                 type: 'create_sphere',
                 message0: 'Create sphere named %1 at x %2 y %3 z %4',
                 args0: [
-                    { type: 'field_input', name: 'NAME', text: 'sphere' },
+                    { type: 'input_value', name: "NAME", check: "String" },
                     { type: 'input_value', name: 'X', check: 'Number' },
                     { type: 'input_value', name: 'Y', check: 'Number' },
                     { type: 'input_value', name: 'Z', check: 'Number' },
@@ -3033,7 +3033,7 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                 type: 'create_light',
                 message0: 'Create light named %1 at x %2 y %3 z %4',
                 args0: [
-                    { type: 'field_input', name: 'NAME', text: 'light' },
+                    { type: 'input_value', name: "NAME", check: "String" },
                     { type: 'input_value', name: 'X', check: 'Number' },
                     { type: 'input_value', name: 'Y', check: 'Number' },
                     { type: 'input_value', name: 'Z', check: 'Number' },
@@ -3049,7 +3049,7 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                 message0: 'Change color of %1 to %2',
                 args0: [
                     { type: 'input_value', name: 'NAME' },
-                    { type: 'field_input', name: 'COLOR', text: '#ff0000' },
+                    { type: '"field_colour"', name: 'COLOUR', colour: '#ff0000' },
                 ],
                 "inputsInline": true,
                 previousStatement: null,
@@ -3286,8 +3286,8 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
             {
                 type: 'create_ground',
                 message0: 'Create ground named %1 with width %2 and height %3',
-                args0: [
-                    { type: 'field_input', name: 'NAME', text: 'ground' },
+                args0: [                   
+                    { type: 'input_value', name: "NAME", check: "String" },                    
                     { type: 'input_value', name: 'WIDTH', check: 'Number' },
                     { type: 'input_value', name: 'HEIGHT', check: 'Number' },
                 ],
@@ -3970,10 +3970,10 @@ if (thisMesh) {
             };
 
             javascript.javascriptGenerator.forBlock['create_ground'] = function (block, generator) {
-                const name = block.getFieldValue('NAME');
+                const name = generator.valueToCode(block, 'NAME', generator.ORDER_ATOMIC) || "'myGround'";
                 const width = generator.valueToCode(block, 'WIDTH', generator.ORDER_ATOMIC) || 10;
                 const height = generator.valueToCode(block, 'HEIGHT', generator.ORDER_ATOMIC) || 10;
-                return `sceneManager.createGround('${name}', ${width}, ${height});\n`;
+                return `sceneManager.createGround(${name}, ${width}, ${height});\n`;
             };
 
             javascript.javascriptGenerator.forBlock['set_ground_material'] = function (block, generator) {
@@ -3987,20 +3987,20 @@ if (thisMesh) {
             };
 
             javascript.javascriptGenerator.forBlock['create_box'] = function (block, generator) {
-                const name = block.getFieldValue('NAME');
+                const name = generator.valueToCode(block, 'NAME', generator.ORDER_ATOMIC) || "'myBox'";
                 const x = generator.valueToCode(block, 'X', generator.ORDER_ATOMIC) || 0;
                 const y = generator.valueToCode(block, 'Y', generator.ORDER_ATOMIC) || 0;
                 const z = generator.valueToCode(block, 'Z', generator.ORDER_ATOMIC) || 0;
-                const code = `sceneManager.createBox('${name}', ${x}, ${y}, ${z})`;
+                const code = `sceneManager.createBox(${name}, ${x}, ${y}, ${z})`;
                 return [code, generator.ORDER_ATOMIC];
             };
 
             javascript.javascriptGenerator.forBlock['create_sphere'] = function (block, generator) {
-                const name = block.getFieldValue('NAME');
+                const name = generator.valueToCode(block, 'NAME', generator.ORDER_ATOMIC) || "'mySphere'";
                 const x = generator.valueToCode(block, 'X', generator.ORDER_ATOMIC) || 0;
                 const y = generator.valueToCode(block, 'Y', generator.ORDER_ATOMIC) || 0;
                 const z = generator.valueToCode(block, 'Z', generator.ORDER_ATOMIC) || 0;
-                const code = `sceneManager.createSphere('${name}', ${x}, ${y}, ${z})`;
+                const code = `sceneManager.createSphere(${name}, ${x}, ${y}, ${z})`;
                 return [code, generator.ORDER_ATOMIC];
             };
 
@@ -4036,11 +4036,11 @@ if (thisMesh) {
             };
 
             javascript.javascriptGenerator.forBlock['create_light'] = function (block, generator) {
-                const name = block.getFieldValue('NAME');
+                const name = generator.valueToCode(block, 'NAME', generator.ORDER_ATOMIC) || "'myLight'";
                 const x = generator.valueToCode(block, 'X', generator.ORDER_ATOMIC) || 0;
                 const y = generator.valueToCode(block, 'Y', generator.ORDER_ATOMIC) || 0;
                 const z = generator.valueToCode(block, 'Z', generator.ORDER_ATOMIC) || 0;
-                return `sceneManager.createLight('${name}', ${x}, ${y}, ${z});\n`;
+                return `sceneManager.createLight(${name}, ${x}, ${y}, ${z});\n`;
             };
 
             javascript.javascriptGenerator.forBlock['change_object_color'] = function (block, generator) {
