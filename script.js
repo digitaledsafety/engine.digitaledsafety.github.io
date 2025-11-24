@@ -4045,7 +4045,7 @@ if (thisMesh) {
 
             javascript.javascriptGenerator.forBlock['change_object_color'] = function (block, generator) {
                 const name = generator.valueToCode(block, 'NAME', generator.ORDER_ATOMIC) || 'null';
-                const color = block.getFieldValue('COLOR');
+                const color = block.getFieldValue('COLOUR');
                 return `sceneManager.changeColor(${name}, '${color}');\n`;
             };
 
