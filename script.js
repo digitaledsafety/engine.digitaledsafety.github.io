@@ -756,6 +756,18 @@ var toolbox = {
                 },
                 {
                     kind: 'block',
+                    type: 'animate_rotation',
+                },
+                {
+                    kind: 'block',
+                    type: 'animate_position',
+                },
+                {
+                    kind: 'block',
+                    type: 'animate_scale',
+                },
+                {
+                    kind: 'block',
                     type: 'stop_animation',
                 }
             ]
@@ -2373,6 +2385,117 @@ class BabylonSceneManager {
             this.scene.stopAnimation(mesh);
         }
     }
+
+    animateRotation(target, x, y, z, duration, loop, loopMode) {
+        const mesh = this._getMesh(target);
+        if (!mesh) return;
+
+        // Ensure the mesh is using quaternions for rotation
+        if (!mesh.rotationQuaternion) {
+            mesh.rotationQuaternion = BABYLON.Quaternion.FromEulerVector(mesh.rotation);
+        }
+
+        const frameRate = 30;
+        const totalFrames = frameRate * duration;
+
+        const animation = new BABYLON.Animation(
+            "rotationAnimation",
+            "rotationQuaternion",
+            frameRate,
+            BABYLON.Animation.ANIMATIONTYPE_QUATERNION,
+            BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE
+        );
+
+        const startRotation = mesh.rotationQuaternion;
+        const endRotation = BABYLON.Quaternion.FromEulerAngles(
+            BABYLON.Tools.ToRadians(x),
+            BABYLON.Tools.ToRadians(y),
+            BABYLON.Tools.ToRadians(z)
+        );
+
+        const keys = [];
+        keys.push({ frame: 0, value: startRotation });
+        keys.push({ frame: totalFrames, value: endRotation });
+        if (loopMode === 'PINGPONG') {
+            keys.push({ frame: totalFrames * 2, value: startRotation });
+        }
+
+        animation.setKeys(keys);
+
+        // Use shortest path for quaternion interpolation
+        animation.useShortestPath = true;
+
+        this.scene.stopAnimation(mesh, "rotationQuaternion");
+
+        const endFrame = loopMode === 'PINGPONG' ? totalFrames * 2 : totalFrames;
+        this.scene.beginDirectAnimation(mesh, [animation], 0, endFrame, loop);
+    }
+
+    animatePosition(target, x, y, z, duration, loop, loopMode) {
+        const mesh = this._getMesh(target);
+        if (!mesh) return;
+
+        const frameRate = 30;
+        const totalFrames = frameRate * duration;
+
+        const animation = new BABYLON.Animation(
+            "positionAnimation",
+            "position",
+            frameRate,
+            BABYLON.Animation.ANIMATIONTYPE_VECTOR3,
+            BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE
+        );
+
+        const startPosition = mesh.position;
+        const endPosition = new BABYLON.Vector3(x, y, z);
+
+        const keys = [];
+        keys.push({ frame: 0, value: startPosition });
+        keys.push({ frame: totalFrames, value: endPosition });
+        if (loopMode === 'PINGPONG') {
+            keys.push({ frame: totalFrames * 2, value: startPosition });
+        }
+
+        animation.setKeys(keys);
+
+        this.scene.stopAnimation(mesh, "position");
+
+        const endFrame = loopMode === 'PINGPONG' ? totalFrames * 2 : totalFrames;
+        this.scene.beginDirectAnimation(mesh, [animation], 0, endFrame, loop);
+    }
+
+    animateScale(target, x, y, z, duration, loop, loopMode) {
+        const mesh = this._getMesh(target);
+        if (!mesh) return;
+
+        const frameRate = 30;
+        const totalFrames = frameRate * duration;
+
+        const animation = new BABYLON.Animation(
+            "scaleAnimation",
+            "scaling",
+            frameRate,
+            BABYLON.Animation.ANIMATIONTYPE_VECTOR3,
+            BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE
+        );
+
+        const startScale = mesh.scaling;
+        const endScale = new BABYLON.Vector3(x, y, z);
+
+        const keys = [];
+        keys.push({ frame: 0, value: startScale });
+        keys.push({ frame: totalFrames, value: endScale });
+        if (loopMode === 'PINGPONG') {
+            keys.push({ frame: totalFrames * 2, value: startScale });
+        }
+
+        animation.setKeys(keys);
+
+        this.scene.stopAnimation(mesh, "scaling");
+
+        const endFrame = loopMode === 'PINGPONG' ? totalFrames * 2 : totalFrames;
+        this.scene.beginDirectAnimation(mesh, [animation], 0, endFrame, loop);
+    }
 }
 
 class UIManager {
@@ -2953,15 +3076,7 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                         "type": "field_dropdown",
                         "name": "PROPERTY",
                         "options": [
-                            ["position.x", "position.x"],
-                            ["position.y", "position.y"],
-                            ["position.z", "position.z"],
-                            ["rotation.x", "rotation.x"],
-                            ["rotation.y", "rotation.y"],
-                            ["rotation.z", "rotation.z"],
-                            ["scaling.x", "scaling.x"],
-                            ["scaling.y", "scaling.y"],
-                            ["scaling.z", "scaling.z"]
+                            ["visibility", "visibility"]
                         ]
                     },
                     {
@@ -3007,6 +3122,78 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                 "nextStatement": null,
                 "colour": 300,
                 "tooltip": "Stops all animations on the specified object."
+            },
+            {
+                "type": "animate_rotation",
+                "message0": "animate rotation of %1 to x %2 y %3 z %4 degrees over %5 seconds",
+                "args0": [
+                    { "type": "input_value", "name": "OBJECT" },
+                    { "type": "input_value", "name": "X", "check": "Number" },
+                    { "type": "input_value", "name": "Y", "check": "Number" },
+                    { "type": "input_value", "name": "Z", "check": "Number" },
+                    { "type": "input_value", "name": "DURATION", "check": "Number" }
+                ],
+                "message1": "loop %1",
+                "args1": [
+                    {
+                        "type": "field_dropdown",
+                        "name": "LOOP",
+                        "options": [ ["no", "NO"], ["yes", "YES"], ["ping-pong", "PINGPONG"] ]
+                    }
+                ],
+                "inputsInline": true,
+                "previousStatement": null,
+                "nextStatement": null,
+                "colour": 300,
+                "tooltip": "Animates the rotation of an object."
+            },
+            {
+                "type": "animate_position",
+                "message0": "animate position of %1 to x %2 y %3 z %4 over %5 seconds",
+                "args0": [
+                    { "type": "input_value", "name": "OBJECT" },
+                    { "type": "input_value", "name": "X", "check": "Number" },
+                    { "type": "input_value", "name": "Y", "check": "Number" },
+                    { "type": "input_value", "name": "Z", "check": "Number" },
+                    { "type": "input_value", "name": "DURATION", "check": "Number" }
+                ],
+                "message1": "loop %1",
+                "args1": [
+                    {
+                        "type": "field_dropdown",
+                        "name": "LOOP",
+                        "options": [ ["no", "NO"], ["yes", "YES"], ["ping-pong", "PINGPONG"] ]
+                    }
+                ],
+                "inputsInline": true,
+                "previousStatement": null,
+                "nextStatement": null,
+                "colour": 300,
+                "tooltip": "Animates the position of an object."
+            },
+            {
+                "type": "animate_scale",
+                "message0": "animate scale of %1 to x %2 y %3 z %4 over %5 seconds",
+                "args0": [
+                    { "type": "input_value", "name": "OBJECT" },
+                    { "type": "input_value", "name": "X", "check": "Number" },
+                    { "type": "input_value", "name": "Y", "check": "Number" },
+                    { "type": "input_value", "name": "Z", "check": "Number" },
+                    { "type": "input_value", "name": "DURATION", "check": "Number" }
+                ],
+                "message1": "loop %1",
+                "args1": [
+                    {
+                        "type": "field_dropdown",
+                        "name": "LOOP",
+                        "options": [ ["no", "NO"], ["yes", "YES"], ["ping-pong", "PINGPONG"] ]
+                    }
+                ],
+                "inputsInline": true,
+                "previousStatement": null,
+                "nextStatement": null,
+                "colour": 300,
+                "tooltip": "Animates the scale of an object."
             },
             {
                 type: 'enable_physics',
@@ -3874,6 +4061,69 @@ if (thisMesh) {
             javascript.javascriptGenerator.forBlock['stop_animation'] = function(block, generator) {
                 const object = generator.valueToCode(block, 'OBJECT', generator.ORDER_ATOMIC) || 'null';
                 return `sceneManager.stopAnimation(${object});\n`;
+            };
+
+            javascript.javascriptGenerator.forBlock['animate_rotation'] = function(block, generator) {
+                const object = generator.valueToCode(block, 'OBJECT', generator.ORDER_ATOMIC) || 'null';
+                const x = generator.valueToCode(block, 'X', generator.ORDER_ATOMIC) || 0;
+                const y = generator.valueToCode(block, 'Y', generator.ORDER_ATOMIC) || 0;
+                const z = generator.valueToCode(block, 'Z', generator.ORDER_ATOMIC) || 0;
+                const duration = generator.valueToCode(block, 'DURATION', generator.ORDER_ATOMIC) || 1;
+                const loop = block.getFieldValue('LOOP');
+
+                let loopBool = false;
+                let loopMode = 'CYCLE';
+
+                if (loop === 'YES') {
+                    loopBool = true;
+                } else if (loop === 'PINGPONG') {
+                    loopBool = true;
+                    loopMode = 'PINGPONG';
+                }
+
+                return `sceneManager.animateRotation(${object}, ${x}, ${y}, ${z}, ${duration}, ${loopBool}, '${loopMode}');\n`;
+            };
+
+            javascript.javascriptGenerator.forBlock['animate_position'] = function(block, generator) {
+                const object = generator.valueToCode(block, 'OBJECT', generator.ORDER_ATOMIC) || 'null';
+                const x = generator.valueToCode(block, 'X', generator.ORDER_ATOMIC) || 0;
+                const y = generator.valueToCode(block, 'Y', generator.ORDER_ATOMIC) || 0;
+                const z = generator.valueToCode(block, 'Z', generator.ORDER_ATOMIC) || 0;
+                const duration = generator.valueToCode(block, 'DURATION', generator.ORDER_ATOMIC) || 1;
+                const loop = block.getFieldValue('LOOP');
+
+                let loopBool = false;
+                let loopMode = 'CYCLE';
+
+                if (loop === 'YES') {
+                    loopBool = true;
+                } else if (loop === 'PINGPONG') {
+                    loopBool = true;
+                    loopMode = 'PINGPONG';
+                }
+
+                return `sceneManager.animatePosition(${object}, ${x}, ${y}, ${z}, ${duration}, ${loopBool}, '${loopMode}');\n`;
+            };
+
+            javascript.javascriptGenerator.forBlock['animate_scale'] = function(block, generator) {
+                const object = generator.valueToCode(block, 'OBJECT', generator.ORDER_ATOMIC) || 'null';
+                const x = generator.valueToCode(block, 'X', generator.ORDER_ATOMIC) || 1;
+                const y = generator.valueToCode(block, 'Y', generator.ORDER_ATOMIC) || 1;
+                const z = generator.valueToCode(block, 'Z', generator.ORDER_ATOMIC) || 1;
+                const duration = generator.valueToCode(block, 'DURATION', generator.ORDER_ATOMIC) || 1;
+                const loop = block.getFieldValue('LOOP');
+
+                let loopBool = false;
+                let loopMode = 'CYCLE';
+
+                if (loop === 'YES') {
+                    loopBool = true;
+                } else if (loop === 'PINGPONG') {
+                    loopBool = true;
+                    loopMode = 'PINGPONG';
+                }
+
+                return `sceneManager.animateScale(${object}, ${x}, ${y}, ${z}, ${duration}, ${loopBool}, '${loopMode}');\n`;
             };
 
             javascript.javascriptGenerator.forBlock['enable_physics'] = function (block, generator) {
