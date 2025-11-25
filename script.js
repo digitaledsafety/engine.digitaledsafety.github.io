@@ -2951,7 +2951,7 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                 type: 'create_box',
                 message0: 'Create box named %1 at x %2 y %3 z %4',
                 args0: [
-                    { type: 'field_input', name: 'NAME', text: 'box' },
+                    { "type": "input_value", "name": "NAME", "check": "String" },
                     { type: 'input_value', name: 'X', check: 'Number' },
                     { type: 'input_value', name: 'Y', check: 'Number' },
                     { type: 'input_value', name: 'Z', check: 'Number' },
@@ -2965,7 +2965,7 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                 type: 'create_sphere',
                 message0: 'Create sphere named %1 at x %2 y %3 z %4',
                 args0: [
-                    { type: 'field_input', name: 'NAME', text: 'sphere' },
+                    { "type": "input_value", "name": "NAME", "check": "String" },
                     { type: 'input_value', name: 'X', check: 'Number' },
                     { type: 'input_value', name: 'Y', check: 'Number' },
                     { type: 'input_value', name: 'Z', check: 'Number' },
@@ -4019,20 +4019,20 @@ if (thisMesh) {
             };
 
             javascript.javascriptGenerator.forBlock['create_box'] = function (block, generator) {
-                const name = block.getFieldValue('NAME');
+                const name = generator.valueToCode(block, 'NAME', generator.ORDER_ATOMIC) || "'myBox'";
                 const x = generator.valueToCode(block, 'X', generator.ORDER_ATOMIC) || 0;
                 const y = generator.valueToCode(block, 'Y', generator.ORDER_ATOMIC) || 0;
                 const z = generator.valueToCode(block, 'Z', generator.ORDER_ATOMIC) || 0;
-                const code = `sceneManager.createBox('${name}', ${x}, ${y}, ${z})`;
+                const code = `sceneManager.createBox(${name}, ${x}, ${y}, ${z})`;
                 return [code, generator.ORDER_ATOMIC];
             };
 
             javascript.javascriptGenerator.forBlock['create_sphere'] = function (block, generator) {
-                const name = block.getFieldValue('NAME');
+                const name = generator.valueToCode(block, 'NAME', generator.ORDER_ATOMIC) || "'mySphere'";                
                 const x = generator.valueToCode(block, 'X', generator.ORDER_ATOMIC) || 0;
                 const y = generator.valueToCode(block, 'Y', generator.ORDER_ATOMIC) || 0;
                 const z = generator.valueToCode(block, 'Z', generator.ORDER_ATOMIC) || 0;
-                const code = `sceneManager.createSphere('${name}', ${x}, ${y}, ${z})`;
+                const code = `sceneManager.createSphere(${name}, ${x}, ${y}, ${z})`;
                 return [code, generator.ORDER_ATOMIC];
             };
 
