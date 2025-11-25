@@ -689,6 +689,14 @@ var toolbox = {
                 },
                 {
                     "kind": "block",
+                    "type": "set_metadata"
+                },
+                {
+                    "kind": "block",
+                    "type": "get_metadata"
+                },
+                {
+                    "kind": "block",
                     "type": "save_3d_model_with_position",
                     "inputs": {
                         "POS_X": {
@@ -2331,6 +2339,24 @@ class BabylonSceneManager {
         return current;
     }
 
+    getMetadata(target, key) {
+        const mesh = this._getMesh(target);
+        if (!mesh || !mesh.metadata || typeof mesh.metadata[key] === 'undefined') {
+            return null;
+        }
+        return mesh.metadata[key];
+    }
+
+    setMetadata(target, key, value) {
+        const mesh = this._getMesh(target);
+        if (!mesh) return;
+
+        if (!mesh.metadata) {
+            mesh.metadata = {};
+        }
+        mesh.metadata[key] = value;
+    }
+
     animateProperty(target, property, from, to, duration, loop, loopMode) {
         const mesh = this._getMesh(target);
         if (!mesh) return;
@@ -3024,6 +3050,31 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                 "colour": 230,
                 "tooltip": "Gets a property from an object.",
                 "helpUrl": ""
+            },
+            {
+                "type": "set_metadata",
+                "message0": "set metadata key %1 on object %2 to value %3",
+                "args0": [
+                    { "type": "input_value", "name": "KEY", "check": "String" },
+                    { "type": "input_value", "name": "OBJECT" },
+                    { "type": "input_value", "name": "VALUE" }
+                ],
+                "inputsInline": true,
+                "previousStatement": null,
+                "nextStatement": null,
+                "colour": 230,
+                "tooltip": "Sets a metadata key-value pair on an object."
+            },
+            {
+                "type": "get_metadata",
+                "message0": "get metadata key %1 from object %2",
+                "args0": [
+                    { "type": "input_value", "name": "KEY", "check": "String" },
+                    { "type": "input_value", "name": "OBJECT" }
+                ],
+                "output": null,
+                "colour": 230,
+                "tooltip": "Gets a metadata value from an object by its key."
             },
             {
                 type: 'move_object',
@@ -4056,6 +4107,20 @@ if (thisMesh) {
                 const object = generator.valueToCode(block, 'OBJECT', generator.ORDER_ATOMIC) || 'null';
                 const property = generator.valueToCode(block, 'PROPERTY', generator.ORDER_ATOMIC) || "''";
                 const code = `sceneManager.getProperty(${object}, ${property})`;
+                return [code, generator.ORDER_ATOMIC];
+            };
+
+            javascript.javascriptGenerator.forBlock['set_metadata'] = function(block, generator) {
+                const key = generator.valueToCode(block, 'KEY', generator.ORDER_ATOMIC) || "''";
+                const object = generator.valueToCode(block, 'OBJECT', generator.ORDER_ATOMIC) || 'null';
+                const value = generator.valueToCode(block, 'VALUE', generator.ORDER_ATOMIC) || 'null';
+                return `sceneManager.setMetadata(${object}, ${key}, ${value});\n`;
+            };
+
+            javascript.javascriptGenerator.forBlock['get_metadata'] = function(block, generator) {
+                const key = generator.valueToCode(block, 'KEY', generator.ORDER_ATOMIC) || "''";
+                const object = generator.valueToCode(block, 'OBJECT', generator.ORDER_ATOMIC) || 'null';
+                const code = `sceneManager.getMetadata(${object}, ${key})`;
                 return [code, generator.ORDER_ATOMIC];
             };
 
