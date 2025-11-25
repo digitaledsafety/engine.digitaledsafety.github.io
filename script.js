@@ -810,6 +810,10 @@ var toolbox = {
                     kind: 'block',
                     type: 'set_gravity',
                 },
+                {
+                    kind: 'block',
+                    type: 'create_environment',
+                },
             ]
         },
 
@@ -2500,6 +2504,13 @@ class BabylonSceneManager {
         const endFrame = loopMode === 'PINGPONG' ? totalFrames * 2 : totalFrames;
         this.scene.beginDirectAnimation(mesh, [animation], 0, endFrame, loop);
     }
+
+    createEnvironment(options) {
+        if (this.environmentHelper) {
+            this.environmentHelper.dispose();
+        }
+        this.environmentHelper = this.scene.createDefaultEnvironment(options);
+    }
 }
 
 class UIManager {
@@ -3802,6 +3813,27 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                 "tooltip": "Converts a string to a number.",
                 "helpUrl": ""
             },
+            {
+                "type": "create_environment",
+                "message0": "Create environment with skybox %1 ground %2",
+                "args0": [
+                    {
+                        "type": "field_checkbox",
+                        "name": "ENABLE_SKYBOX",
+                        "checked": true
+                    },
+                    {
+                        "type": "field_checkbox",
+                        "name": "ENABLE_GROUND",
+                        "checked": true
+                    }
+                ],
+                "previousStatement": null,
+                "nextStatement": null,
+                "colour": 180,
+                "tooltip": "Creates a skybox and ground for the scene.",
+                "helpUrl": ""
+            }
             
         ]);
 
@@ -4320,7 +4352,17 @@ if (thisMesh) {
                 const string = generator.valueToCode(block, 'STRING', generator.ORDER_ATOMIC) || "''";
                 const code = `parseFloat(${string});\n`;
                 return [code, generator.ORDER_ATOMIC];
-            };            
+            };
+
+            javascript.javascriptGenerator.forBlock['create_environment'] = function(block, generator) {
+                const enableSkybox = block.getFieldValue('ENABLE_SKYBOX') === 'TRUE';
+                const enableGround = block.getFieldValue('ENABLE_GROUND') === 'TRUE';
+                const options = {
+                    createSkybox: enableSkybox,
+                    createGround: enableGround
+                };
+                return `sceneManager.createEnvironment(${JSON.stringify(options)});\n`;
+            };
         }
 
         // Convert Blockly Code to JavaScript
