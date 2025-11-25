@@ -560,6 +560,22 @@ var toolbox = {
                 {
                     kind: 'block',
                     type: 'gui_get_input_text',
+                },
+                {
+                    kind: 'block',
+                    type: 'gui_create_button',
+                },
+                {
+                    kind: 'block',
+                    type: 'gui_create_image_from_url',
+                },
+                {
+                    kind: 'block',
+                    type: 'gui_create_image_from_asset',
+                },
+                {
+                    kind: 'block',
+                    type: 'event_on_gui_click',
                 }
             ]
         },
@@ -2518,6 +2534,7 @@ class UIManager {
         this.scene = scene;
         this.advancedTexture = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI", true, this.scene);
         this.controls = {};
+        this.assetUrls = {};
     }
 
     createText(name, text, options = {}) {
@@ -2562,13 +2579,78 @@ class UIManager {
         return "";
     }
 
+    createButton(name, text, options = {}) {
+        const button = BABYLON.GUI.Button.CreateSimpleButton(name, text);
+        button.width = options.width || "150px";
+        button.height = options.height || "40px";
+        button.color = options.color || "white";
+        button.background = options.background || "green";
+        button.top = options.top || "0px";
+        button.left = options.left || "0px";
+        button.horizontalAlignment = options.horizontalAlignment !== undefined ? options.horizontalAlignment : BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
+        button.verticalAlignment = options.verticalAlignment !== undefined ? options.verticalAlignment : BABYLON.GUI.Control.VERTICAL_ALIGNMENT_CENTER;
+        this.advancedTexture.addControl(button);
+        this.controls[name] = button;
+        return button;
+    }
+
+    createImage(name, url, options = {}) {
+        const image = new BABYLON.GUI.Image(name, url);
+        image.width = options.width || "100px";
+        image.height = options.height || "100px";
+        image.top = options.top || "0px";
+        image.left = options.left || "0px";
+        image.horizontalAlignment = options.horizontalAlignment !== undefined ? options.horizontalAlignment : BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
+        image.verticalAlignment = options.verticalAlignment !== undefined ? options.verticalAlignment : BABYLON.GUI.Control.VERTICAL_ALIGNMENT_CENTER;
+        this.advancedTexture.addControl(image);
+        this.controls[name] = image;
+        return image;
+    }
+
+    createImageFromAsset(name, asset, options = {}) {
+        if (this.controls[name]) {
+            this.controls[name].dispose();
+        }
+
+        if (this.assetUrls[name]) {
+            URL.revokeObjectURL(this.assetUrls[name]);
+        }
+
+        const url = URL.createObjectURL(asset.data);
+        this.assetUrls[name] = url; // Store the URL
+        const image = new BABYLON.GUI.Image(name, url);
+
+        // Set properties
+        Object.keys(options).forEach(key => {
+            if (key in image) {
+                image[key] = options[key];
+            }
+        });
+
+        this.advancedTexture.addControl(image);
+        this.controls[name] = image;
+
+        return image;
+    }
+
+    onControlClick(name, callback) {
+        if (this.controls[name]) {
+            this.controls[name].onPointerClickObservable.add(callback);
+        }
+    }
+
     clear() {
         // Dispose all controls
         for (const name in this.controls) {
             this.controls[name].dispose();
         }
         this.controls = {};
-        // The advancedTexture itself doesn't need to be cleared of controls one-by-one if it's going to be disposed
+
+        // Revoke all created asset URLs
+        for (const name in this.assetUrls) {
+            URL.revokeObjectURL(this.assetUrls[name]);
+        }
+        this.assetUrls = {};
     }
 
     dispose() {
@@ -3743,6 +3825,61 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                 "tooltip": "Gets the text from a GUI input field.",
                 "helpUrl": ""
             },
+            {
+                "type": "gui_create_button",
+                "message0": "create button named %1 with text %2",
+                "args0": [
+                    { "type": "field_input", "name": "NAME", "text": "myButton" },
+                    { "type": "input_value", "name": "TEXT", "check": "String" }
+                ],
+                "inputsInline": true,
+                "previousStatement": null,
+                "nextStatement": null,
+                "colour": "#5B80A5",
+                "tooltip": "Creates a new button in the GUI.",
+                "helpUrl": ""
+            },
+            {
+                "type": "gui_create_image_from_url",
+                "message0": "create image named %1 from URL %2",
+                "args0": [
+                    { "type": "field_input", "name": "NAME", "text": "myImage" },
+                    { "type": "input_value", "name": "URL", "check": "String" }
+                ],
+                "inputsInline": true,
+                "previousStatement": null,
+                "nextStatement": null,
+                "colour": "#5B80A5",
+                "tooltip": "Creates a new image in the GUI from a URL.",
+                "helpUrl": ""
+            },
+            {
+                "type": "gui_create_image_from_asset",
+                "message0": "create image named %1 from asset %2",
+                "args0": [
+                    { "type": "field_input", "name": "NAME", "text": "myImage" },
+                    { "type": "input_value", "name": "ASSET", "check": "String" }
+                ],
+                "previousStatement": null,
+                "nextStatement": null,
+                "colour": "#5B80A5",
+                "tooltip": "Creates a new image in the GUI from an asset.",
+                "helpUrl": ""
+            },
+            {
+                "type": "event_on_gui_click",
+                "message0": "when GUI element %1 is clicked %2 do %3",
+                "args0": [
+                    { "type": "field_input", "name": "NAME", "text": "myButton" },
+                    { "type": "input_dummy" },
+                    { "type": "input_statement", "name": "DO" }
+                ],
+                "previousStatement": null,
+                "nextStatement": null,
+                "colour": "%{BKY_LOOPS_HUE}",
+                "tooltip": "Executes code when the specified GUI element is clicked.",
+                "helpUrl": ""
+            },
             // Console Blocks
             {
                 "type": "console_log",
@@ -4326,6 +4463,38 @@ if (thisMesh) {
                 const name = block.getFieldValue('NAME');
                 const code = `sceneManager.uiManager.getInputText('${name}')`;
                 return [code, generator.ORDER_ATOMIC];
+            };
+
+            javascript.javascriptGenerator.forBlock['gui_create_button'] = function(block, generator) {
+                const name = block.getFieldValue('NAME');
+                const text = generator.valueToCode(block, 'TEXT', generator.ORDER_ATOMIC) || "''";
+                return `sceneManager.uiManager.createButton('${name}', ${text});\n`;
+            };
+
+            javascript.javascriptGenerator.forBlock['gui_create_image_from_url'] = function(block, generator) {
+                const name = block.getFieldValue('NAME');
+                const url = generator.valueToCode(block, 'URL', generator.ORDER_ATOMIC) || "''";
+                return `sceneManager.uiManager.createImage('${name}', ${url});\n`;
+            };
+
+            javascript.javascriptGenerator.forBlock['gui_create_image_from_asset'] = function(block, generator) {
+                const name = block.getFieldValue('NAME');
+                const assetName = generator.valueToCode(block, 'ASSET', generator.ORDER_ATOMIC) || "''";
+                return `
+                    (async () => {
+                        const asset = await assetManager.getAsset(${assetName});
+                        if (asset) {
+                            sceneManager.uiManager.createImageFromAsset('${name}', asset);
+                        }
+                    })();
+                `;
+            };
+
+            javascript.javascriptGenerator.forBlock['event_on_gui_click'] = function(block, generator) {
+                const name = block.getFieldValue('NAME');
+                const doCode = generator.statementToCode(block, 'DO');
+                const callback = `function() {\n${doCode}\n}`;
+                return `sceneManager.uiManager.onControlClick('${name}', ${callback});\n`;
             };
 
             // --- Console Block Generators ---
