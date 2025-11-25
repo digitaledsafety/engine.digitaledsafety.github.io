@@ -547,6 +547,10 @@ var toolbox = {
                 },
                 {
                     kind: 'block',
+                    type: 'set_fps_camera',
+                },
+                {
+                    kind: 'block',
                     type: 'create_3d_text',
                 },
                 {
@@ -2093,9 +2097,46 @@ class BabylonSceneManager {
         }
     }
 
+    setFpsCamera(target) {
+        let mesh = null;
+        if (typeof target === 'string') {
+            mesh = this.objects[target];
+        } else if (target && typeof target === 'object') {
+            mesh = target;
+        }
+
+        if (!mesh) {
+            console.warn("setFpsCamera: Target object not found.");
+            return;
+        }
+
+        // Dispose of the old camera
+        if (this.scene.activeCamera) {
+            this.scene.activeCamera.dispose();
+        }
+
+        // Create a new UniversalCamera
+        const camera = new BABYLON.UniversalCamera("fpsCamera", new BABYLON.Vector3(0, 1.6, 0), this.scene);
+        camera.attachControl(this.canvas, true);
+
+        // Parent the camera to the mesh
+        camera.parent = mesh;
+
+        // Set the active camera
+        this.scene.activeCamera = camera;
+    }
+
     setIsometricCamera() {
         let camera = this.scene.activeCamera;
         if (camera) {
+            // If the current camera is a UniversalCamera (like our FPS one),
+            // we need to dispose it and create a new ArcRotateCamera for isometric view.
+            if (camera instanceof BABYLON.UniversalCamera) {
+                camera.dispose();
+                camera = new BABYLON.ArcRotateCamera('Camera', Math.PI / 2, Math.PI / 4, 10, BABYLON.Vector3.Zero(), this.scene);
+                camera.attachControl(this.canvas, true);
+                this.scene.activeCamera = camera;
+            }
             camera.mode = BABYLON.Camera.ORTHOGRAPHIC_CAMERA;
             const aspectRatio = this.engine.getRenderingCanvas().width / this.engine.getRenderingCanvas().height;
             const orthoSize = 10;
@@ -2971,6 +3012,21 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                 nextStatement: null,
                 colour: 160,
                 tooltip: 'Sets the active camera to an isometric angle pointing at the origin.',
+                helpUrl: '',
+            },
+            {
+                type: 'set_fps_camera',
+                message0: 'set first-person camera on %1',
+                args0: [
+                    {
+                        type: 'input_value',
+                        name: 'OBJECT',
+                    },
+                ],
+                previousStatement: null,
+                nextStatement: null,
+                colour: 160,
+                tooltip: 'Attaches a first-person camera to the specified object.',
                 helpUrl: '',
             },
             {
@@ -4042,6 +4098,11 @@ if (thisMesh) {
 
             javascript.javascriptGenerator.forBlock['set_isometric_camera'] = function (block, generator) {
                 return `sceneManager.setIsometricCamera();\n`;
+            };
+
+            javascript.javascriptGenerator.forBlock['set_fps_camera'] = function (block, generator) {
+                const object = generator.valueToCode(block, 'OBJECT', generator.ORDER_ATOMIC) || 'null';
+                return `sceneManager.setFpsCamera(${object});\n`;
             };
 
             javascript.javascriptGenerator.forBlock['import_3d_file'] = function (block, generator) {
