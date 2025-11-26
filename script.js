@@ -2632,17 +2632,17 @@ class BabylonSceneManager {
             let texture;
             switch (backgroundInput) {
                 case 'brick':
-                    texture = new BABYLON.BrickProceduralTexture("brickTexture", 1024, this.scene);
+                    texture = new BABYLON.BrickProceduralTexture("brickTexture", 512, this.scene);
                     texture.numberOfBricksHeight = 6;
                     texture.numberOfBricksWidth = 10;
                     skyboxMaterial.diffuseTexture = texture;                    
                     break;
                 case 'grass':
-                    texture = new BABYLON.GrassProceduralTexture("grassTexture", 1024, this.scene);
+                    texture = new BABYLON.GrassProceduralTexture("grassTexture", 256, this.scene);
                     skyboxMaterial.ambientTexture = texture;
                     break;                    
                 case 'road':
-                    texture = new BABYLON.BrickProceduralTexture("roadTexture", 1024, this.scene);
+                    texture = new BABYLON.BrickProceduralTexture("roadTexture", 512, this.scene);
                     skyboxMaterial.diffuseTexture = texture;
                     break;                      
                 case 'wood':
@@ -2651,13 +2651,13 @@ class BabylonSceneManager {
                     skyboxMaterial.diffuseTexture = texture;
                     break;
                 case 'marble':
-                    texture = new BABYLON.MarbleProceduralTexture("marbleTexture", 1024, this.scene);
+                    texture = new BABYLON.MarbleProceduralTexture("marbleTexture", 512, this.scene);
                     texture.numberOfTilesHeight = 5;
                     texture.numberOfTilesWidth = 5;
                     skyboxMaterial.ambientTexture = texture;
                     break;
                 case 'fire':
-                    texture = new BABYLON.FireProceduralTexture("fireTexture", 1024, this.scene);
+                    texture = new BABYLON.FireProceduralTexture("fireTexture", 256, this.scene);
                     skyboxMaterial.diffuseTexture = texture;
                     skyboxMaterial.opacityTexture = texture;                    
                     break;
