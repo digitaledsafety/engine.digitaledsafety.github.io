@@ -842,6 +842,25 @@ var toolbox = {
                     kind: 'block',
                     type: 'create_environment',
                 },
+                {
+                    kind: 'block',
+                    type: 'set_background',
+                    inputs: {
+                        BACKGROUND: {
+                            block: {
+                                type: 'colour_picker'
+                            }
+                        }
+                    }
+                },
+                {
+                    kind: 'block',
+                    type: 'procedural_texture'
+                },
+                {
+                    kind: 'block',
+                    type: 'colour_picker'
+                }
             ]
         },
 
@@ -1674,6 +1693,7 @@ class BabylonSceneManager {
         this.inactivityTimer = null;
         this.uiManager = new UIManager(this.scene);
         this.processedCollisions = new Set();
+        this.background = null;
 
         this.initScene();
         this.initInputListeners();
@@ -2589,10 +2609,64 @@ class BabylonSceneManager {
     }
 
     createEnvironment(options) {
+        this._clearBackground();
+        this.environmentHelper = this.scene.createDefaultEnvironment(options);
+    }
+
+    setBackground(backgroundInput) {
+        this._clearBackground();
+
+        // Check if the input is a hex color
+        if (/^#([0-9A-F]{3}){1,2}$/i.test(backgroundInput)) {
+            this.scene.clearColor = BABYLON.Color3.FromHexString(backgroundInput);
+            this.background = 'color';
+        } else {
+            // Assume it's a texture name
+            const skybox = BABYLON.MeshBuilder.CreateBox("skyBox", { size: 1000.0 }, this.scene);
+            const skyboxMaterial = new BABYLON.StandardMaterial("skyBoxMaterial", this.scene);
+            skyboxMaterial.backFaceCulling = false;
+            skyboxMaterial.disableLighting = true;
+            skybox.material = skyboxMaterial;
+            skybox.infiniteDistance = true;
+
+            let texture;
+            switch (backgroundInput) {
+                case 'wood':
+                    texture = new BABYLON.WoodProceduralTexture("woodTexture", 1024, this.scene);
+                    break;
+                case 'marble':
+                    texture = new BABYLON.MarbleProceduralTexture("marbleTexture", 1024, this.scene);
+                    break;
+                case 'fire':
+                    texture = new BABYLON.FireProceduralTexture("fireTexture", 1024, this.scene);
+                    break;
+                case 'clouds':
+                    texture = new BABYLON.CloudProceduralTexture("cloudTexture", 1024, this.scene);
+                    break;
+                default:
+                    console.warn(`Unknown background texture: ${backgroundInput}`);
+                    skybox.dispose(); // clean up the created skybox
+                    return;
+            }
+            skyboxMaterial.reflectionTexture = texture;
+            skyboxMaterial.reflectionTexture.coordinatesMode = BABYLON.Texture.SKYBOX_MODE;
+            this.background = skybox;
+        }
+    }
+
+    _clearBackground() {
+        if (this.background) {
+            if (this.background.dispose) {
+                this.background.dispose();
+            }
+            this.background = null;
+        }
         if (this.environmentHelper) {
             this.environmentHelper.dispose();
+            this.environmentHelper = null;
         }
-        this.environmentHelper = this.scene.createDefaultEnvironment(options);
+        // Reset clear color to default, Babylon's default is cornflower blue, let's use it
+        this.scene.clearColor = new BABYLON.Color4(100/255, 149/255, 237/255, 1);
     }
 }
 
@@ -4077,6 +4151,56 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                 "colour": 180,
                 "tooltip": "Creates a skybox and ground for the scene.",
                 "helpUrl": ""
+            },
+            {
+                "type": "set_background",
+                "message0": "set background to %1",
+                "args0": [
+                    {
+                        "type": "input_value",
+                        "name": "BACKGROUND"
+                    }
+                ],
+                "previousStatement": null,
+                "nextStatement": null,
+                "colour": 180,
+                "tooltip": "Sets the scene background to a color or procedural texture.",
+                "helpUrl": ""
+            },
+            {
+                "type": "procedural_texture",
+                "message0": "procedural texture %1",
+                "args0": [
+                    {
+                        "type": "field_dropdown",
+                        "name": "TEXTURE",
+                        "options": [
+                            ["wood", "wood"],
+                            ["marble", "marble"],
+                            ["fire", "fire"],
+                            ["clouds", "clouds"]
+                        ]
+                    }
+                ],
+                "output": "String",
+                "colour": 180,
+                "tooltip": "Selects a procedural texture for the background.",
+                "helpUrl": ""
+            },
+            {
+                "type": "colour_picker",
+                "message0": "%1",
+                "args0": [
+                    {
+                        "type": "field_colour",
+                        "name": "COLOUR",
+                        "colour": "#ff0000"
+                    }
+                ],
+                "output": "String",
+                "colour": "%{BKY_COLOUR_HUE}",
+                "tooltip": "Select a color.",
+                "helpUrl": ""
             }
             
         ]);
@@ -4657,6 +4781,21 @@ if (thisMesh) {
                     createGround: enableGround
                 };
                 return `sceneManager.createEnvironment(${JSON.stringify(options)});\n`;
+            };
+
+            javascript.javascriptGenerator.forBlock['set_background'] = function(block, generator) {
+                const background = generator.valueToCode(block, 'BACKGROUND', generator.ORDER_ATOMIC) || "''";
+                return `sceneManager.setBackground(${background});\n`;
+            };
+
+            javascript.javascriptGenerator.forBlock['procedural_texture'] = function(block, generator) {
+                const texture = block.getFieldValue('TEXTURE');
+                return [`'${texture}'`, generator.ORDER_ATOMIC];
+            };
+
+            javascript.javascriptGenerator.forBlock['colour_picker'] = function(block, generator) {
+                const colour = block.getFieldValue('COLOUR');
+                return [`'${colour}'`, generator.ORDER_ATOMIC];
             };
         }
 
