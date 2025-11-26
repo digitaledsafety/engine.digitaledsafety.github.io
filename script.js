@@ -2624,41 +2624,58 @@ class BabylonSceneManager {
             // Assume it's a texture name
             const skybox = BABYLON.MeshBuilder.CreateBox("skyBox", { size: 1000.0 }, this.scene);
             const skyboxMaterial = new BABYLON.StandardMaterial("skyBoxMaterial", this.scene);
-            skyboxMaterial.backFaceCulling = false;
-            skyboxMaterial.disableLighting = true;
-            skybox.material = skyboxMaterial;
+            //skyboxMaterial.backFaceCulling = false;
+            //skyboxMaterial.disableLighting = true;
+            
             skybox.infiniteDistance = true;
 
             let texture;
             switch (backgroundInput) {
                 case 'brick':
                     texture = new BABYLON.BrickProceduralTexture("brickTexture", 1024, this.scene);
+                    texture.numberOfBricksHeight = 6;
+                    texture.numberOfBricksWidth = 10;
+                    skyboxMaterial.diffuseTexture = texture;                    
                     break;
                 case 'grass':
                     texture = new BABYLON.GrassProceduralTexture("grassTexture", 1024, this.scene);
+                    skyboxMaterial.ambientTexture = texture;
                     break;                    
                 case 'road':
                     texture = new BABYLON.BrickProceduralTexture("roadTexture", 1024, this.scene);
+                    skyboxMaterial.diffuseTexture = texture;
                     break;                      
                 case 'wood':
                     texture = new BABYLON.WoodProceduralTexture("woodTexture", 1024, this.scene);
+                    texture.ampScale = 80.0;
+                    skyboxMaterial.diffuseTexture = texture;
                     break;
                 case 'marble':
                     texture = new BABYLON.MarbleProceduralTexture("marbleTexture", 1024, this.scene);
+                    texture.numberOfTilesHeight = 5;
+                    texture.numberOfTilesWidth = 5;
+                    skyboxMaterial.ambientTexture = texture;
                     break;
                 case 'fire':
                     texture = new BABYLON.FireProceduralTexture("fireTexture", 1024, this.scene);
+                    skyboxMaterial.diffuseTexture = texture;
+                    skyboxMaterial.opacityTexture = texture;                    
                     break;
                 case 'clouds':
                     texture = new BABYLON.CloudProceduralTexture("cloudTexture", 1024, this.scene);
+                    skyboxMaterial.emissiveTexture = texture;
+                    skyboxMaterial.backFaceCulling = false;
+                    skyboxMaterial.emissiveTexture.coordinatesMode = BABYLON.Texture.SKYBOX_MODE;                 
                     break;
                 default:
                     console.warn(`Unknown background texture: ${backgroundInput}`);
                     skybox.dispose(); // clean up the created skybox
                     return;
             }
-            skyboxMaterial.reflectionTexture = texture;
-            skyboxMaterial.reflectionTexture.coordinatesMode = BABYLON.Texture.SKYBOX_MODE;
+
+            //skyboxMaterial.reflectionTexture = texture;
+            //skyboxMaterial.reflectionTexture.coordinatesMode = BABYLON.Texture.SKYBOX_MODE;            
+            skybox.material = skyboxMaterial;
             this.background = skybox;
         }
     }
