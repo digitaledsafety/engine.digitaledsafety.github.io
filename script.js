@@ -1,3 +1,12 @@
+// --- URL Sanitization ---
+function isValidAssetURL(url) {
+    if (typeof url !== 'string' || !url.trim().toLowerCase().startsWith('https://')) {
+        console.error('Invalid URL:', url, 'Only HTTPS URLs are allowed for assets.');
+        return false;
+    }
+    return true;
+}
+
 // --- Hero Overlay Logic ---
 document.addEventListener('DOMContentLoaded', () => {
     const heroOverlay = document.getElementById('hero-overlay');
@@ -85,6 +94,9 @@ class AssetManager {
     }
 
     async addAssetFromURL(url) {
+        if (!isValidAssetURL(url)) {
+            return;
+        }
         const proxyUrl = `https://proxy.fxio.workers.dev/corsproxy/?apiurl=${encodeURIComponent(url)}`;
         try {
             const response = await fetch(proxyUrl);
@@ -1827,6 +1839,9 @@ class BabylonSceneManager {
     }
 
     async createText(name, text, fontUrl, size = 1, resolution = 16, depth = 0.5) {
+        if (!isValidAssetURL(fontUrl)) {
+            return null;
+        }
         try {
             const response = await fetch(fontUrl);
             if (!response.ok) {
@@ -1869,6 +1884,9 @@ class BabylonSceneManager {
     }
 
     async importModel(name, url, x, y, z) {
+        if (!isValidAssetURL(url)) {
+            return null;
+        }
         // Load model using SceneLoader
         const result = await BABYLON.SceneLoader.ImportMeshAsync(null, '', url, this.scene);
         if (result.meshes.length > 0) {
@@ -2203,6 +2221,9 @@ class BabylonSceneManager {
 
 
     async playSound(url) {
+        if (!isValidAssetURL(url)) {
+            return;
+        }
         // Create a new sound and play it.
 
         if (!this.audioEngine) {
@@ -2765,6 +2786,9 @@ class UIManager {
     }
 
     createImage(name, url, options = {}) {
+        if (!isValidAssetURL(url)) {
+            return null;
+        }
         const image = new BABYLON.GUI.Image(name, url);
         image.width = options.width || "100px";
         image.height = options.height || "100px";
