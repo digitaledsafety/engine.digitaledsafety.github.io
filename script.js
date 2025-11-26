@@ -860,10 +860,6 @@ var toolbox = {
                 {
                     kind: 'block',
                     type: 'procedural_texture'
-                },
-                {
-                    kind: 'block',
-                    type: 'colour_picker'
                 }
             ]
         },
@@ -918,6 +914,29 @@ var toolbox = {
                     type: 'set_texture_from_asset',
                 }
             ]
+        },
+        {
+            kind: 'category',
+            name: 'Colour',
+            categorystyle: 'colour_category',
+            contents: [
+                {
+                    kind: 'block',
+                    type: 'colour_picker',
+                },
+                {
+                    kind: 'block',
+                    type: 'colour_random',
+                },
+                {
+                    kind: 'block',
+                    type: 'colour_rgb',
+                },
+                {
+                    kind: 'block',
+                    type: 'colour_blend',
+                },
+            ],
         },
         {
             kind: 'category',
@@ -4249,23 +4268,7 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                 "colour": 180,
                 "tooltip": "Selects a procedural texture for the background.",
                 "helpUrl": ""
-            },
-            {
-                "type": "colour_picker",
-                "message0": "%1",
-                "args0": [
-                    {
-                        "type": "field_colour",
-                        "name": "COLOUR",
-                        "colour": "#ff0000"
-                    }
-                ],
-                "output": "String",
-                "colour": "%{BKY_COLOUR_HUE}",
-                "tooltip": "Select a color.",
-                "helpUrl": ""
             }
-            
         ]);
 
         {
