@@ -2631,6 +2631,15 @@ class BabylonSceneManager {
 
             let texture;
             switch (backgroundInput) {
+                case 'brick':
+                    texture = new BABYLON.BrickProceduralTexture("brickTexture", 1024, this.scene);
+                    break;
+                case 'grass':
+                    texture = new BABYLON.GrassProceduralTexture("grassTexture", 1024, this.scene);
+                    break;                    
+                case 'road':
+                    texture = new BABYLON.BrickProceduralTexture("roadTexture", 1024, this.scene);
+                    break;                      
                 case 'wood':
                     texture = new BABYLON.WoodProceduralTexture("woodTexture", 1024, this.scene);
                     break;
@@ -4178,6 +4187,9 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                             ["wood", "wood"],
                             ["marble", "marble"],
                             ["fire", "fire"],
+                            ["road", "road"],
+                            ["brick", "brick"],
+                            ["grass", "grass"],
                             ["clouds", "clouds"]
                         ]
                     }
