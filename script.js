@@ -1850,8 +1850,7 @@ class BabylonSceneManager {
 
     async importModel(name, url, x, y, z) {
         // Load model using SceneLoader
-        let ext = "." + url.split('.').pop().split('?')[0].toLowerCase();
-        const result = await BABYLON.SceneLoader.ImportMeshAsync(null, '', url, this.scene, null, ext);
+        const result = await BABYLON.SceneLoader.ImportMeshAsync(null, '', url, this.scene);
         if (result.meshes.length > 0) {
             const rootMesh = result.meshes[0];
             rootMesh.name = name;
