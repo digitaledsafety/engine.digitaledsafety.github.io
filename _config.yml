@@ -21,6 +21,12 @@ collections:
         values:
           layout: "docs"
 
+include:
+  - "script.js"
+  - "custom_loading_screen.js"
+  - "favicon.ico"
+
 exclude:
   - tests
   - vendor/
+  - verify_loading_screen.py
