@@ -3349,7 +3349,7 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                 message0: 'Change color of %1 to %2',
                 args0: [
                     { type: 'input_value', name: 'NAME' },
-                    { type: 'field_input', name: 'COLOR', text: '#ff0000' },
+                    { type: 'input_value', name: 'COLOR' },
                 ],
                 "inputsInline": true,
                 previousStatement: null,
@@ -4493,8 +4493,8 @@ if (thisMesh) {
 
             javascript.javascriptGenerator.forBlock['change_object_color'] = function (block, generator) {
                 const name = generator.valueToCode(block, 'NAME', generator.ORDER_ATOMIC) || 'null';
-                const color = block.getFieldValue('COLOR');
-                return `sceneManager.changeColor(${name}, '${color}');\n`;
+                const color = generator.valueToCode(block, 'COLOR', generator.ORDER_ATOMIC) || "''";
+                return `sceneManager.changeColor(${name}, ${color});\n`;
             };
 
             javascript.javascriptGenerator.forBlock['rotate_object'] = function (block, generator) {
