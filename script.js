@@ -844,6 +844,10 @@ var toolbox = {
                 },
                 {
                     kind: 'block',
+                    type: 'show_custom_loading_screen',
+                },
+                {
+                    kind: 'block',              
                     type: 'set_background',
                     inputs: {
                         BACKGROUND: {
@@ -1866,8 +1870,7 @@ class BabylonSceneManager {
 
     async importModel(name, url, x, y, z) {
         // Load model using SceneLoader
-        let ext = "." + name.split('.').pop().toLowerCase();
-        const result = await BABYLON.SceneLoader.ImportMeshAsync(null, '', url, this.scene, null, ext);
+        const result = await BABYLON.SceneLoader.ImportMeshAsync(null, '', url, this.scene);
         if (result.meshes.length > 0) {
             const rootMesh = result.meshes[0];
             rootMesh.name = name;
@@ -4179,6 +4182,37 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                 "helpUrl": ""
             },
             {
+                "type": "show_custom_loading_screen",
+                "message0": "show loading screen with text %1",
+                "args0": [
+                    {
+                        "type": "input_value",
+                        "name": "TEXT",
+                        "check": "String"
+                    }
+                ],
+                "message1": "background color %1",
+                "args1": [
+                    {
+                        "type": "field_colour",
+                        "name": "BG_COLOR",
+                        "colour": "#000000"
+                    }
+                ],
+                "message2": "text color %1",
+                "args2": [
+                    {
+                        "type": "field_colour",
+                        "name": "TEXT_COLOR",
+                        "colour": "#ffffff"
+                    }
+                ],
+                "previousStatement": null,
+                "nextStatement": null,
+                "colour": 180,
+                "tooltip": "Shows a custom loading screen.",
+            },
+            {              
                 "type": "set_background",
                 "message0": "set background to %1",
                 "args0": [
@@ -4235,6 +4269,16 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
         ]);
 
         {
+
+            javascript.javascriptGenerator.forBlock['show_custom_loading_screen'] = function(block, generator) {
+                const text = generator.valueToCode(block, 'TEXT', generator.ORDER_ATOMIC) || "'Loading...'";
+                const bgColor = block.getFieldValue('BG_COLOR');
+                const textColor = block.getFieldValue('TEXT_COLOR');
+                return `
+                    var loadingScreen = new CustomLoadingScreen(${text}, '${bgColor}', '${textColor}');
+                    sceneManager.engine.loadingScreen = loadingScreen;
+                `;
+            };
 
             // --- Scripting Block Generators ---
             javascript.javascriptGenerator.forBlock['event_on_click'] = function(block, generator) {
