@@ -5841,6 +5841,8 @@ if (thisMesh) {
         let sceneManager = new BabylonSceneManager(canvas);
         const projectManager = new ProjectManager(assetManager, workspace, sceneManager);
 
+        registerFieldColour();
+
         assetManager.init().then(() => {
             console.log("Asset manager initialized");
             loadAssetsIntoView();
