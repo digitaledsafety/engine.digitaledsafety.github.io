@@ -4273,23 +4273,7 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                 "colour": 180,
                 "tooltip": "Selects a procedural texture for the background.",
                 "helpUrl": ""
-            },
-            {
-                "type": "colour_picker",
-                "message0": "%1",
-                "args0": [
-                    {
-                        "type": "field_colour",
-                        "name": "COLOUR",
-                        "colour": "#ff0000"
-                    }
-                ],
-                "output": "String",
-                "colour": "%{BKY_COLOUR_HUE}",
-                "tooltip": "Select a color.",
-                "helpUrl": ""
             }
-            
         ]);
 
         {
@@ -5841,7 +5825,11 @@ if (thisMesh) {
         let sceneManager = new BabylonSceneManager(canvas);
         const projectManager = new ProjectManager(assetManager, workspace, sceneManager);
 
+        // Set up our default Blockly color blocks
         registerFieldColour();
+        installAllBlocks({
+          javascript: javascript.javascriptGenerator
+        });
 
         assetManager.init().then(() => {
             console.log("Asset manager initialized");
