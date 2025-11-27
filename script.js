@@ -3398,7 +3398,7 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                 message0: 'Change color of %1 to %2',
                 args0: [
                     { type: 'input_value', name: 'NAME' },
-                    { type: 'input_value', name: 'COLOR' },
+                    { type: 'input_value', name: 'COLOR', check: 'Colour' },
                 ],
                 "inputsInline": true,
                 previousStatement: null,
@@ -5852,6 +5852,61 @@ if (thisMesh) {
         installAllBlocks({
           javascript: javascript.javascriptGenerator
         });
+
+        javascript.javascriptGenerator.forBlock['colour_random'] = function(block, generator) {
+            return [generator.provideFunction_('colourRandom', `
+function ${generator.FUNCTION_NAME_PLACEHOLDER_}() {
+  var num = Math.floor(Math.random() * 0x1000000);
+  return '#' + ('00000' + num.toString(16)).substr(-6);
+}
+`) + '()', generator.ORDER_FUNCTION_CALL];
+        };
+
+        javascript.javascriptGenerator.forBlock['colour_picker'] = function(block, generator) {
+            const colour = block.getFieldValue('COLOUR');
+            return [`'${colour}'`, generator.ORDER_ATOMIC];
+        };
+
+        javascript.javascriptGenerator.forBlock['colour_rgb'] = function(block, generator) {
+            const r = generator.valueToCode(block, 'RED', generator.ORDER_ATOMIC) || 0;
+            const g = generator.valueToCode(block, 'GREEN', generator.ORDER_ATOMIC) || 0;
+            const b = generator.valueToCode(block, 'BLUE', generator.ORDER_ATOMIC) || 0;
+            return [generator.provideFunction_('colourRgb', `
+function ${generator.FUNCTION_NAME_PLACEHOLDER_}(r, g, b) {
+  r = Math.max(Math.min(Number(r), 100), 0) * 2.55;
+  g = Math.max(Math.min(Number(g), 100), 0) * 2.55;
+  b = Math.max(Math.min(Number(b), 100), 0) * 2.55;
+  r = ('0' + (Math.round(r) || 0).toString(16)).slice(-2);
+  g = ('0' + (Math.round(g) || 0).toString(16)).slice(-2);
+  b = ('0' + (Math.round(b) || 0).toString(16)).slice(-2);
+  return '#' + r + g + b;
+}
+`) + `(${r}, ${g}, ${b})`, generator.ORDER_FUNCTION_CALL];
+        };
+
+        javascript.javascriptGenerator.forBlock['colour_blend'] = function(block, generator) {
+            const c1 = generator.valueToCode(block, 'COLOUR1', generator.ORDER_ATOMIC) || "'#000000'";
+            const c2 = generator.valueToCode(block, 'COLOUR2', generator.ORDER_ATOMIC) || "'#000000'";
+            const ratio = generator.valueToCode(block, 'RATIO', generator.ORDER_ATOMIC) || 0.5;
+            return [generator.provideFunction_('colourBlend', `
+function ${generator.FUNCTION_NAME_PLACEHOLDER_}(c1, c2, ratio) {
+  ratio = Math.max(Math.min(Number(ratio), 1), 0);
+  var r1 = parseInt(c1.substring(1, 3), 16);
+  var g1 = parseInt(c1.substring(3, 5), 16);
+  var b1 = parseInt(c1.substring(5, 7), 16);
+  var r2 = parseInt(c2.substring(1, 3), 16);
+  var g2 = parseInt(c2.substring(3, 5), 16);
+  var b2 = parseInt(c2.substring(5, 7), 16);
+  var r = Math.round(r1 * (1 - ratio) + r2 * ratio);
+  var g = Math.round(g1 * (1 - ratio) + g2 * ratio);
+  var b = Math.round(b1 * (1 - ratio) + b2 * ratio);
+  r = ('0' + (r || 0).toString(16)).slice(-2);
+  g = ('0' + (g || 0).toString(16)).slice(-2);
+  b = ('0' + (b || 0).toString(16)).slice(-2);
+  return '#' + r + g + b;
+}
+`) + `(${c1}, ${c2}, ${ratio})`, generator.ORDER_FUNCTION_CALL];
+        };
 
         assetManager.init().then(() => {
             console.log("Asset manager initialized");
