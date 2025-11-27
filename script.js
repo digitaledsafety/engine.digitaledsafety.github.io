@@ -555,10 +555,6 @@ var toolbox = {
             contents: [
                 {
                     kind: 'block',
-                    type: 'gui_create_panel',
-                },
-                {
-                    kind: 'block',
                     type: 'gui_create_text_block',
                 },
                 {
@@ -822,10 +818,6 @@ var toolbox = {
             name: 'Scene',
             categorystyle: 'scene_category',
             contents: [
-                {
-                    kind: 'block',
-                    type: 'restart_scene',
-                },
                 {
                     kind: 'block',
                     type: 'create_camera',
@@ -2748,48 +2740,14 @@ class BabylonSceneManager {
         // Reset clear color to default, Babylon's default is cornflower blue, let's use it
         this.scene.clearColor = new BABYLON.Color4(100/255, 149/255, 237/255, 1);
     }
-
-    restartScene() {
-        // doRun is globally available and handles the entire scene reset and code execution
-        doRun();
-    }
 }
 
 class UIManager {
     constructor(scene) {
         this.scene = scene;
-        this._advancedTexture = null;
+        this.advancedTexture = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI", true, this.scene);
         this.controls = {};
         this.assetUrls = {};
-    }
-
-    get advancedTexture() {
-        if (!this._advancedTexture) {
-            this._advancedTexture = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI", true, this.scene);
-        }
-        return this._advancedTexture;
-    }
-
-    createPanel(name, options = {}) {
-        // Main container for darkening the screen
-        const panelContainer = new BABYLON.GUI.Rectangle(name + "_container");
-        panelContainer.width = "100%";
-        panelContainer.height = "100%";
-        panelContainer.background = options.background || "rgba(0, 0, 0, 0.7)";
-        panelContainer.thickness = 0; // No border
-        this.advancedTexture.addControl(panelContainer);
-        this.controls[name + "_container"] = panelContainer;
-
-        // StackPanel for vertical layout
-        const stackPanel = new BABYLON.GUI.StackPanel(name);
-        stackPanel.isVertical = true;
-        stackPanel.spacing = options.spacing || 10; // Add some default spacing
-        stackPanel.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
-        stackPanel.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_CENTER;
-        panelContainer.addControl(stackPanel);
-        this.controls[name] = stackPanel; // The stack panel is what other controls will be added to
-
-        return stackPanel;
     }
 
     createText(name, text, options = {}) {
@@ -2797,25 +2755,11 @@ class UIManager {
         textBlock.resizeToFit = true;
         textBlock.color = options.color || "white";
         textBlock.fontSize = options.fontSize || 24;
-
-        if (options.parent) {
-            // When parented, top/left are relative to the parent
-            textBlock.top = options.top || 0;
-            textBlock.left = options.left || 0;
-            // Alignment is handled by the parent container (e.g., StackPanel)
-        } else {
-            textBlock.top = options.top || "0px";
-            textBlock.left = options.left || "0px";
-            textBlock.horizontalAlignment = options.horizontalAlignment !== undefined ? options.horizontalAlignment : BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
-            textBlock.verticalAlignment = options.verticalAlignment !== undefined ? options.verticalAlignment : BABYLON.GUI.Control.VERTICAL_ALIGNMENT_CENTER;
-        }
-
-        if (options.parent && typeof options.parent.addControl === 'function') {
-            options.parent.addControl(textBlock);
-        } else {
-            this.advancedTexture.addControl(textBlock);
-        }
-
+        textBlock.top = options.top || "0px";
+        textBlock.left = options.left || "0px";
+        textBlock.horizontalAlignment = options.horizontalAlignment !== undefined ? options.horizontalAlignment : BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
+        textBlock.verticalAlignment = options.verticalAlignment !== undefined ? options.verticalAlignment : BABYLON.GUI.Control.VERTICAL_ALIGNMENT_CENTER;
+        this.advancedTexture.addControl(textBlock);
         this.controls[name] = textBlock;
         return textBlock;
     }
@@ -2854,25 +2798,11 @@ class UIManager {
         button.height = options.height || "40px";
         button.color = options.color || "white";
         button.background = options.background || "green";
-
-        if (options.parent) {
-            // When parented, top/left are relative to the parent and often not needed
-            // if the parent is a StackPanel
-            button.top = options.top || 0;
-            button.left = options.left || 0;
-        } else {
-            button.top = options.top || "0px";
-            button.left = options.left || "0px";
-            button.horizontalAlignment = options.horizontalAlignment !== undefined ? options.horizontalAlignment : BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
-            button.verticalAlignment = options.verticalAlignment !== undefined ? options.verticalAlignment : BABYLON.GUI.Control.VERTICAL_ALIGNMENT_CENTER;
-        }
-
-        if (options.parent && typeof options.parent.addControl === 'function') {
-            options.parent.addControl(button);
-        } else {
-            this.advancedTexture.addControl(button);
-        }
-
+        button.top = options.top || "0px";
+        button.left = options.left || "0px";
+        button.horizontalAlignment = options.horizontalAlignment !== undefined ? options.horizontalAlignment : BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
+        button.verticalAlignment = options.verticalAlignment !== undefined ? options.verticalAlignment : BABYLON.GUI.Control.VERTICAL_ALIGNMENT_CENTER;
+        this.advancedTexture.addControl(button);
         this.controls[name] = button;
         return button;
     }
@@ -2941,14 +2871,7 @@ class UIManager {
 
     dispose() {
         this.clear();
-        if (this._advancedTexture) {
-            this._advancedTexture.dispose();
-            this._advancedTexture = null;
-        }
-    }
-
-    getControlByName(name) {
-        return this.controls[name] || null;
+        this.advancedTexture.dispose();
     }
 }
 
@@ -3075,17 +2998,6 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
         };
 
         Blockly.defineBlocksWithJsonArray([
-            {
-                "type": "gui_create_panel",
-                "message0": "create panel named %1",
-                "args0": [
-                    { "type": "field_input", "name": "NAME", "text": "myPanel" }
-                ],
-                "output": "GUI_Panel",
-                "colour": "#5B80A5",
-                "tooltip": "Creates a UI panel that can contain other elements.",
-                "helpUrl": ""
-            },
             {
                 "type": "import_model_from_asset",
                 "message0": "import model from asset %1 as %2",
@@ -4109,10 +4021,6 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                     { "type": "input_value", "name": "TOP", "check": "String" },
                     { "type": "input_value", "name": "LEFT", "check": "String" }
                 ],
-                "message3": "in parent %1",
-                "args3": [
-                    { "type": "input_value", "name": "PARENT", "check": "GUI_Panel" }
-                ],
                 "inputsInline": false,
                 "previousStatement": null,
                 "nextStatement": null,
@@ -4180,11 +4088,7 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                     { "type": "field_input", "name": "NAME", "text": "myButton" },
                     { "type": "input_value", "name": "TEXT", "check": "String" }
                 ],
-                "message1": "in parent %1",
-                "args1": [
-                    { "type": "input_value", "name": "PARENT", "check": "GUI_Panel" }
-                ],
-                "inputsInline": false,
+                "inputsInline": true,
                 "previousStatement": null,
                 "nextStatement": null,
                 "colour": "#5B80A5",
@@ -4390,15 +4294,6 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                 "output": "String",
                 "colour": 180,
                 "tooltip": "Selects a procedural texture for the background.",
-                "helpUrl": ""
-            },
-            {
-                "type": "restart_scene",
-                "message0": "restart scene",
-                "previousStatement": null,
-                "nextStatement": null,
-                "colour": 180,
-                "tooltip": "Restarts the entire scene and re-runs the code.",
                 "helpUrl": ""
             }
         ]);
@@ -4850,18 +4745,11 @@ if (thisMesh) {
             };
 
             // --- GUI Block Generators ---
-            javascript.javascriptGenerator.forBlock['gui_create_panel'] = function(block, generator) {
-                const name = block.getFieldValue('NAME');
-                const code = `sceneManager.uiManager.createPanel('${name}')`;
-                return [code, generator.ORDER_ATOMIC];
-            };
-
             javascript.javascriptGenerator.forBlock['gui_create_text_block'] = function(block, generator) {
                 const name = block.getFieldValue('NAME');
                 const text = generator.valueToCode(block, 'TEXT', generator.ORDER_ATOMIC) || "''";
                 const hAlign = parseInt(block.getFieldValue('H_ALIGN'));
                 const vAlign = parseInt(block.getFieldValue('V_ALIGN'));
-                const parent = generator.valueToCode(block, 'PARENT', generator.ORDER_ATOMIC) || 'null';
 
                 let top, left;
                 const topBlock = block.getInputTargetBlock('TOP');
@@ -4882,8 +4770,7 @@ if (thisMesh) {
                     horizontalAlignment: ${hAlign},
                     verticalAlignment: ${vAlign},
                     top: ${top},
-                    left: ${left},
-                    parent: ${parent}
+                    left: ${left}
                 }`;
 
                 return `sceneManager.uiManager.createText('${name}', ${text}, ${options});\n`;
@@ -4934,8 +4821,7 @@ if (thisMesh) {
             javascript.javascriptGenerator.forBlock['gui_create_button'] = function(block, generator) {
                 const name = block.getFieldValue('NAME');
                 const text = generator.valueToCode(block, 'TEXT', generator.ORDER_ATOMIC) || "''";
-                const parent = generator.valueToCode(block, 'PARENT', generator.ORDER_ATOMIC) || 'null';
-                return `sceneManager.uiManager.createButton('${name}', ${text}, { parent: ${parent} });\n`;
+                return `sceneManager.uiManager.createButton('${name}', ${text});\n`;
             };
 
             javascript.javascriptGenerator.forBlock['gui_create_image_from_url'] = function(block, generator) {
@@ -5008,10 +4894,6 @@ if (thisMesh) {
             javascript.javascriptGenerator.forBlock['procedural_texture'] = function(block, generator) {
                 const texture = block.getFieldValue('TEXTURE');
                 return [`'${texture}'`, generator.ORDER_ATOMIC];
-            };
-
-            javascript.javascriptGenerator.forBlock['restart_scene'] = function(block, generator) {
-                return `sceneManager.restartScene();\n`;
             };
         }
 
@@ -5933,23 +5815,16 @@ if (thisMesh) {
                 return;
             }
 
-            if (window.bjs) {
-                window.bjs.dispose();
+            if (sceneManager) {
+                sceneManager.dispose();
             }
-
-            // Assign to window.bjs immediately. The 'bjs' name is used in tests.
-            const newSceneManager = new BabylonSceneManager(canvas);
-            window.bjs = newSceneManager;
-            projectManager.sceneManager = newSceneManager; // Update project manager's reference
-
+            sceneManager = new BabylonSceneManager(canvas);
+            window.sceneManager = sceneManager; // Expose for debugging and testing
 
             try {
-                // The user's code will run in an async context and can reference
-                // the scene manager via `window.bjs`.
                 const AsyncFunction = Object.getPrototypeOf(async function(){}).constructor;
                 const userGeneratedCode = new AsyncFunction('sceneManager', 'assetManager', codeToRun);
-                await userGeneratedCode(newSceneManager, assetManager);
-
+                await userGeneratedCode(sceneManager, assetManager);
             } catch (error) {
                 console.error('Error executing code:', error);
             } finally {
@@ -5965,7 +5840,6 @@ if (thisMesh) {
         const canvas = document.getElementById('gameCanvas');
         const assetManager = new AssetManager();
         let sceneManager = new BabylonSceneManager(canvas);
-        window.bjs = sceneManager; // Use window.bjs for test compatibility
         const projectManager = new ProjectManager(assetManager, workspace, sceneManager);
 
         // Set up our default Blockly color blocks
