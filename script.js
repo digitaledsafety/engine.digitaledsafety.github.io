@@ -4895,11 +4895,6 @@ if (thisMesh) {
                 const texture = block.getFieldValue('TEXTURE');
                 return [`'${texture}'`, generator.ORDER_ATOMIC];
             };
-
-            javascript.javascriptGenerator.forBlock['colour_picker'] = function(block, generator) {
-                const colour = block.getFieldValue('COLOUR');
-                return [`'${colour}'`, generator.ORDER_ATOMIC];
-            };
         }
 
         // Convert Blockly Code to JavaScript
