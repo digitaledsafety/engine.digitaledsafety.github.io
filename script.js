@@ -3398,7 +3398,7 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                 message0: 'Change color of %1 to %2',
                 args0: [
                     { type: 'input_value', name: 'NAME' },
-                    { type: 'input_value', name: 'COLOR' },
+                    { type: 'input_value', name: 'COLOR', check: 'Colour' },
                 ],
                 "inputsInline": true,
                 previousStatement: null,
@@ -5852,6 +5852,15 @@ if (thisMesh) {
         installAllBlocks({
           javascript: javascript.javascriptGenerator
         });
+
+        javascript.javascriptGenerator.forBlock['colour_random'] = function(block, generator) {
+            return [generator.provideFunction_('colourRandom', `
+function ${generator.FUNCTION_NAME_PLACEHOLDER_}() {
+  var num = Math.floor(Math.random() * 0x1000000);
+  return '#' + ('00000' + num.toString(16)).substr(-6);
+}
+`) + '()', generator.ORDER_FUNCTION_CALL];
+        };
 
         assetManager.init().then(() => {
             console.log("Asset manager initialized");
