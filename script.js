@@ -3307,6 +3307,7 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                 ],
                 "output": "Mesh",
                 "colour": 160,
+                "inputsInline": false,
                 "tooltip": "Creates a 3D text mesh.",
                 "helpUrl": ""
             },
@@ -3461,7 +3462,7 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                         ]
                     }
                 ],
-                "inputsInline": true,
+                "inputsInline": false,
                 "previousStatement": null,
                 "nextStatement": null,
                 "colour": 300,
@@ -3500,7 +3501,7 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                         "options": [ ["no", "NO"], ["yes", "YES"], ["ping-pong", "PINGPONG"] ]
                     }
                 ],
-                "inputsInline": true,
+                "inputsInline": false,
                 "previousStatement": null,
                 "nextStatement": null,
                 "colour": 300,
@@ -3524,7 +3525,7 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                         "options": [ ["no", "NO"], ["yes", "YES"], ["ping-pong", "PINGPONG"] ]
                     }
                 ],
-                "inputsInline": true,
+                "inputsInline": false,
                 "previousStatement": null,
                 "nextStatement": null,
                 "colour": 300,
@@ -3548,7 +3549,7 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                         "options": [ ["no", "NO"], ["yes", "YES"], ["ping-pong", "PINGPONG"] ]
                     }
                 ],
-                "inputsInline": true,
+                "inputsInline": false,
                 "previousStatement": null,
                 "nextStatement": null,
                 "colour": 300,
@@ -3579,7 +3580,7 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
                     { type: 'input_value', name: 'PY', check: 'Number' },
                     { type: 'input_value', name: 'PZ', check: 'Number' },
                 ],
-                "inputsInline": true,
+                "inputsInline": false,
                 previousStatement: null,
                 nextStatement: null,
                 colour: 120,
