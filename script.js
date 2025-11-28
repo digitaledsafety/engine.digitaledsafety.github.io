@@ -2939,9 +2939,9 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
         });
 
        // Ensure the toolbox is collapsed on load
-        const toolbox = workspace.getToolbox();
-        if (toolbox) {
-            toolbox.setVisible(false);
+        const tb = workspace.getToolbox();
+        if (tb) {
+            tb.setVisible(false);
         }        
 
         // Define Blockly Blocks
