@@ -234,10 +234,6 @@
             pointer-events: none;
         }
 
-        #blocklyDiv.toolbox-collapsed .blocklyToolboxDiv {
-            display: none !important;
-        }
-
         #bottom-nav {
             display: flex;
             justify-content: space-between;
@@ -400,7 +396,7 @@
         </div>
         <div class="controls">
             <div id="code-view">
-                <div id="blocklyDiv" class="blockly-workspace digital-education-safety-theme toolbox-collapsed"></div>
+                <div id="blocklyDiv" class="blockly-workspace digital-education-safety-theme"></div>
                 <div id="monacoEditorContainer" class="editor-container"
                     style="height: 80%; min-height: 300px; border: 1px solid #ddd; margin-bottom: 10px; display: none;">
                     <!-- Monaco Editor will be initialized here by script.js -->
@@ -431,7 +427,7 @@
             <div class="dropdown-menu-container">
                 <button id="menuButton" class="btn btn-icon btn-menu-toggle" title="More actions">⋮</button>
                 <div id="dropdownMenu" class="dropdown-content">
-                    <button id="toggleToolboxButton" class="btn btn-toggle-toolbox" title="Toggle Toolbox">☰ Hide Toolbox</button>
+                    <button id="toggleToolboxButton" class="btn btn-toggle-toolbox" title="Toggle Toolbox">☰ Toggle Toolbox</button>
                     <button id="codeViewButton" class="btn btn-icon active" title="Code">👩‍💻 Code</button>
                     <button id="assetsViewButton" class="btn btn-icon" title="Assets">📦Assets </button>
                     <button id="showBlocksButton" class="btn" title="Show Blocks">Blocks</button>

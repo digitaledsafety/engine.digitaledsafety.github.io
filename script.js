@@ -2929,14 +2929,20 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
             zoom: {
                 controls: true,
                 wheel: true,
-                startScale: 1.0,
-                maxScale: 3,
+                startScale: 1.2,
+                maxScale: 6,
                 minScale: 0.3,
                 scaleSpeed: 1.2,
                 pinch: true
             },
             trashcan: true
         });
+
+       // Ensure the toolbox is collapsed on load
+        const toolbox = workspace.getToolbox();
+        if (toolbox) {
+            toolbox.setVisible(false);
+        }        
 
         // Define Blockly Blocks
 
@@ -5999,8 +6005,10 @@ function ${generator.FUNCTION_NAME_PLACEHOLDER_}(c1, c2, ratio) {
         window.open('docs/Home.html', '_blank');
     });
     document.getElementById('toggleToolboxButton').addEventListener('click', () => {
-        const blocklyDiv = document.getElementById('blocklyDiv');
-        blocklyDiv.classList.toggle('toolbox-collapsed');
+        const toolbox = workspace.getToolbox();
+        if (toolbox) {
+            toolbox.setVisible(!toolbox.isVisible);
+        }
         Blockly.svgResize(workspace);
     });
 
