@@ -6735,6 +6735,9 @@ function ${generator.FUNCTION_NAME_PLACEHOLDER_}(c1, c2, ratio) {
                     container.classList.remove('preview-active');
                     workspaceTab.classList.add('active');
                     previewTab.classList.remove('active');
+
+                    // Fix case when toggling toolbox from Preview tab
+                    Blockly.svgResize(workspace);
                 });
 
                 previewTab.addEventListener('click', () => {
