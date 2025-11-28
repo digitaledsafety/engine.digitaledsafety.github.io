@@ -23,7 +23,6 @@ collections:
 
 include:
   - "script.js"
-  - "custom_loading_screen.js"
   - "favicon.ico"
 
 exclude:
