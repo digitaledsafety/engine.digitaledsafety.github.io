@@ -2929,9 +2929,9 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
             zoom: {
                 controls: true,
                 wheel: true,
-                startScale: 1.2,
-                maxScale: 6,
-                minScale: 0.3,
+                startScale: 0.8,
+                maxScale: 3,
+                minScale: 0,
                 scaleSpeed: 1.2,
                 pinch: true
             },
