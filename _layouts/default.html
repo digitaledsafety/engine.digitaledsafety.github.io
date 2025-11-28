@@ -391,6 +391,10 @@
         body.fullscreen-active #bottom-nav {
             display: none;
         }
+
+        #blocklyDiv.toolbox-collapsed .blocklyToolboxDiv {
+            display: none !important;
+        }        
     </style>
 </head>
 
@@ -414,7 +418,7 @@
         </div>
         <div class="controls">
             <div id="code-view">
-                <div id="blocklyDiv" class="blockly-workspace digital-education-safety-theme"></div>
+                <div id="blocklyDiv" class="blockly-workspace digital-education-safety-theme toolbox-collapsed"></div>
                 <div id="monacoEditorContainer" class="editor-container"
                     style="height: 80%; min-height: 300px; border: 1px solid #ddd; margin-bottom: 10px; display: none;">
                     <!-- Monaco Editor will be initialized here by script.js -->
@@ -446,8 +450,7 @@
             <div class="dropdown-menu-container">
                 <button id="menuButton" class="btn btn-icon btn-menu-toggle" title="More actions">⋮</button>
                 <div id="dropdownMenu" class="dropdown-content">
-                    <button id="toggleToolboxButton" class="btn btn-toggle-toolbox" title="Toggle Toolbox">☰ Toggle
-                        Toolbox</button>
+                    <button id="toggleToolboxButton" class="btn btn-toggle-toolbox" title="Toggle Toolbox">☰ Toggle Toolbox</button>
                     <button id="codeViewButton" class="btn btn-icon active" title="Code">👩‍💻 Code</button>
                     <button id="assetsViewButton" class="btn btn-icon" title="Assets">📦Assets </button>
                     <button id="showBlocksButton" class="btn" title="Show Blocks">Blocks</button>
@@ -3433,14 +3436,6 @@ workspace_data: "${base64WorkspaceData}"
             },
             trashcan: true
         });
-
-        // Ensure the toolbox is collapsed on load
-        const tb = workspace.getToolbox();
-        if (tb) {
-            tb.setVisible(false);
-        }
-
-        // Define Blockly Blocks
 
         function getModelAssets() {
             const modelOptions = assetManager.assets
@@ -6504,10 +6499,8 @@ function ${generator.FUNCTION_NAME_PLACEHOLDER_}(c1, c2, ratio) {
             window.open('docs/Home.html', '_blank');
         });
         document.getElementById('toggleToolboxButton').addEventListener('click', () => {
-            const tb = workspace.getToolbox();
-            if (tb) {
-                tb.setVisible(!tb.isVisible);
-            }
+            const blocklyDiv = document.getElementById('blocklyDiv');
+            blocklyDiv.classList.toggle('toolbox-collapsed');
             Blockly.svgResize(workspace);
         });
 
