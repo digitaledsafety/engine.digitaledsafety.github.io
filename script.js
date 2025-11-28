@@ -5967,28 +5967,38 @@ function ${generator.FUNCTION_NAME_PLACEHOLDER_}(c1, c2, ratio) {
         }
 
 
-    // --- Dropdown Menu Logic ---
-    document.getElementById('menuButton').addEventListener('click', function() {
-        document.getElementById('dropdownMenu').classList.toggle('show');
+    // --- Slide-up Menu Logic ---
+    const menuButton = document.getElementById('menuButton');
+    const slideUpMenu = document.getElementById('slide-up-menu');
+    const menuOverlay = document.getElementById('slide-up-menu-overlay');
+    const closeMenuButton = document.getElementById('close-slide-up-menu');
+    const slideUpMenuContent = document.querySelector('.slide-up-menu-content');
+    const dropdownMenu = document.getElementById('dropdownMenu');
+
+    // Move items from the old dropdown to the new slide-up menu
+    const menuItems = dropdownMenu.querySelectorAll('button');
+    menuItems.forEach(item => {
+        slideUpMenuContent.appendChild(item);
     });
 
-    // Close the dropdown if the user clicks outside of it
-    window.addEventListener('click', function(event) {
-        if (!event.target.matches('.btn-menu-toggle')) {
-            var dropdowns = document.getElementsByClassName("dropdown-content");
-            for (var i = 0; i < dropdowns.length; i++) {
-                var openDropdown = dropdowns[i];
-                if (openDropdown.classList.contains('show')) {
-                    openDropdown.classList.remove('show');
-                }
-            }
-        }
-    });
+    const openMenu = () => {
+        menuOverlay.classList.add('show');
+        slideUpMenu.classList.add('show');
+    };
 
-    // Add event listener to the dropdown container to close the menu on button click
-    document.getElementById('dropdownMenu').addEventListener('click', function(event) {
+    const closeMenu = () => {
+        menuOverlay.classList.remove('show');
+        slideUpMenu.classList.remove('show');
+    };
+
+    menuButton.addEventListener('click', openMenu);
+    closeMenuButton.addEventListener('click', closeMenu);
+    menuOverlay.addEventListener('click', closeMenu);
+
+    // Close the menu when any button inside it is clicked
+    slideUpMenuContent.addEventListener('click', (event) => {
         if (event.target.tagName === 'BUTTON') {
-            document.getElementById('dropdownMenu').classList.remove('show');
+            closeMenu();
         }
     });
 
