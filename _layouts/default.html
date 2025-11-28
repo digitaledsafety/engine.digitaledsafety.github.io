@@ -6504,9 +6504,9 @@ function ${generator.FUNCTION_NAME_PLACEHOLDER_}(c1, c2, ratio) {
             window.open('docs/Home.html', '_blank');
         });
         document.getElementById('toggleToolboxButton').addEventListener('click', () => {
-            const toolbox = workspace.getToolbox();
-            if (toolbox) {
-                toolbox.setVisible(!toolbox.isVisible);
+            const tb = workspace.getToolbox();
+            if (tb) {
+                tb.setVisible(!tb.isVisible);
             }
             Blockly.svgResize(workspace);
         });
