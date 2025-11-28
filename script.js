@@ -3751,8 +3751,9 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
             },
             {
                 "type": "action_rotate_continuously",
-                "message0": "rotate current object continuously by x %1 y %2 z %3 deg/sec",
+                "message0": "rotate object %1 continuously by x %2 y %3 z %4 deg/sec",
                 "args0": [
+                    { type: 'input_value', name: 'NAME' },
                     {
                         "type": "input_value",
                         "name": "ROTATE_X_SPEED",
@@ -4328,20 +4329,21 @@ Blockly.Themes.DigitalEducationSafety = Blockly.Theme.defineTheme('digital-educa
             javascript.javascriptGenerator.forBlock['event_every_frame'] = function(block, generator) {
                 const objectName = generator.valueToCode(block, 'OBJECT_SELECTOR', generator.ORDER_ATOMIC) || 'null';
                 const doCode = generator.statementToCode(block, 'DO_CODE');
-                const callback = `function(thisMesh, deltaTime) {\n${doCode}\n}`;
+                const callback = `function(${objectName}, sceneManager.engine.getDeltaTime()) {\n${doCode}\n}`;
                 return `sceneManager.everyFrame(${objectName}, ${callback});\n`;
             };
 
             javascript.javascriptGenerator.forBlock['action_rotate_continuously'] = function(block, generator) {
+                const name = generator.valueToCode(block, 'NAME', generator.ORDER_ATOMIC) || null;
                 const rotateXSpeed = generator.valueToCode(block, 'ROTATE_X_SPEED', generator.ORDER_ATOMIC) || 0;
                 const rotateYSpeed = generator.valueToCode(block, 'ROTATE_Y_SPEED', generator.ORDER_ATOMIC) || 0;
                 const rotateZSpeed = generator.valueToCode(block, 'ROTATE_Z_SPEED', generator.ORDER_ATOMIC) || 0;
 
                 return `
-if (thisMesh) {
-    thisMesh.rotation.x += (${rotateXSpeed} * (Math.PI / 180)) * (deltaTime / 1000);
-    thisMesh.rotation.y += (${rotateYSpeed} * (Math.PI / 180)) * (deltaTime / 1000);
-    thisMesh.rotation.z += (${rotateZSpeed} * (Math.PI / 180)) * (deltaTime / 1000);
+if (${name}) {
+    ${name}.rotation.x += (${rotateXSpeed} * (Math.PI / 180)) * (sceneManager.engine.getDeltaTime() / 1000);
+    ${name}.rotation.y += (${rotateYSpeed} * (Math.PI / 180)) * (sceneManager.engine.getDeltaTime() / 1000);
+    ${name}.rotation.z += (${rotateZSpeed} * (Math.PI / 180)) * (sceneManager.engine.getDeltaTime() / 1000);
 }
 `;
             };
