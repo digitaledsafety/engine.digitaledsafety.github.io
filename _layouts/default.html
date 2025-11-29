@@ -1308,7 +1308,15 @@ workspace_data: "${base64WorkspaceData}"
                         },
                         {
                             kind: 'block',
-                            type: 'stop_animation',
+                            type: 'create_loading_screen',
+                        },
+                        {
+                            kind: 'block',
+                            type: 'show_loading_screen',
+                        },
+                        {
+                            kind: 'block',
+                            type: 'hide_loading_screen',
                         }
                     ]
                 },
@@ -4727,8 +4735,8 @@ workspace_data: "${base64WorkspaceData}"
                 "helpUrl": ""
             },
             {
-                "type": "show_custom_loading_screen",
-                "message0": "show loading screen with text %1",
+                "type": "create_loading_screen",
+                "message0": "create loading screen with text %1",
                 "args0": [
                     {
                         "type": "input_value",
@@ -4755,7 +4763,23 @@ workspace_data: "${base64WorkspaceData}"
                 "previousStatement": null,
                 "nextStatement": null,
                 "colour": 180,
-                "tooltip": "Shows a custom loading screen.",
+                "tooltip": "Creates a custom loading screen.",
+            },
+            {
+                "type": "show_loading_screen",
+                "message0": "show loading screen",
+                "previousStatement": null,
+                "nextStatement": null,
+                "colour": 180,
+                "tooltip": "Shows the custom loading screen.",
+            },
+            {
+                "type": "hide_loading_screen",
+                "message0": "hide loading screen",
+                "previousStatement": null,
+                "nextStatement": null,
+                "colour": 180,
+                "tooltip": "Hides the custom loading screen.",
             },
             {
                 "type": "set_background",
@@ -4798,6 +4822,28 @@ workspace_data: "${base64WorkspaceData}"
         ]);
 
         {
+
+            javascript.javascriptGenerator.forBlock['create_loading_screen'] = function (block, generator) {
+                const text = generator.valueToCode(block, 'TEXT', generator.ORDER_ATOMIC) || "'Loading...'";
+                const bgColor = block.getFieldValue('BG_COLOR');
+                const textColor = block.getFieldValue('TEXT_COLOR');
+                var code = 'var loadingScreen = new CustomLoadingScreen(' + text + ', \'' + bgColor + '\', \'' + textColor + '\');\n';
+                code += 'sceneManager.engine.loadingScreen = loadingScreen;\n';
+                return code;
+            };
+
+            javascript.javascriptGenerator.forBlock['show_loading_screen'] = function (block, generator) {
+                var code = 'if (sceneManager.engine.loadingScreen) {\\\n';
+                code += '    sceneManager.engine.displayLoadingUI();\\\n';
+                code += '} else {\\\n';
+                code += '    console.warn("Show loading screen block used, but no loading screen was created. Please use the \'create loading screen\' block first.");\\\n';
+                code += '}\n';
+                return code;
+            };
+
+            javascript.javascriptGenerator.forBlock['hide_loading_screen'] = function (block, generator) {
+                return 'sceneManager.engine.hideLoadingUI();\n';
+            };
 
             javascript.javascriptGenerator.forBlock['show_custom_loading_screen'] = function (block, generator) {
                 const text = generator.valueToCode(block, 'TEXT', generator.ORDER_ATOMIC) || "'Loading...'";
