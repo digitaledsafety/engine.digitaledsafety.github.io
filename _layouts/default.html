@@ -475,21 +475,26 @@
         CustomLoadingScreen.prototype.displayLoadingUI = function () {
             var loadingDiv = document.createElement("div");
             loadingDiv.id = "customLoadingScreen";
-            loadingDiv.style.position = "absolute";
-            loadingDiv.style.top = "0";
-            loadingDiv.style.left = "0";
-            loadingDiv.style.width = "100%";
-            loadingDiv.style.height = "100%";
-            loadingDiv.style.backgroundColor = this.loadingUIBackgroundColor;
-            loadingDiv.style.color = this.loadingUITextColor;
-            loadingDiv.style.fontSize = "30px";
-            loadingDiv.style.display = "flex";
-            loadingDiv.style.justifyContent = "center";
-            loadingDiv.style.alignItems = "center";
-            loadingDiv.style.zIndex = "2001";
-            loadingDiv.innerHTML = this.loadingUIText;
-            document.body.appendChild(loadingDiv);
-            this._loadingDiv = loadingDiv;
+            const canvasContainer = document.querySelector('.canvas-container');
+            if (canvasContainer) {
+                loadingDiv.style.position = "absolute";
+                loadingDiv.style.top = "0";
+                loadingDiv.style.left = "0";
+                loadingDiv.style.width = "100%";
+                loadingDiv.style.height = "100%";
+                loadingDiv.style.backgroundColor = this.loadingUIBackgroundColor;
+                loadingDiv.style.color = this.loadingUITextColor;
+                loadingDiv.style.fontSize = "30px";
+                loadingDiv.style.display = "flex";
+                loadingDiv.style.justifyContent = "center";
+                loadingDiv.style.alignItems = "center";
+                loadingDiv.style.zIndex = "1001"; // Ensure it's above the canvas but respects overall layout
+                loadingDiv.innerHTML = this.loadingUIText;
+                canvasContainer.appendChild(loadingDiv);
+                this._loadingDiv = loadingDiv;
+            } else {
+                console.error("Canvas container not found for loading screen.");
+            }
         };
         CustomLoadingScreen.prototype.hideLoadingUI = function () {
             if (this._loadingDiv) {
