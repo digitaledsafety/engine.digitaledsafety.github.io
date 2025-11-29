@@ -4858,7 +4858,7 @@ workspace_data: "${base64WorkspaceData}"
             javascript.javascriptGenerator.forBlock['event_every_frame'] = function (block, generator) {
                 const objectName = generator.valueToCode(block, 'OBJECT_SELECTOR', generator.ORDER_ATOMIC) || 'null';
                 const doCode = generator.statementToCode(block, 'DO_CODE');
-                const callback = `function(${objectName}, sceneManager.engine.getDeltaTime()) {\n${doCode}\n}`;
+                const callback = `function(${objectName}) {\n${doCode}\n}`;
                 return `sceneManager.everyFrame(${objectName}, ${callback});\n`;
             };
 
