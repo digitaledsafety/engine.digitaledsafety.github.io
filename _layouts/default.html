@@ -4819,12 +4819,13 @@ workspace_data: "${base64WorkspaceData}"
 
         {
             javascript.javascriptGenerator.forBlock['show_loading_screen'] = function (block, generator) {
-                var code = 'if (sceneManager.engine.loadingScreen) {\\\n';
-                code += '    sceneManager.engine.displayLoadingUI();\\\n';
-                code += '} else {\\\n';
-                code += '    console.warn("Show loading screen block used, but no loading screen was created. Please use the \'create loading screen\' block first.");\\\n';
-                code += '}\n';
-                return code;
+                return `
+                    if (sceneManager.engine.loadingScreen) {
+                        sceneManager.engine.displayLoadingUI();
+                    } else {
+                         console.warn("Show loading screen block used, but no loading screen was created. Please use the create loading screen block first.");
+                    };
+                `;
             };
 
             javascript.javascriptGenerator.forBlock['hide_loading_screen'] = function (block, generator) {
