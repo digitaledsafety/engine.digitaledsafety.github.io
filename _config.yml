@@ -30,3 +30,5 @@ exclude:
   - vendor/
   - verify_loading_screen.py
   - verify_background.py
+  - verification/
+  - jekyll.log
