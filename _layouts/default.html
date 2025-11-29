@@ -5433,6 +5433,93 @@ if (${name}) {
                 const texture = block.getFieldValue('TEXTURE');
                 return [`'${texture}'`, generator.ORDER_ATOMIC];
             };
+
+            javascript.javascriptGenerator.forBlock['procedures_defnoreturn'] = function(block, generator) {
+              // Defining a procedure without a return value.
+              const funcName = generator.getProcedureName(block.getFieldValue('NAME'));
+              let branch = generator.statementToCode(block, 'STACK');
+              if (generator.STATEMENT_PREFIX) {
+                branch = generator.prefixLines(
+                    generator.STATEMENT_PREFIX.replace(/%1/g, '\'' + block.id + '\''),
+                    generator.INDENT) + branch;
+              }
+              if (generator.INFINITE_LOOP_TRAP) {
+                branch = generator.INFINITE_LOOP_TRAP.replace(/%1/g, '\'' + block.id + '\'') +
+                    branch;
+              }
+              const returnValue =
+                  generator.provides_[funcName] || '';
+              const args = [];
+              const variables = block.getVars();
+              for (let i = 0; i < variables.length; i++) {
+                args[i] = generator.getVariableName(variables[i]);
+              }
+              let code = 'async function ' + funcName + '(' + args.join(', ') + ') {\n' + branch +
+                  returnValue + '}';
+              code = generator.scrub_(block, code);
+              // Add % OSO define to prevent regex matching.
+              generator.definitions_['%' + funcName] = code;
+              return null;
+            };
+
+            javascript.javascriptGenerator.forBlock['procedures_defreturn'] = function(block, generator) {
+                // Defining a procedure with a return value.
+                const funcName = generator.getProcedureName(block.getFieldValue('NAME'));
+                let branch = generator.statementToCode(block, 'STACK');
+                if (generator.STATEMENT_PREFIX) {
+                  branch = generator.prefixLines(
+                      generator.STATEMENT_PREFIX.replace(/%1/g, '\'' + block.id + '\''),
+                      generator.INDENT) + branch;
+                }
+                if (generator.INFINITE_LOOP_TRAP) {
+                  branch = generator.INFINITE_LOOP_TRAP.replace(/%1/g, '\'' + block.id + '\'') +
+                      branch;
+                }
+                let returnValue = generator.valueToCode(block, 'RETURN', generator.ORDER_NONE) || '';
+                let returnCode = '';
+                if (returnValue) {
+                  returnValue = generator.INDENT + 'return ' + returnValue + ';\n';
+                  returnCode = returnValue;
+                }
+                const args = [];
+                const variables = block.getVars();
+                for (let i = 0; i < variables.length; i++) {
+                  args[i] = generator.getVariableName(variables[i]);
+                }
+                let code = 'async function ' + funcName + '(' + args.join(', ') + ') {\n' + branch +
+                    returnCode + '}';
+                code = generator.scrub_(block, code);
+                // Add % OSO define to prevent regex matching.
+                generator.definitions_['%' + funcName] = code;
+                return null;
+            };
+
+            javascript.javascriptGenerator.forBlock['procedures_callreturn'] = function(block, generator) {
+                // Call a procedure with a return value.
+                const funcName = generator.getProcedureName(block.getFieldValue('NAME'));
+                const args = [];
+                const variables = block.getVars();
+                for (let i = 0; i < variables.length; i++) {
+                  args[i] =
+                      generator.valueToCode(block, 'ARG' + i, generator.ORDER_NONE) || 'null';
+                }
+                const code = 'await ' + funcName + '(' + args.join(', ') + ')';
+                return [code, generator.ORDER_FUNCTION_CALL];
+            };
+
+            javascript.javascriptGenerator.forBlock['procedures_callnoreturn'] = function(block, generator) {
+              // Call a procedure with no return value.
+              // Generated code is for statement block.
+              const funcName = generator.getProcedureName(block.getFieldValue('NAME'));
+              const args = [];
+              const variables = block.getVars();
+              for (let i = 0; i < variables.length; i++) {
+                args[i] =
+                    generator.valueToCode(block, 'ARG' + i, generator.ORDER_NONE) || 'null';
+              }
+              const code = 'await ' + funcName + '(' + args.join(', ') + ');\n';
+              return code;
+            };
         }
 
         // Convert Blockly Code to JavaScript
