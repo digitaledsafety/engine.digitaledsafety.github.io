@@ -3778,17 +3778,11 @@ workspace_data: "${base64WorkspaceData}"
                 "args1": [
                     { "type": "field_input", "name": "FONT_URL", "text": "https://assets.babylonjs.com/fonts/Droid Sans_Bold.json" }
                 ],
-                "message2": "and do with loaded_model %1",
-                "args2": [
-                    { "type": "input_statement", "name": "DO" }
-                ],
-                "previousStatement": null,
-                "nextStatement": null,
+                "output": "Mesh",
                 "colour": 160,
                 "inputsInline": false,
-                "tooltip": "Creates a 3D text mesh and runs code after it loads.",
-                "helpUrl": "",
-                "extensions": ["dynamic_loaded_model_variable"]
+                "tooltip": "Creates a 3D text mesh.",
+                "helpUrl": ""
             },
             {
                 "type": "scale_object",
@@ -5060,17 +5054,9 @@ sceneManager.importModel(null, '${modelUrl}').then((${loadedModelVar}) => {
                 const text = generator.valueToCode(block, 'TEXT', generator.ORDER_ATOMIC) || "''";
                 const name = generator.valueToCode(block, 'NAME', generator.ORDER_ATOMIC) || "'myText'";
                 const fontUrl = block.getFieldValue('FONT_URL');
-                const doCode = generator.statementToCode(block, 'DO');
-                const loadedModelVar = generator.nameDB_.getName('loaded_model', Blockly.VARIABLE_CATEGORY_NAME);
 
-                const code = `
-sceneManager.createText(${name}, ${text}, '${fontUrl}').then((${loadedModelVar}) => {
-    if (${loadedModelVar}) {
-        ${doCode}
-    }
-});
-`;
-                return code;
+                const code = `await sceneManager.createText(${name}, ${text}, '${fontUrl}')`;
+                return [code, generator.ORDER_ATOMIC];
             };
 
             javascript.javascriptGenerator.forBlock['scale_object'] = function (block, generator) {
