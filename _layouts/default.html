@@ -451,6 +451,8 @@
                 <button id="menuButton" class="btn btn-icon btn-menu-toggle" title="More actions">⋮</button>
                 <div id="dropdownMenu" class="dropdown-content">
                     <button id="toggleToolboxButton" class="btn btn-toggle-toolbox" title="Toggle Toolbox">☰ Toggle Toolbox</button>
+                    <button id="undoButton" class="btn" title="Undo" disabled>↶ Undo</button>
+                    <button id="redoButton" class="btn" title="Redo" disabled>↷ Redo</button>
                     <button id="codeViewButton" class="btn btn-icon active" title="Code">👩‍💻 Code</button>
                     <button id="assetsViewButton" class="btn btn-icon" title="Assets">📦Assets </button>
                     <button id="showBlocksButton" class="btn" title="Show Blocks">Blocks</button>
@@ -3433,6 +3435,8 @@ workspace_data: "${base64WorkspaceData}"
         const workspace = Blockly.inject('blocklyDiv', {
             toolbox: toolbox,
             theme: Blockly.Themes.DigitalEducationSafety,
+            undoStack: true,
+            redoStack: true,
             renderer: 'zelos',
             zoom: {
                 controls: true,
@@ -6584,6 +6588,21 @@ function ${generator.FUNCTION_NAME_PLACEHOLDER_}(c1, c2, ratio) {
             const blocklyDiv = document.getElementById('blocklyDiv');
             blocklyDiv.classList.toggle('toolbox-collapsed');
             Blockly.svgResize(workspace);
+        });
+
+        document.getElementById('undoButton').addEventListener('click', () => {
+            workspace.undo(false);
+        });
+
+        document.getElementById('redoButton').addEventListener('click', () => {
+            workspace.undo(true);
+        });
+
+        workspace.addChangeListener(function(event) {
+            const undoButton = document.getElementById('undoButton');
+            const redoButton = document.getElementById('redoButton');
+            undoButton.disabled = workspace.getUndoStack().length === 0;
+            redoButton.disabled = workspace.getRedoStack().length === 0;
         });
 
         document.getElementById('shareButton').addEventListener('click', () => {
