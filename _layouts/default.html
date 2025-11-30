@@ -1030,23 +1030,11 @@ workspace_data: "${base64WorkspaceData}"
                         {
                             kind: 'category',
                             name: 'Scripting',
-                            categorystyle: 'logic_category', // Or a new custom style
+                            categorystyle: 'logic_category',
                             contents: [
                                 {
                                     kind: 'block',
-                                    type: 'select_object',
-                                },
-                                {
-                                    kind: 'block',
-                                    type: 'event_on_click',
-                                },
-                                {
-                                    kind: 'block',
-                                    type: 'event_every_frame',
-                                },
-                                {
-                                    kind: 'block',
-                                    type: 'action_rotate_continuously',
+                                    type: 'event_on_start',
                                 },
                             ],
                         },
@@ -4204,6 +4192,22 @@ workspace_data: "${base64WorkspaceData}"
             },
             // Phase 2 Blockly Blocks
             {
+                "type": "event_on_start",
+                "message0": "when game starts %1 do %2",
+                "args0": [
+                    {
+                        "type": "input_dummy"
+                    },
+                    {
+                        "type": "input_statement",
+                        "name": "DO"
+                    }
+                ],
+                "colour": "%{BKY_LOOPS_HUE}",
+                "tooltip": "Executes code when the game starts.",
+                "helpUrl": ""
+            },
+            {
                 "type": "event_on_click",
                 "message0": "when %1 is clicked %2 do %3",
                 "args0": [
@@ -4848,6 +4852,11 @@ workspace_data: "${base64WorkspaceData}"
             };
 
             // --- Scripting Block Generators ---
+            javascript.javascriptGenerator.forBlock['event_on_start'] = function (block, generator) {
+                const doCode = generator.statementToCode(block, 'DO');
+                return `${doCode}\n`;
+            };
+
             javascript.javascriptGenerator.forBlock['event_on_click'] = function (block, generator) {
                 const objectName = generator.valueToCode(block, 'OBJECT_SELECTOR', generator.ORDER_ATOMIC) || 'null';
                 const doCode = generator.statementToCode(block, 'DO_CODE');
