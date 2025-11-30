@@ -3506,24 +3506,24 @@ workspace_data: "${base64WorkspaceData}"
         Blockly.defineBlocksWithJsonArray([
             {
                 "type": "import_model_from_asset",
-                "message0": "import model from asset %1 as %2",
+                "message0": "import model from asset %1",
                 "args0": [
                     {
                         "type": "input_value",
                         "name": "ASSET",
                         "check": "String"
-                    },
-                    {
-                        "type": "field_variable",
-                        "name": "VAR",
-                        "variable": "model"
                     }
+                ],
+                "message1": "and do with loaded_model %1",
+                "args1": [
+                    { "type": "input_statement", "name": "DO" }
                 ],
                 "previousStatement": null,
                 "nextStatement": null,
                 "colour": "%{BKY_MATH_HUE}",
-                "tooltip": "Imports a model from the asset manager.",
-                "helpUrl": ""
+                "tooltip": "Imports a model from the asset manager and runs code after it loads.",
+                "helpUrl": "",
+                "extensions": ["dynamic_loaded_model_variable"]
             },
             {
                 "type": "play_sound_from_asset",
@@ -3608,111 +3608,80 @@ workspace_data: "${base64WorkspaceData}"
             },
 
             {
-                type: 'save_3d_model_with_position',
-                message0: 'Import model URL %1 as %2\r\n',
-                args0: [
+                "type": "save_3d_model_with_position",
+                "message0": "import model from URL %1",
+                "args0": [
                     {
-                        type: 'field_input',
-                        name: 'MODEL_URL',
-                        text: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/main/2.0/Duck/glTF-Binary/Duck.glb',
-                    },
-                    {
-                        type: 'field_variable',
-                        name: 'MODEL_VAR',
-                        variable: 'model',
-                    },
+                        "type": "field_input",
+                        "name": "MODEL_URL",
+                        "text": "https://example.com/model.glb"
+                    }
                 ],
-                message1: 'Place at X %1 Y %2 Z %3',
-                args1: [
-                    {
-                        type: 'input_value',
-                        name: 'POS_X',
-                    },
-                    {
-                        type: 'input_value',
-                        name: 'POS_Y',
-                    },
-                    {
-                        type: 'input_value',
-                        name: 'POS_Z',
-                    },
+                "message1": "place at X %1 Y %2 Z %3",
+                "args1": [
+                    { "type": "input_value", "name": "POS_X", "check": "Number" },
+                    { "type": "input_value", "name": "POS_Y", "check": "Number" },
+                    { "type": "input_value", "name": "POS_Z", "check": "Number" }
                 ],
-                inputsInline: true,
-                previousStatement: null,
-                nextStatement: null,
-                colour: 230,
-                tooltip: 'Imports a 3D model and saves it as a variable for later use, with dynamic position.',
-                helpUrl: '',
-                extensions: [
-                    'set_max_display_length',
+                "message2": "and do with loaded_model %1",
+                "args2": [
+                    { "type": "input_statement", "name": "DO" }
                 ],
+                "previousStatement": null,
+                "nextStatement": null,
+                "colour": 230,
+                "tooltip": "Imports a 3D model from a URL, places it, and runs code after it loads.",
+                "helpUrl": "",
+                "extensions": ["set_max_display_length", "dynamic_loaded_model_variable"]
             },
             {
-                type: 'import_3d_file_url_with_position',
-                message0: 'Import 3D file from URL %1',
-                args0: [
+                "type": "import_3d_file_url_with_position",
+                "message0": "import model from URL %1",
+                "args0": [
                     {
-                        type: 'field_input',
-                        name: 'FILE_URL',
-                        text: 'https://example.com/model.gltf',
-                    },
+                        "type": "field_input",
+                        "name": "FILE_URL",
+                        "text": "https://example.com/model.glb"
+                    }
                 ],
-                message1: 'Place at X %1 Y %2 Z %3',
-                args1: [
-                    {
-                        type: 'field_number',
-                        name: 'POS_X',
-                        value: 0,
-                    },
-                    {
-                        type: 'field_number',
-                        name: 'POS_Y',
-                        value: 0,
-                    },
-                    {
-                        type: 'field_number',
-                        name: 'POS_Z',
-                        value: 0,
-                    },
+                "message1": "place at X %1 Y %2 Z %3",
+                "args1": [
+                    { "type": "input_value", "name": "POS_X", "check": "Number" },
+                    { "type": "input_value", "name": "POS_Y", "check": "Number" },
+                    { "type": "input_value", "name": "POS_Z", "check": "Number" }
                 ],
-                previousStatement: null,
-                nextStatement: null,
-                colour: 200,
-                tooltip: 'Imports a 3D file from a URL, places it in the scene, and executes actions on success.',
-                helpUrl: '',
+                "message2": "and do with loaded_model %1",
+                "args2": [
+                    { "type": "input_statement", "name": "DO" }
+                ],
+                "previousStatement": null,
+                "nextStatement": null,
+                "colour": 230,
+                "tooltip": "Imports a 3D model from a URL, places it, and runs code after it loads.",
+                "helpUrl": "",
+                "extensions": ["dynamic_loaded_model_variable"]
             },
             {
-                type: 'import_3d_file_url',
-                message0: 'Import model URL %1 as %2\r\n',
-                args0: [
+                "type": "import_3d_file_url",
+                "message0": "import model from URL %1",
+                "args0": [
                     {
-                        type: 'field_input',
-                        name: 'MODEL_URL',
-                        text: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/main/2.0/Duck/glTF-Binary/Duck.glb',
-                    },
-                    {
-                        type: 'field_variable',
-                        name: 'MODEL_VAR',
-                        variable: 'model',
-                    },
+                        "type": "field_input",
+                        "name": "MODEL_URL",
+                        "text": "https://example.com/model.glb"
+                    }
                 ],
-                message1: 'Do on success %1',
-                args1: [
-                    {
-                        type: 'input_statement',
-                        name: 'ON_SUCCESS',
-                    },
+                "message1": "and do with loaded_model %1",
+                "args1": [
+                    { "type": "input_statement", "name": "DO" }
                 ],
-                previousStatement: null,
-                nextStatement: null,
-                colour: 200,
-                tooltip: 'Imports a 3D file from a URL and executes actions on success.',
-                helpUrl: '',
-                extensions: [
-                    'set_max_display_length',
-                ],
+                "previousStatement": null,
+                "nextStatement": null,
+                "colour": 230,
+                "tooltip": "Imports a 3D model from a URL and runs code after it loads.",
+                "helpUrl": "",
+                "extensions": ["set_max_display_length", "dynamic_loaded_model_variable"]
             },
-
             {
                 type: 'import_3d_file',
                 message0: 'Import 3D file %1 from path %2',
@@ -3799,17 +3768,23 @@ workspace_data: "${base64WorkspaceData}"
                 "message0": "create 3D text %1 named %2",
                 "args0": [
                     { "type": "input_value", "name": "TEXT", "check": "String" },
-                    { "type": "input_value", "name": "NAME", "check": "String" },
+                    { "type": "input_value", "name": "NAME", "check": "String" }
                 ],
                 "message1": "font URL %1",
                 "args1": [
                     { "type": "field_input", "name": "FONT_URL", "text": "https://assets.babylonjs.com/fonts/Droid Sans_Bold.json" }
                 ],
-                "output": "Mesh",
+                "message2": "and do with loaded_model %1",
+                "args2": [
+                    { "type": "input_statement", "name": "DO" }
+                ],
+                "previousStatement": null,
+                "nextStatement": null,
                 "colour": 160,
                 "inputsInline": false,
-                "tooltip": "Creates a 3D text mesh.",
-                "helpUrl": ""
+                "tooltip": "Creates a 3D text mesh and runs code after it loads.",
+                "helpUrl": "",
+                "extensions": ["dynamic_loaded_model_variable"]
             },
             {
                 "type": "scale_object",
@@ -4624,11 +4599,16 @@ workspace_data: "${base64WorkspaceData}"
                     { "type": "field_input", "name": "NAME", "text": "myImage" },
                     { "type": "input_value", "name": "ASSET", "check": "String" }
                 ],
+                "message1": "and do with loaded_model %1",
+                "args1": [
+                    { "type": "input_statement", "name": "DO" }
+                ],
                 "previousStatement": null,
                 "nextStatement": null,
                 "colour": "#5B80A5",
                 "tooltip": "Creates a new image in the GUI from an asset.",
-                "helpUrl": ""
+                "helpUrl": "",
+                "extensions": ["dynamic_loaded_model_variable"]
             },
             {
                 "type": "event_on_gui_click",
@@ -4969,32 +4949,54 @@ if (${name}) {
                 return `sceneManager.cameraFollow(${meshVar}.name);\n`;
             };
 
-            javascript.javascriptGenerator.forBlock['save_3d_model_with_position'] = function (block, generator) {
+            javascript.javascriptGenerator.forBlock['save_3d_model_with_position'] = function(block, generator) {
                 const modelUrl = block.getFieldValue('MODEL_URL');
-                const modelVarName = generator.nameDB_.getName(block.getFieldValue('MODEL_VAR'), Blockly.Variables.NAME_TYPE);
                 const posX = generator.valueToCode(block, 'POS_X', generator.ORDER_ATOMIC) || '0';
                 const posY = generator.valueToCode(block, 'POS_Y', generator.ORDER_ATOMIC) || '0';
                 const posZ = generator.valueToCode(block, 'POS_Z', generator.ORDER_ATOMIC) || '0';
-                return `var ${modelVarName} = await sceneManager.importModel('${modelVarName}', '${modelUrl}', ${posX}, ${posY}, ${posZ});\n`;
+                const doCode = generator.statementToCode(block, 'DO');
+                const loadedModelVar = generator.nameDB_.getName('loaded_model', Blockly.VARIABLE_CATEGORY_NAME);
+
+                const code = `
+sceneManager.importModel(null, '${modelUrl}', ${posX}, ${posY}, ${posZ}).then((${loadedModelVar}) => {
+    if (${loadedModelVar}) {
+        ${doCode}
+    }
+});
+`;
+                return code;
             };
 
-            javascript.javascriptGenerator.forBlock['import_3d_file_url_with_position'] = function (block, generator) {
+            javascript.javascriptGenerator.forBlock['import_3d_file_url_with_position'] = function(block, generator) {
                 const fileUrl = block.getFieldValue('FILE_URL');
-                const posX = block.getFieldValue('POS_X');
-                const posY = block.getFieldValue('POS_Y');
-                const posZ = block.getFieldValue('POS_Z');
-                const baseName = (fileUrl.substring(fileUrl.lastIndexOf('/') + 1) || 'importedModel').replace(/[^a-zA-Z0-9]/g, '_');
-                return `await sceneManager.importModel('${baseName}', '${fileUrl}', ${posX}, ${posY}, ${posZ});\n`;
+                const posX = generator.valueToCode(block, 'POS_X', generator.ORDER_ATOMIC) || '0';
+                const posY = generator.valueToCode(block, 'POS_Y', generator.ORDER_ATOMIC) || '0';
+                const posZ = generator.valueToCode(block, 'POS_Z', generator.ORDER_ATOMIC) || '0';
+                const doCode = generator.statementToCode(block, 'DO');
+                const loadedModelVar = generator.nameDB_.getName('loaded_model', Blockly.VARIABLE_CATEGORY_NAME);
+
+                const code = `
+sceneManager.importModel(null, '${fileUrl}', ${posX}, ${posY}, ${posZ}).then((${loadedModelVar}) => {
+    if (${loadedModelVar}) {
+        ${doCode}
+    }
+});
+`;
+                return code;
             };
 
-            javascript.javascriptGenerator.forBlock['import_3d_file_url'] = function (block, generator) {
+            javascript.javascriptGenerator.forBlock['import_3d_file_url'] = function(block, generator) {
                 const modelUrl = block.getFieldValue('MODEL_URL');
-                const modelVarName = generator.nameDB_.getName(block.getFieldValue('MODEL_VAR'), Blockly.Variables.NAME_TYPE);
-                const onSuccessCode = generator.statementToCode(block, 'ON_SUCCESS') || '';
-                let code = `var ${modelVarName} = await sceneManager.importModel('${modelVarName}', '${modelUrl}');\n`;
-                if (onSuccessCode) {
-                    code += `if (${modelVarName}) {\n${onSuccessCode}}\n`;
-                }
+                const doCode = generator.statementToCode(block, 'DO');
+                const loadedModelVar = generator.nameDB_.getName('loaded_model', Blockly.VARIABLE_CATEGORY_NAME);
+
+                const code = `
+sceneManager.importModel(null, '${modelUrl}').then((${loadedModelVar}) => {
+    if (${loadedModelVar}) {
+        ${doCode}
+    }
+});
+`;
                 return code;
             };
 
@@ -5050,12 +5052,21 @@ if (${name}) {
                 return [code, generator.ORDER_ATOMIC];
             };
 
-            javascript.javascriptGenerator.forBlock['create_3d_text'] = function (block, generator) {
+            javascript.javascriptGenerator.forBlock['create_3d_text'] = function(block, generator) {
                 const text = generator.valueToCode(block, 'TEXT', generator.ORDER_ATOMIC) || "''";
                 const name = generator.valueToCode(block, 'NAME', generator.ORDER_ATOMIC) || "'myText'";
                 const fontUrl = block.getFieldValue('FONT_URL');
-                const code = `await sceneManager.createText(${name}, ${text}, '${fontUrl}')`;
-                return [code, generator.ORDER_ATOMIC];
+                const doCode = generator.statementToCode(block, 'DO');
+                const loadedModelVar = generator.nameDB_.getName('loaded_model', Blockly.VARIABLE_CATEGORY_NAME);
+
+                const code = `
+sceneManager.createText(${name}, ${text}, '${fontUrl}').then((${loadedModelVar}) => {
+    if (${loadedModelVar}) {
+        ${doCode}
+    }
+});
+`;
+                return code;
             };
 
             javascript.javascriptGenerator.forBlock['scale_object'] = function (block, generator) {
@@ -5265,10 +5276,19 @@ if (${name}) {
                 return [`'${assetName}'`, generator.ORDER_ATOMIC];
             };
 
-            javascript.javascriptGenerator.forBlock['import_model_from_asset'] = function (block, generator) {
+            javascript.javascriptGenerator.forBlock['import_model_from_asset'] = function(block, generator) {
                 const assetName = generator.valueToCode(block, 'ASSET', generator.ORDER_ATOMIC) || 'null';
-                const varName = generator.nameDB_.getName(block.getFieldValue('VAR'), Blockly.Variables.NAME_TYPE);
-                return `var ${varName} = await sceneManager.importModelAsset(${assetName}, assetManager);\n`;
+                const doCode = generator.statementToCode(block, 'DO');
+                const loadedModelVar = generator.nameDB_.getName('loaded_model', Blockly.VARIABLE_CATEGORY_NAME);
+
+                const code = `
+sceneManager.importModelAsset(${assetName}, assetManager).then((${loadedModelVar}) => {
+    if (${loadedModelVar}) {
+        ${doCode}
+    }
+});
+`;
+                return code;
             };
 
             javascript.javascriptGenerator.forBlock['play_sound_from_asset'] = function (block, generator) {
@@ -5368,17 +5388,23 @@ if (${name}) {
                 return `sceneManager.uiManager.createImage('${name}', ${url});\n`;
             };
 
-            javascript.javascriptGenerator.forBlock['gui_create_image_from_asset'] = function (block, generator) {
+            javascript.javascriptGenerator.forBlock['gui_create_image_from_asset'] = function(block, generator) {
                 const name = block.getFieldValue('NAME');
                 const assetName = generator.valueToCode(block, 'ASSET', generator.ORDER_ATOMIC) || "''";
-                return `
-                    (async () => {
-                        const asset = await assetManager.getAsset(${assetName});
-                        if (asset) {
-                            sceneManager.uiManager.createImageFromAsset('${name}', asset);
-                        }
-                    })();
-                `;
+                const doCode = generator.statementToCode(block, 'DO');
+                const loadedModelVar = generator.nameDB_.getName('loaded_model', Blockly.VARIABLE_CATEGORY_NAME);
+
+                const code = `
+assetManager.getAsset(${assetName}).then(asset => {
+    if (asset) {
+        const ${loadedModelVar} = sceneManager.uiManager.createImageFromAsset('${name}', asset);
+        if (${loadedModelVar}) {
+            ${doCode}
+        }
+    }
+});
+`;
+                return code;
             };
 
             javascript.javascriptGenerator.forBlock['event_on_gui_click'] = function (block, generator) {
@@ -6374,6 +6400,24 @@ if (${name}) {
             this.getField('MODEL_URL').maxDisplayLength = 16;
         }
         Blockly.Extensions.register('set_max_display_length', helper);
+
+        Blockly.Extensions.register('dynamic_loaded_model_variable', function() {
+            this.setOnChange(function(event) {
+                if (event.type === Blockly.Events.BLOCK_CREATE && event.blockId === this.id ||
+                    event.type === Blockly.Events.BLOCK_MOVE && event.blockId === this.id) {
+                    const ws = this.workspace;
+                    let variable = ws.getVariable('loaded_model');
+                    if (!variable) {
+                        variable = ws.createVariable('loaded_model');
+                    }
+                    const doStatement = this.getInput('DO');
+                    if (doStatement && doStatement.connection) {
+                        // This is a bit of a hack to ensure the variable is scoped.
+                        // Ideally, Blockly would have better support for temporary variables.
+                    }
+                }
+            });
+        });
 
         const canvas = document.getElementById('gameCanvas');
         const assetManager = new AssetManager();
