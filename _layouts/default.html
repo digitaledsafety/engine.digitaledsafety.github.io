@@ -842,80 +842,12 @@ workspace_data: "${base64WorkspaceData}"
                 loadAssetsIntoView();
 
                 // 3. Load Workspace
-                const migratedWorkspace = this.migrateWorkspaceData(projectData.workspace);
-                Blockly.serialization.workspaces.load(migratedWorkspace, this.workspace);
+                Blockly.serialization.workspaces.load(projectData.workspace, this.workspace);
 
                 // 4. Run the loaded project
                 doRun();
 
                 console.log('Project data loaded successfully!');
-            }
-
-            migrateWorkspaceData(workspaceData) {
-                const blocksToMigrate = [
-                    "create_3d_text",
-                    "import_model_from_asset",
-                    "gui_create_image_from_asset",
-                    "save_3d_model_with_position",
-                    "import_3d_file_url_with_position",
-                    "import_3d_file_url"
-                ];
-
-                function findAndTransform(obj) {
-                    if (obj && typeof obj === 'object') {
-                        // Check if the current object is a block that needs migration
-                        if (obj.type && blocksToMigrate.includes(obj.type)) {
-                            // Check if it's the old format (has an 'output' connection)
-                            // This check is implicit: the old blocks were used inside a variables_set block.
-                            // The logic here is designed to find that specific pattern.
-                        }
-
-                        // Special case: Find `variables_set` blocks that HAVE a block to migrate in their VALUE input
-                        if (obj.type === 'variables_set' && obj.inputs && obj.inputs.VALUE && obj.inputs.VALUE.block &&
-                            blocksToMigrate.includes(obj.inputs.VALUE.block.type)) {
-
-                            const originalNextBlock = obj.next;
-                            const newDoBlock = obj.inputs.VALUE.block;
-                            const varField = obj.fields.VAR;
-
-                            // The new 'variables_set' that goes inside the 'DO' statement
-                            const innerVarSet = {
-                                type: 'variables_set',
-                                fields: { VAR: varField },
-                                inputs: {
-                                    VALUE: {
-                                        block: {
-                                            type: 'variables_get',
-                                            fields: {
-                                                VAR: { name: 'loaded_model' } // Use the special variable
-                                            }
-                                        }
-                                    }
-                                },
-                                next: originalNextBlock
-                            };
-
-                            // Transform the outer block
-                            obj.type = newDoBlock.type;
-                            obj.fields = newDoBlock.fields;
-                            obj.inputs = newDoBlock.inputs;
-                            obj.inputs.DO = { block: innerVarSet };
-
-                            // Remove the now-processed parts
-                            delete obj.inputs.VALUE;
-                            delete obj.next;
-
-                        } else {
-                             // Recursively call for all children
-                            for (const key in obj) {
-                                findAndTransform(obj[key]);
-                            }
-                        }
-                    }
-                }
-
-                findAndTransform(workspaceData);
-                return workspaceData;
             }
 
             async loadProject() {
