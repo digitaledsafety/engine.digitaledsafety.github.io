@@ -28,5 +28,6 @@ include:
 exclude:
   - tests
   - vendor/
+  - jekyll.log
   - verify_loading_screen.py
   - verify_background.py
