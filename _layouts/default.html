@@ -4911,7 +4911,7 @@ if (${name}) {
                 // The 'collided_object' variable is made available within the 'DO' statement.
                 // We need to ensure that the variable is properly declared and scoped.
                 const collidedObjectVar = generator.nameDB_.getName('collided_object', Blockly.VARIABLE_CATEGORY_NAME);
-                const callback = `function(${collidedObjectVar}) {
+                const callback = `async function(${collidedObjectVar}) {
                     // This function will be called with the collided object.
                     // We can then execute the DO code.
                     ${doCode}
