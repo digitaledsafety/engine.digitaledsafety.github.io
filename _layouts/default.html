@@ -2207,7 +2207,6 @@ workspace_data: "${base64WorkspaceData}"
 
         class BabylonSceneManager {
             constructor(canvas) {
-                this.initAudioEngine();
                 this.canvas = canvas;
                 this.engine = new BABYLON.Engine(this.canvas, true);
                 this.scene = new BABYLON.Scene(this.engine);
@@ -2237,12 +2236,12 @@ workspace_data: "${base64WorkspaceData}"
                     'w': 'Up',
                     's': 'Down'
                 };
-                this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
                 this.uiElements = [];
                 this.inactivityTimer = null;
                 this.uiManager = new UIManager(this.scene);
                 this.processedCollisions = new Set();
                 this.background = null;
+                this.audioEngine = null;
 
                 this.initScene();
                 this.initInputListeners();
@@ -2252,16 +2251,11 @@ workspace_data: "${base64WorkspaceData}"
 
             }
 
-            async initAudioEngine() {
-                if (this.engine && this.engine.audioEngine && this.sounds.length > 0) {
-                    this.sounds.forEach(sound => {
-
-                        console.log("stopping sound");
-                        sound.stop(); // Set default volume
-                    });
-                    this.engine.audioEngine.dispose();
+            async getAudioEngine() {
+                if (!this.audioEngine) {
+                    this.audioEngine = await BABYLON.CreateAudioEngineAsync();
                 }
-                this.audioEngine = await BABYLON.CreateAudioEngineAsync();
+                return this.audioEngine;
             }
 
             initJoystick() {
@@ -2756,45 +2750,52 @@ workspace_data: "${base64WorkspaceData}"
                 if (!isValidAssetURL(url)) {
                     return;
                 }
-                // Create a new sound and play it.
-
-                if (!this.audioEngine) {
-                    return;
+                const audioEngine = await this.getAudioEngine();
+                if (audioEngine.audioContext.state === "suspended") {
+                    await audioEngine.audioContext.resume();
                 }
 
-                let sound = await BABYLON.CreateStreamingSoundAsync("sound", url);
-
+                const sound = new BABYLON.Sound("sound", url, this.scene, null, {
+                    autoplay: true,
+                    loop: false,
+                    onended: () => {
+                        sound.dispose();
+                        this.sounds = this.sounds.filter(s => s !== sound);
+                    }
+                });
                 this.sounds.push(sound);
-
-                await this.audioEngine.unlockAsync();
-
-                sound.play();
             }
 
             async playSoundAsset(name, assetManager) {
                 let asset = await assetManager.getAsset(name);
                 if (asset && asset.data instanceof ArrayBuffer) {
-                    this.playSound(URL.createObjectURL(new Blob([asset.data])));
+                   await this.playSound(URL.createObjectURL(new Blob([asset.data])));
                 }
             }
 
-            playNote(frequency, duration) {
-                if (!this.audioContext) return;
-                const oscillator = this.audioContext.createOscillator();
-                const gainNode = this.audioContext.createGain();
+            async playNote(frequency, duration) {
+                const audioEngine = await this.getAudioEngine();
+                const audioContext = audioEngine.audioContext;
+                if (!audioContext) return;
+
+                if (audioContext.state === 'suspended') {
+                    await audioContext.resume();
+                }
+
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
 
                 oscillator.connect(gainNode);
-                gainNode.connect(this.audioContext.destination);
+                gainNode.connect(audioContext.destination);
 
-                oscillator.type = 'sine'; // 'sine', 'square', 'sawtooth', 'triangle'
+                oscillator.type = 'sine';
                 oscillator.frequency.value = frequency;
 
-                // Fade out to avoid clicking
-                gainNode.gain.setValueAtTime(1, this.audioContext.currentTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.001, this.audioContext.currentTime + duration);
+                gainNode.gain.setValueAtTime(1, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + duration);
 
-                oscillator.start(this.audioContext.currentTime);
-                oscillator.stop(this.audioContext.currentTime + duration);
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + duration);
             }
 
             initInputListeners() {
@@ -5251,7 +5252,7 @@ if (${name}) {
             javascript.javascriptGenerator.forBlock['play_note'] = function (block, generator) {
                 const note = block.getFieldValue('NOTE');
                 const duration = generator.valueToCode(block, 'DURATION', generator.ORDER_ATOMIC) || '0.5';
-                return `sceneManager.playNote(${note}, ${duration});\n`;
+                return `await sceneManager.playNote(${note}, ${duration});\n`;
             };
 
             javascript.javascriptGenerator.forBlock['asset_model'] = function (block, generator) {
@@ -5277,7 +5278,7 @@ if (${name}) {
 
             javascript.javascriptGenerator.forBlock['play_sound_from_asset'] = function (block, generator) {
                 const assetName = generator.valueToCode(block, 'ASSET', generator.ORDER_ATOMIC) || 'null';
-                return `sceneManager.playSoundAsset(${assetName}, assetManager);\n`;
+                return `await sceneManager.playSoundAsset(${assetName}, assetManager);\n`;
             };
 
             javascript.javascriptGenerator.forBlock['set_texture_from_asset'] = function (block, generator) {
