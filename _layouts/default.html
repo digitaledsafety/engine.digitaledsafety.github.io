@@ -2207,7 +2207,6 @@ workspace_data: "${base64WorkspaceData}"
 
         class BabylonSceneManager {
             constructor(canvas) {
-                this.initAudioEngine();
                 this.canvas = canvas;
                 this.engine = new BABYLON.Engine(this.canvas, true);
                 this.scene = new BABYLON.Scene(this.engine);
@@ -2237,7 +2236,6 @@ workspace_data: "${base64WorkspaceData}"
                     'w': 'Up',
                     's': 'Down'
                 };
-                this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
                 this.uiElements = [];
                 this.inactivityTimer = null;
                 this.uiManager = new UIManager(this.scene);
@@ -2250,18 +2248,6 @@ workspace_data: "${base64WorkspaceData}"
                 this.initAutoHide();
                 this.runRenderLoop();
 
-            }
-
-            async initAudioEngine() {
-                if (this.engine && this.engine.audioEngine && this.sounds.length > 0) {
-                    this.sounds.forEach(sound => {
-
-                        console.log("stopping sound");
-                        sound.stop(); // Set default volume
-                    });
-                    this.engine.audioEngine.dispose();
-                }
-                this.audioEngine = await BABYLON.CreateAudioEngineAsync();
             }
 
             initJoystick() {
@@ -2756,19 +2742,21 @@ workspace_data: "${base64WorkspaceData}"
                 if (!isValidAssetURL(url)) {
                     return;
                 }
-                // Create a new sound and play it.
-
-                if (!this.audioEngine) {
-                    return;
+                // Babylon's AudioEngine might be suspended by the browser. Unlock it first.
+                if (this.engine.getAudioContext().state === "suspended") {
+                    await this.engine.getAudioContext().resume();
                 }
 
-                let sound = await BABYLON.CreateStreamingSoundAsync("sound", url);
-
+                const sound = new BABYLON.Sound("sound", url, this.scene, null, {
+                    autoplay: true,
+                    loop: false,
+                    // On sound ended, dispose it to free up resources
+                    onended: () => {
+                        sound.dispose();
+                        this.sounds = this.sounds.filter(s => s !== sound);
+                    }
+                });
                 this.sounds.push(sound);
-
-                await this.audioEngine.unlockAsync();
-
-                sound.play();
             }
 
             async playSoundAsset(name, assetManager) {
@@ -2779,22 +2767,29 @@ workspace_data: "${base64WorkspaceData}"
             }
 
             playNote(frequency, duration) {
-                if (!this.audioContext) return;
-                const oscillator = this.audioContext.createOscillator();
-                const gainNode = this.audioContext.createGain();
+                const audioContext = this.engine.getAudioContext();
+                if (!audioContext) return;
+
+                // Resume the audio context if it's suspended
+                if (audioContext.state === 'suspended') {
+                    audioContext.resume();
+                }
+
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
 
                 oscillator.connect(gainNode);
-                gainNode.connect(this.audioContext.destination);
+                gainNode.connect(audioContext.destination);
 
                 oscillator.type = 'sine'; // 'sine', 'square', 'sawtooth', 'triangle'
                 oscillator.frequency.value = frequency;
 
                 // Fade out to avoid clicking
-                gainNode.gain.setValueAtTime(1, this.audioContext.currentTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.001, this.audioContext.currentTime + duration);
+                gainNode.gain.setValueAtTime(1, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + duration);
 
-                oscillator.start(this.audioContext.currentTime);
-                oscillator.stop(this.audioContext.currentTime + duration);
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + duration);
             }
 
             initInputListeners() {
