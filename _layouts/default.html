@@ -1099,6 +1099,18 @@ workspace_data: "${base64WorkspaceData}"
                         {
                             kind: 'block',
                             type: 'event_on_gui_click',
+                        },
+                        {
+                            kind: 'block',
+                            type: 'create_popup',
+                        },
+                        {
+                            kind: 'block',
+                            type: 'show_popup',
+                        },
+                        {
+                            kind: 'block',
+                            type: 'hide_popup',
                         }
                     ]
                 },
@@ -2252,6 +2264,28 @@ workspace_data: "${base64WorkspaceData}"
 
             }
 
+            pauseEngine() {
+                this.engine.stopRenderLoop();
+            }
+
+            resumeEngine() {
+                this.runRenderLoop();
+            }
+
+            createPopup(name, title, options) {
+                return this.uiManager.createPopup(name, title, options);
+            }
+
+            showPopup(name) {
+                this.uiManager.showPopup(name);
+                this.pauseEngine();
+            }
+
+            hidePopup(name) {
+                this.uiManager.hidePopup(name);
+                this.resumeEngine();
+            }
+
             async initAudioEngine() {
                 if (this.engine && this.engine.audioEngine && this.sounds.length > 0) {
                     this.sounds.forEach(sound => {
@@ -2370,36 +2404,6 @@ workspace_data: "${base64WorkspaceData}"
                 this.objects[name] = sphereMesh;
                 return sphereMesh;
             }
-
-            createPopup(name, text, options = {}) {
-                const popupPanel = new BABYLON.GUI.Rectangle("popupPanel");
-                popupPanel.width = "400px";
-                popupPanel.height = "200px";
-                popupPanel.color = "white";
-                popupPanel.thickness = 2;
-                popupPanel.background = "rgba(0, 0, 0, 0.7)"; // Semi-transparent black overlay
-                popupPanel.isVisible = false; // Initially hide the pop-up
-
-                const textBlock = new BABYLON.GUI.TextBlock("popupText", text);
-                textBlock.color = "white";
-                textBlock.fontSize = 24;
-                popupPanel.addControl(textBlock);
-                
-                const closeButton = BABYLON.GUI.Button.CreateByName("closeButton");
-                closeButton.width = "100px";
-                closeButton.height = "40px";
-                closeButton.color = "white";
-                closeButton.background = "blue";
-                closeButton.children[0].text = "Close"; // Set button text
-                closeButton.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_BOTTOM;
-                closeButton.onPointerUpObservable.add(function() {
-                    popupPanel.isVisible = false; // Hide the pop-up when clicked
-                });
-                popupPanel.addControl(closeButton);
-                
-                this.advancedTexture.addControl(popupPanel);
-                this.controls[name] = popupPanel;
-            }            
 
             async createText(name, text, fontUrl, size = 1, resolution = 16, depth = 0.5) {
                 if (!isValidAssetURL(fontUrl)) {
@@ -3392,6 +3396,93 @@ workspace_data: "${base64WorkspaceData}"
             onControlClick(name, callback) {
                 if (this.controls[name]) {
                     this.controls[name].onPointerClickObservable.add(callback);
+                }
+            }
+
+            getControlByName(name) {
+                return this.controls[name];
+            }
+
+            createPopup(name, title, options = {}) {
+                if (this.controls[name]) {
+                    console.warn(`Popup with name "${name}" already exists. Creation ignored.`);
+                    return;
+                }
+
+                // Create a full-screen, semi-transparent container
+                const container = new BABYLON.GUI.Rectangle(name);
+                container.width = "100%";
+                container.height = "100%";
+                container.thickness = 0; // No border
+                container.background = "rgba(0, 0, 0, 0.7)";
+                container.isVisible = false; // Initially hidden
+                this.advancedTexture.addControl(container);
+                this.controls[name] = container;
+
+                // Create a stack panel for vertical alignment of content
+                const panel = new BABYLON.GUI.StackPanel();
+                panel.width = "80%";
+                panel.maxWidth = "500px";
+                container.addControl(panel);
+
+                // Add Image if provided
+                if (options.image) {
+                    const image = new BABYLON.GUI.Image(`${name}_image`, options.image);
+                    image.width = "150px";
+                    image.height = "150px";
+                    image.paddingBottom = "20px";
+                    panel.addControl(image);
+                }
+
+                // Add Title
+                const titleBlock = new BABYLON.GUI.TextBlock(`${name}_title`, title);
+                titleBlock.resizeToFit = true;
+                titleBlock.color = "white";
+                titleBlock.fontSize = 32;
+                titleBlock.paddingBottom = "20px";
+                panel.addControl(titleBlock);
+
+                // Add Button 1 if text is provided
+                if (options.button1_text) {
+                    const button1_name = options.button1_name || `${name}_button1`;
+                    const button1 = BABYLON.GUI.Button.CreateSimpleButton(button1_name, options.button1_text);
+                    button1.width = "200px";
+                    button1.height = "50px";
+                    button1.color = "white";
+                    button1.background = "green";
+                    button1.paddingBottom = "10px";
+                    panel.addControl(button1);
+                    this.controls[button1_name] = button1;
+                }
+
+                // Add Button 2 if text is provided
+                if (options.button2_text) {
+                    const button2_name = options.button2_name || `${name}_button2`;
+                    const button2 = BABYLON.GUI.Button.CreateSimpleButton(button2_name, options.button2_text);
+                    button2.width = "200px";
+                    button2.height = "50px";
+                    button2.color = "white";
+                    button2.background = "blue";
+                    panel.addControl(button2);
+                    this.controls[button2_name] = button2;
+                }
+
+                return container;
+            }
+
+            showPopup(name) {
+                if (this.controls[name]) {
+                    this.controls[name].isVisible = true;
+                } else {
+                    console.warn(`Popup with name "${name}" not found.`);
+                }
+            }
+
+            hidePopup(name) {
+                if (this.controls[name]) {
+                    this.controls[name].isVisible = false;
+                } else {
+                    console.warn(`Popup with name "${name}" not found.`);
                 }
             }
 
@@ -4853,10 +4944,90 @@ workspace_data: "${base64WorkspaceData}"
                 "colour": 180,
                 "tooltip": "Selects a procedural texture for the background.",
                 "helpUrl": ""
+            },
+            {
+                "type": "create_popup",
+                "message0": "create popup named %1 with title %2",
+                "args0": [
+                    { "type": "input_value", "name": "NAME", "check": "String" },
+                    { "type": "input_value", "name": "TITLE", "check": "String" }
+                ],
+                "message1": "image URL %1",
+                "args1": [
+                    { "type": "input_value", "name": "IMAGE", "check": "String" }
+                ],
+                "message2": "button 1 name %1 text %2",
+                "args2": [
+                    { "type": "input_value", "name": "BUTTON1_NAME", "check": "String" },
+                    { "type": "input_value", "name": "BUTTON1_TEXT", "check": "String" }
+                ],
+                "message3": "button 2 name %1 text %2",
+                "args3": [
+                    { "type": "input_value", "name": "BUTTON2_NAME", "check": "String" },
+                    { "type": "input_value", "name": "BUTTON2_TEXT", "check": "String" }
+                ],
+                "previousStatement": null,
+                "nextStatement": null,
+                "colour": "#5B80A5",
+                "tooltip": "Creates a popup with a title, an optional image, and up to two buttons.",
+                "helpUrl": ""
+            },
+            {
+                "type": "show_popup",
+                "message0": "show popup %1",
+                "args0": [
+                    { "type": "input_value", "name": "NAME", "check": "String" }
+                ],
+                "previousStatement": null,
+                "nextStatement": null,
+                "colour": "#5B80A5",
+                "tooltip": "Shows the specified popup and pauses the game.",
+                "helpUrl": ""
+            },
+            {
+                "type": "hide_popup",
+                "message0": "hide popup %1",
+                "args0": [
+                    { "type": "input_value", "name": "NAME", "check": "String" }
+                ],
+                "previousStatement": null,
+                "nextStatement": null,
+                "colour": "#5B80A5",
+                "tooltip": "Hides the specified popup and resumes the game.",
+                "helpUrl": ""
             }
         ]);
 
         {
+            javascript.javascriptGenerator.forBlock['create_popup'] = function (block, generator) {
+                const name = generator.valueToCode(block, 'NAME', generator.ORDER_ATOMIC) || "''";
+                const title = generator.valueToCode(block, 'TITLE', generator.ORDER_ATOMIC) || "''";
+                const image = generator.valueToCode(block, 'IMAGE', generator.ORDER_ATOMIC) || "null";
+                const button1Name = generator.valueToCode(block, 'BUTTON1_NAME', generator.ORDER_ATOMIC) || "null";
+                const button1Text = generator.valueToCode(block, 'BUTTON1_TEXT', generator.ORDER_ATOMIC) || "null";
+                const button2Name = generator.valueToCode(block, 'BUTTON2_NAME', generator.ORDER_ATOMIC) || "null";
+                const button2Text = generator.valueToCode(block, 'BUTTON2_TEXT', generator.ORDER_ATOMIC) || "null";
+
+                const options = `{
+                    image: ${image},
+                    button1_name: ${button1Name},
+                    button1_text: ${button1Text},
+                    button2_name: ${button2Name},
+                    button2_text: ${button2Text}
+                }`;
+                return `sceneManager.createPopup(${name}, ${title}, ${options});\n`;
+            };
+
+            javascript.javascriptGenerator.forBlock['show_popup'] = function (block, generator) {
+                const name = generator.valueToCode(block, 'NAME', generator.ORDER_ATOMIC) || "''";
+                return `sceneManager.showPopup(${name});\n`;
+            };
+
+            javascript.javascriptGenerator.forBlock['hide_popup'] = function (block, generator) {
+                const name = generator.valueToCode(block, 'NAME', generator.ORDER_ATOMIC) || "''";
+                return `sceneManager.hidePopup(${name});\n`;
+            };
+
             javascript.javascriptGenerator.forBlock['show_loading_screen'] = function (block, generator) {
                 return `
                     if (sceneManager.engine.loadingScreen) {
