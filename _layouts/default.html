@@ -2371,6 +2371,36 @@ workspace_data: "${base64WorkspaceData}"
                 return sphereMesh;
             }
 
+            createPopup(name, text, options = {}) {
+                const popupPanel = new BABYLON.GUI.Rectangle("popupPanel");
+                popupPanel.width = "400px";
+                popupPanel.height = "200px";
+                popupPanel.color = "white";
+                popupPanel.thickness = 2;
+                popupPanel.background = "rgba(0, 0, 0, 0.7)"; // Semi-transparent black overlay
+                popupPanel.isVisible = false; // Initially hide the pop-up
+
+                const textBlock = new BABYLON.GUI.TextBlock("popupText", text);
+                textBlock.color = "white";
+                textBlock.fontSize = 24;
+                popupPanel.addControl(textBlock);
+                
+                const closeButton = BABYLON.GUI.Button.CreateByName("closeButton");
+                closeButton.width = "100px";
+                closeButton.height = "40px";
+                closeButton.color = "white";
+                closeButton.background = "blue";
+                closeButton.children[0].text = "Close"; // Set button text
+                closeButton.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_BOTTOM;
+                closeButton.onPointerUpObservable.add(function() {
+                    popupPanel.isVisible = false; // Hide the pop-up when clicked
+                });
+                popupPanel.addControl(closeButton);
+                
+                this.advancedTexture.addControl(popupPanel);
+                this.controls[name] = popupPanel;
+            }            
+
             async createText(name, text, fontUrl, size = 1, resolution = 16, depth = 0.5) {
                 if (!isValidAssetURL(fontUrl)) {
                     return null;
