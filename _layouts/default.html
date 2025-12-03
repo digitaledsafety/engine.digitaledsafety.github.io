@@ -3309,8 +3309,16 @@ workspace_data: "${base64WorkspaceData}"
             }
 
             setText(name, text) {
-                if (this.controls[name] && this.controls[name].text !== undefined) {
-                    this.controls[name].text = text;
+                const control = this.controls[name];
+                if (control) {
+                    // For Buttons, the text is on a child TextBlock
+                    if (control.textBlock && typeof control.textBlock.text !== 'undefined') {
+                        control.textBlock.text = text;
+                    }
+                    // For TextBlocks or InputTexts
+                    else if (typeof control.text !== 'undefined') {
+                        control.text = text;
+                    }
                 }
             }
 
@@ -6653,6 +6661,7 @@ if (${name}) {
             }
             sceneManager = new BabylonSceneManager(canvas);
             window.sceneManager = sceneManager; // Expose for debugging and testing
+            window.bjs = sceneManager;
 
             try {
                 const AsyncFunction = Object.getPrototypeOf(async function () { }).constructor;
