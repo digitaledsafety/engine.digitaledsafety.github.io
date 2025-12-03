@@ -1128,6 +1128,10 @@ workspace_data: "${base64WorkspaceData}"
                             kind: 'block',
                             type: 'play_note',
                         },
+                        {
+                            kind: 'block',
+                            type: 'stop_sound',
+                        },
                     ]
                 },
 
@@ -2225,7 +2229,7 @@ workspace_data: "${base64WorkspaceData}"
                 this.scene = new BABYLON.Scene(this.engine);
                 this.objects = {};
                 this.materials = {};
-                this.sounds = [];
+                this.sounds = {};
                 this.player = null;
                 this.moveDirection = new BABYLON.Vector3(0, 0, 0);
                 this.playerSpeed = 5;
@@ -2786,29 +2790,58 @@ workspace_data: "${base64WorkspaceData}"
             }
 
 
-            async playSound(url) {
+            async playSound(name, url, mode = 'PLAY') {
                 if (!isValidAssetURL(url)) {
                     return;
                 }
-                // Create a new sound and play it.
-
                 if (!this.audioEngine) {
+                    console.warn("Audio engine is not initialized.");
                     return;
                 }
 
-                let sound = await BABYLON.CreateStreamingSoundAsync("sound", url);
-
-                this.sounds.push(sound);
+                // If a sound with this name already exists, dispose of it first.
+                if (this.sounds[name]) {
+                    this.sounds[name].dispose();
+                }
 
                 await this.audioEngine.unlockAsync();
 
-                sound.play();
+                const sound = await BABYLON.CreateStreamingSoundAsync(name, url, this.scene, null, {
+                    loop: mode === 'LOOP',
+                    autoplay: false // We will play it manually
+                });
+
+                this.sounds[name] = sound;
+
+                if (mode === 'PLAY_AND_WAIT') {
+                    return new Promise(resolve => {
+                        sound.onended = () => {
+                            resolve();
+                        };
+                        sound.play();
+                    });
+                } else {
+                    sound.play();
+                    return Promise.resolve(); // Return a resolved promise for consistency
+                }
             }
 
-            async playSoundAsset(name, assetManager) {
-                let asset = await assetManager.getAsset(name);
+            async playSoundAsset(name, assetName, assetManager, mode = 'PLAY') {
+                const asset = await assetManager.getAsset(assetName);
                 if (asset && asset.data instanceof ArrayBuffer) {
-                    this.playSound(URL.createObjectURL(new Blob([asset.data])));
+                    const blob = new Blob([asset.data]);
+                    const url = URL.createObjectURL(blob);
+                    // Important: We return the promise from playSound
+                    return this.playSound(name, url, mode);
+                }
+                return Promise.resolve(); // Return a resolved promise if asset not found
+            }
+
+            stopSound(name) {
+                if (this.sounds[name]) {
+                    this.sounds[name].stop();
+                    this.sounds[name].dispose();
+                    delete this.sounds[name];
                 }
             }
 
@@ -2950,10 +2983,12 @@ workspace_data: "${base64WorkspaceData}"
                 this.materials = {};
 
                 // Dispose all sounds
-                for (let i = 0; i < this.sounds.length; i++) {
-                    this.sounds[i].dispose();
+                for (const name in this.sounds) {
+                    if (this.sounds.hasOwnProperty(name)) {
+                        this.sounds[name].dispose();
+                    }
                 }
-                this.sounds = [];
+                this.sounds = {};
 
                 this.player = null;
                 this.perFrameFunctions = [];
@@ -3652,14 +3687,30 @@ workspace_data: "${base64WorkspaceData}"
             },
             {
                 "type": "play_sound_from_asset",
-                "message0": "play sound from asset %1",
+                "message0": "play sound from asset %1 as %2 %3",
                 "args0": [
                     {
                         "type": "input_value",
                         "name": "ASSET",
                         "check": "String"
+                    },
+                    {
+                        "type": "input_value",
+                        "name": "NAME",
+                        "check": "String",
+                        "align": "RIGHT"
+                    },
+                    {
+                        "type": "field_dropdown",
+                        "name": "MODE",
+                        "options": [
+                            [ "play", "PLAY" ],
+                            [ "play and wait", "PLAY_AND_WAIT" ],
+                            [ "loop", "LOOP" ]
+                        ]
                     }
                 ],
+                "inputsInline": true,
                 "previousStatement": null,
                 "nextStatement": null,
                 "colour": "%{BKY_AUDIO_HUE}",
@@ -4587,14 +4638,30 @@ workspace_data: "${base64WorkspaceData}"
             },
             {
                 "type": "play_sound_url",
-                "message0": "play sound from URL %1",
+                "message0": "play sound from URL %1 as %2 %3",
                 "args0": [
                     {
-                        "type": "field_input",
+                        "type": "input_value",
                         "name": "URL",
-                        "text": "https://example.com/sound.mp3"
+                        "check": "String"
+                    },
+                    {
+                        "type": "input_value",
+                        "name": "NAME",
+                        "check": "String",
+                        "align": "RIGHT"
+                    },
+                    {
+                        "type": "field_dropdown",
+                        "name": "MODE",
+                        "options": [
+                            [ "play", "PLAY" ],
+                            [ "play and wait", "PLAY_AND_WAIT" ],
+                            [ "loop", "LOOP" ]
+                        ]
                     }
                 ],
+                "inputsInline": true,
                 "previousStatement": null,
                 "nextStatement": null,
                 "colour": "#5B80A5",
@@ -4628,6 +4695,22 @@ workspace_data: "${base64WorkspaceData}"
                 "nextStatement": null,
                 "colour": "#5B80A5",
                 "tooltip": "Plays a musical note for a given duration.",
+                "helpUrl": ""
+            },
+            {
+                "type": "stop_sound",
+                "message0": "stop sound %1",
+                "args0": [
+                    {
+                        "type": "input_value",
+                        "name": "NAME",
+                        "check": "String"
+                    }
+                ],
+                "previousStatement": null,
+                "nextStatement": null,
+                "colour": "#5B80A5",
+                "tooltip": "Stops a playing sound by name.",
                 "helpUrl": ""
             },
             // GUI Blocks
@@ -5443,10 +5526,15 @@ if (${name}) {
 
             // --- Audio Block Generators ---
             javascript.javascriptGenerator.forBlock['play_sound_url'] = function (block, generator) {
-                const url = block.getFieldValue('URL');
-                return `
-                    sceneManager.playSound('${url}');
-                `;
+                const url = generator.valueToCode(block, 'URL', generator.ORDER_ATOMIC) || "''";
+                const name = generator.valueToCode(block, 'NAME', generator.ORDER_ATOMIC) || "''";
+                const mode = block.getFieldValue('MODE');
+
+                if (mode === 'PLAY_AND_WAIT') {
+                    return `await sceneManager.playSound(${name}, ${url}, '${mode}');\n`;
+                } else {
+                    return `sceneManager.playSound(${name}, ${url}, '${mode}');\n`;
+                }
             };
 
             javascript.javascriptGenerator.forBlock['play_note'] = function (block, generator) {
@@ -5478,7 +5566,19 @@ if (${name}) {
 
             javascript.javascriptGenerator.forBlock['play_sound_from_asset'] = function (block, generator) {
                 const assetName = generator.valueToCode(block, 'ASSET', generator.ORDER_ATOMIC) || 'null';
-                return `sceneManager.playSoundAsset(${assetName}, assetManager);\n`;
+                const name = generator.valueToCode(block, 'NAME', generator.ORDER_ATOMIC) || 'null';
+                const mode = block.getFieldValue('MODE');
+
+                if (mode === 'PLAY_AND_WAIT') {
+                    return `await sceneManager.playSoundAsset(${name}, ${assetName}, assetManager, '${mode}');\n`;
+                } else {
+                    return `sceneManager.playSoundAsset(${name}, ${assetName}, assetManager, '${mode}');\n`;
+                }
+            };
+
+            javascript.javascriptGenerator.forBlock['stop_sound'] = function(block, generator) {
+                const name = generator.valueToCode(block, 'NAME', generator.ORDER_ATOMIC) || 'null';
+                return `sceneManager.stopSound(${name});\n`;
             };
 
             javascript.javascriptGenerator.forBlock['set_texture_from_asset'] = function (block, generator) {
