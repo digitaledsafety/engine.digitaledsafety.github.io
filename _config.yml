@@ -28,5 +28,4 @@ include:
 exclude:
   - tests
   - vendor/
-  - verify_loading_screen.py
-  - verify_background.py
+  - verification/
