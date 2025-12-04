@@ -2771,6 +2771,9 @@ workspace_data: "${base64WorkspaceData}"
                     camera.beta = BABYLON.Tools.ToRadians(45); // Classic isometric angle
                     camera.radius = 20;
                     camera.setTarget(BABYLON.Vector3.Zero());
+
+                    // Detach controls to lock the camera angle
+                    camera.detachControl(this.canvas);
                 }
             }
 
