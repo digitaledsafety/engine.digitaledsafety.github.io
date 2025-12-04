@@ -2288,13 +2288,13 @@ workspace_data: "${base64WorkspaceData}"
             }
 
             async initAudioEngine() {
-                if (this.engine && this.engine.audioEngine && this.sounds.length > 0) {
+                if (this.audioEngine && this.sounds.length > 0) {
                     this.sounds.forEach(sound => {
 
                         console.log("stopping sound");
                         sound.stop(); // Set default volume
                     });
-                    this.engine.audioEngine.dispose();
+                    this.audioEngine.dispose();
                 }
                 this.audioEngine = await BABYLON.CreateAudioEngineAsync();
             }
