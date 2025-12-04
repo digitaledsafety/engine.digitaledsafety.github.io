@@ -468,6 +468,18 @@
         </div>
     </div>
     <script>
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
         function CustomLoadingScreen(/* variables needed, for example:*/ loadingUIText, loadingUIBackgroundColor, loadingUITextColor) {
             //init the loader
             this.loadingUIText = loadingUIText || "Loading...";
@@ -847,6 +859,9 @@ workspace_data: "${base64WorkspaceData}"
                 // 4. Run the loaded project
                 doRun();
 
+                // 5. Auto-save the newly loaded project
+                this.autoSaveProject();
+
                 console.log('Project data loaded successfully!');
             }
 
@@ -955,6 +970,41 @@ workspace_data: "${base64WorkspaceData}"
                     if (error.name !== 'AbortError') {
                         alert('Error sharing project. See console for details.');
                     }
+                }
+            }
+
+            async autoSaveProject() {
+                try {
+                    const workspaceState = Blockly.serialization.workspaces.save(this.workspace);
+                    const assets = await this.assetManager.getAllAssets();
+                    const serializableAssets = [];
+
+                    for (const asset of assets) {
+                        let dataB64;
+                        if (asset.data instanceof Blob) {
+                            dataB64 = await this._blobToBase64(asset.data);
+                        } else if (asset.data instanceof ArrayBuffer) {
+                            dataB64 = this._arrayBufferToBase64(asset.data);
+                        } else {
+                            continue;
+                        }
+                        serializableAssets.push({
+                            name: asset.name,
+                            type: asset.type,
+                            data: dataB64
+                        });
+                    }
+
+                    const projectData = {
+                        workspace: workspaceState,
+                        assets: serializableAssets,
+                        version: '1.0'
+                    };
+
+                    const jsonString = JSON.stringify(projectData);
+                    localStorage.setItem('autosaved_project', jsonString);
+                } catch (error) {
+                    console.error('Auto-save failed:', error);
                 }
             }
         }
@@ -6845,11 +6895,17 @@ function ${generator.FUNCTION_NAME_PLACEHOLDER_}(c1, c2, ratio) {
             workspace.undo(true);
         });
 
+        const debouncedAutoSave = debounce(() => projectManager.autoSaveProject(), 500);
+
         workspace.addChangeListener(function(event) {
             const undoButton = document.getElementById('undoButton');
             const redoButton = document.getElementById('redoButton');
             undoButton.disabled = workspace.getUndoStack().length === 0;
             redoButton.disabled = workspace.getRedoStack().length === 0;
+
+            if (event.type !== Blockly.Events.UI) {
+                debouncedAutoSave();
+            }
         });
 
         document.getElementById('shareButton').addEventListener('click', () => {
@@ -7011,6 +7067,7 @@ function ${generator.FUNCTION_NAME_PLACEHOLDER_}(c1, c2, ratio) {
             const urlParams = new URLSearchParams(window.location.search);
             const projectParam = urlParams.get('project');
             const workspaceDataEl = document.getElementById('workspace-data');
+            const autosavedProject = localStorage.getItem('autosaved_project');
 
             if (urlParams.has('fullscreen')) {
                 enterPresentationMode();
@@ -7035,7 +7092,9 @@ function ${generator.FUNCTION_NAME_PLACEHOLDER_}(c1, c2, ratio) {
                         version: projectData.version || '0.9' // Mark as legacy if no version
                     };
                     await projectManager.loadProjectData(fullProjectData);
-
+                } else if (autosavedProject) {
+                    const projectData = JSON.parse(autosavedProject);
+                    await projectManager.loadProjectData(projectData);
                 } else {
                     // No project data found, load the default
                     loadWorkspaceDefault();
