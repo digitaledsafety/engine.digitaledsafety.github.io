@@ -2559,15 +2559,77 @@ workspace_data: "${base64WorkspaceData}"
             }
 
             enablePhysics(target, mass, impostorType = 'BoxImpostor') {
-                let name;
+                let originalMesh;
                 if (typeof target === 'string') {
-                    name = target;
-                } else if (target && typeof target === 'object' && target.name) {
-                    name = target.name;
+                    originalMesh = this._getMesh(target);
+                } else if (target && typeof target === 'object') {
+                    originalMesh = target;
                 }
-                if (this.objects[name]) {
+
+                if (!originalMesh) {
+                    console.warn("enablePhysics: Target object not found.", target);
+                    return;
+                }
+                const name = originalMesh.name;
+
+                // Prevent applying physics twice to the same logical object
+                if (originalMesh.physicsImpostor || (originalMesh.parent && originalMesh.parent.physicsImpostor)) {
+                    return;
+                }
+
+                const meshesWithGeometry = [originalMesh, ...originalMesh.getDescendants(false)].filter(m => m.geometry);
+
+                if (meshesWithGeometry.length === 0) {
+                    console.warn(`enablePhysics: Object '${name}' has no geometry.`);
+                    return;
+                }
+
+                // A mesh is considered "complex" if it has descendants with geometry.
+                // Primitives created by createBox/createSphere do not have descendants.
+                const isComplex = originalMesh.getDescendants(false).some(d => d.geometry);
+
+                if (isComplex) {
+                    // 1. Calculate bounding box of the entire hierarchy.
+                    const boundingInfo = originalMesh.getHierarchyBoundingVectors(true);
+                    const size = boundingInfo.max.subtract(boundingInfo.min);
+
+                    // Use a small epsilon for dimensions to prevent zero-sized impostors which cannon.js dislikes.
+                    const epsilon = 0.001;
+                    if (size.x < epsilon) size.x = epsilon;
+                    if (size.y < epsilon) size.y = epsilon;
+                    if (size.z < epsilon) size.z = epsilon;
+
+                    // 2. Create an invisible box mesh that will be the new physics body.
+                    const impostorBox = BABYLON.MeshBuilder.CreateBox(`${name}_impostor`, {
+                        width: size.x,
+                        height: size.y,
+                        depth: size.z
+                    }, this.scene);
+
+                    // 3. Position the new box at the center of the model's bounding box.
+                    impostorBox.position.copyFrom(boundingInfo.center);
+                    impostorBox.visibility = 0; // Make it invisible for rendering.
+
+                    // 4. Apply the physics impostor to this new box.
                     const impostor = BABYLON.PhysicsImpostor[impostorType];
-                    this.objects[name].physicsImpostor = new BABYLON.PhysicsImpostor(this.objects[name], impostor, { mass: mass, restitution: 0.9 }, this.scene);
+                    impostorBox.physicsImpostor = new BABYLON.PhysicsImpostor(impostorBox, impostor, { mass: mass, restitution: 0.9 }, this.scene);
+
+                    // 5. Parent the original visual mesh to the new physics box.
+                    // This makes the physics box the new "root" for all transformations.
+                    originalMesh.parent = impostorBox;
+
+                    // 6. Adjust the original mesh's local position to be relative to the new parent's center.
+                    originalMesh.position.subtractInPlace(boundingInfo.center);
+
+                    // 7. Update the scene's object map to point to the new physics root.
+                    // Rename the physics root to the original name for consistency in subsequent block calls.
+                    impostorBox.name = name;
+                    this.objects[name] = impostorBox;
+
+                } else {
+                    // It's a simple mesh (like a primitive), apply physics directly to it.
+                    const impostor = BABYLON.PhysicsImpostor[impostorType];
+                    originalMesh.physicsImpostor = new BABYLON.PhysicsImpostor(originalMesh, impostor, { mass: mass, restitution: 0.9 }, this.scene);
                 }
             }
 
@@ -5196,11 +5258,12 @@ if (${name}) {
 
             javascript.javascriptGenerator.forBlock['save_3d_model_with_position'] = function (block, generator) {
                 const modelUrl = block.getFieldValue('MODEL_URL');
-                const modelVarName = generator.nameDB_.getName(block.getFieldValue('MODEL_VAR'), Blockly.Variables.NAME_TYPE);
+                const modelVar = workspace.getVariableById(block.getFieldValue('MODEL_VAR').id);
+                const modelVarName = generator.nameDB_.getName(modelVar.name, Blockly.Variables.NAME_TYPE);
                 const posX = generator.valueToCode(block, 'POS_X', generator.ORDER_ATOMIC) || '0';
                 const posY = generator.valueToCode(block, 'POS_Y', generator.ORDER_ATOMIC) || '0';
                 const posZ = generator.valueToCode(block, 'POS_Z', generator.ORDER_ATOMIC) || '0';
-                return `var ${modelVarName} = await sceneManager.importModel('${modelVarName}', '${modelUrl}', ${posX}, ${posY}, ${posZ});\n`;
+                return `var ${modelVarName} = await sceneManager.importModel('${modelVar.name}', '${modelUrl}', ${posX}, ${posY}, ${posZ});\n`;
             };
 
             javascript.javascriptGenerator.forBlock['import_3d_file_url_with_position'] = function (block, generator) {
