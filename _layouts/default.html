@@ -2455,16 +2455,32 @@ workspace_data: "${base64WorkspaceData}"
                 if (!isValidAssetURL(url)) {
                     return null;
                 }
-                // Load model using SceneLoader
-                const result = await BABYLON.SceneLoader.ImportMeshAsync(null, '', url, this.scene);
-                if (result.meshes.length > 0) {
-                    const rootMesh = result.meshes[0];
-                    rootMesh.name = name;
-                    if (x !== undefined && y !== undefined && z !== undefined) {
-                        rootMesh.position = new BABYLON.Vector3(x, y, z);
+                try {
+                    // Load model using SceneLoader
+                    const result = await BABYLON.SceneLoader.ImportMeshAsync(null, '', url, this.scene);
+                    if (result.meshes.length > 0) {
+                        const rootMesh = result.meshes[0];
+                        rootMesh.name = name;
+                        if (x !== undefined && y !== undefined && z !== undefined) {
+                            rootMesh.position = new BABYLON.Vector3(x, y, z);
+                        }
+
+                        // If it's a VRM model, normalize its height to a sane default
+                        if (url.toLowerCase().endsWith('.vrm')) {
+                            const boundingInfo = rootMesh.getHierarchyBoundingVectors(true);
+                            const height = boundingInfo.max.y - boundingInfo.min.y;
+                            if (height > 0.001) { // Avoid division by zero or tiny values
+                                const targetHeight = 2.0;
+                                const scale = targetHeight / height;
+                                rootMesh.scaling = new BABYLON.Vector3(scale, scale, scale);
+                            }
+                        }
+
+                        this.objects[name] = rootMesh;
+                        return rootMesh;
                     }
-                    this.objects[name] = rootMesh;
-                    return rootMesh;
+                } catch (error) {
+                    console.error(`Failed to load model from URL: ${url}`, error);
                 }
                 return null;
             }
