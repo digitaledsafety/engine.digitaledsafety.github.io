@@ -1058,6 +1058,30 @@ workspace_data: "${base64WorkspaceData}"
 
                 {
                     kind: 'category',
+                    name: 'Animation',
+                    categorystyle: 'motion_category',
+                    contents: [
+                        {
+                            "kind": "block",
+                            "type": "import_animation"
+                        },
+                        {
+                            "kind": "block",
+                            "type": "apply_animation"
+                        },
+                        {
+                            "kind": "block",
+                            "type": "play_animation"
+                        },
+                        {
+                            "kind": "block",
+                            "type": "stop_skeletal_animation"
+                        }
+                    ]
+                },
+
+                {
+                    kind: 'category',
                     name: 'GUI',
                     categorystyle: 'text_category',
                     contents: [
@@ -3162,7 +3186,57 @@ workspace_data: "${base64WorkspaceData}"
                 this.scene.beginDirectAnimation(mesh, [animation], 0, endFrame, loop);
             }
 
-            stopAnimation(target) {
+            async importAnimation(url) {
+                if (!isValidAssetURL(url)) {
+                    return null;
+                }
+                try {
+                    // Note: LoadAssetContainerAsync is better for animations as it doesn't add to scene automatically.
+                    const container = await BABYLON.SceneLoader.LoadAssetContainerAsync("", url, this.scene);
+                    if (container.animationGroups.length > 0) {
+                        const animationGroup = container.animationGroups[0];
+                        animationGroup.stop(); // Stop by default
+                        // We don't add meshes to the scene, just return the animation group
+                        return animationGroup;
+                    }
+                } catch (error) {
+                    console.error(`Failed to load animation from URL: ${url}`, error);
+                }
+                return null;
+            }
+
+            applyAnimation(animationGroup, target) {
+                const mesh = this._getMesh(target);
+                if (mesh && animationGroup) {
+                    // Target the animation to the mesh's skeleton
+                    animationGroup.targetedAnimations.forEach(anim => {
+                        const targetNode = this.scene.getBoneByName(anim.target.name) || this.scene.getTransformNodeByName(anim.target.name);
+                        if(targetNode) {
+                            anim.target = targetNode;
+                        }
+                    });
+                    mesh.animationGroups = mesh.animationGroups || [];
+                    mesh.animationGroups.push(animationGroup);
+                }
+            }
+
+            playAnimation(target, from, to, loop) {
+                const mesh = this._getMesh(target);
+                if (mesh && mesh.animationGroups && mesh.animationGroups.length > 0) {
+                    mesh.animationGroups.forEach(ag => {
+                        ag.start(loop, 1.0, from, to);
+                    });
+                }
+            }
+
+            stopSkeletalAnimation(target) {
+                const mesh = this._getMesh(target);
+                if (mesh && mesh.animationGroups) {
+                    mesh.animationGroups.forEach(ag => ag.stop());
+                }
+            }
+
+            stopPropertyAnimation(target) {
                 const mesh = this._getMesh(target);
                 if (mesh) {
                     this.scene.stopAnimation(mesh);
@@ -4176,8 +4250,60 @@ workspace_data: "${base64WorkspaceData}"
                 "tooltip": "Animates a property of an object over a duration."
             },
             {
+                "type": "import_animation",
+                "message0": "import animation from url %1 as %2",
+                "args0": [
+                    { "type": "input_value", "name": "URL", "check": "String" },
+                    { "type": "field_variable", "name": "VAR", "variable": "animation" }
+                ],
+                "previousStatement": null,
+                "nextStatement": null,
+                "colour": "%{BKY_MOTION_HUE}",
+                "tooltip": "Imports a skeletal animation from a URL (.fbx)."
+            },
+            {
+                "type": "apply_animation",
+                "message0": "apply animation %1 to model %2",
+                "args0": [
+                    { "type": "input_value", "name": "ANIMATION" },
+                    { "type": "input_value", "name": "MODEL" }
+                ],
+                "inputsInline": true,
+                "previousStatement": null,
+                "nextStatement": null,
+                "colour": "%{BKY_MOTION_HUE}",
+                "tooltip": "Applies an imported animation to a model."
+            },
+            {
+                "type": "play_animation",
+                "message0": "play animation on %1 from frame %2 to %3 loop %4",
+                "args0": [
+                    { "type": "input_value", "name": "MODEL" },
+                    { "type": "input_value", "name": "FROM", "check": "Number" },
+                    { "type": "input_value", "name": "TO", "check": "Number" },
+                    { "type": "field_checkbox", "name": "LOOP", "checked": true }
+                ],
+                "inputsInline": true,
+                "previousStatement": null,
+                "nextStatement": null,
+                "colour": "%{BKY_MOTION_HUE}",
+                "tooltip": "Plays a skeletal animation on a model."
+            },
+            {
+                "type": "stop_skeletal_animation",
+                "message0": "stop skeletal animation on %1",
+                "args0": [
+                    { "type": "input_value", "name": "OBJECT" }
+                ],
+                "inputsInline": true,
+                "previousStatement": null,
+                "nextStatement": null,
+                "colour": 300,
+                "tooltip": "Stops skeletal animations on the specified object."
+            },
+            {
                 "type": "stop_animation",
-                "message0": "stop animation on %1",
+                "message0": "stop property animation on %1",
                 "args0": [
                     {
                         "type": "input_value",
@@ -4188,7 +4314,7 @@ workspace_data: "${base64WorkspaceData}"
                 "previousStatement": null,
                 "nextStatement": null,
                 "colour": 300,
-                "tooltip": "Stops all animations on the specified object."
+                "tooltip": "Stops all property animations (e.g., position, rotation, scale) on the specified object."
             },
             {
                 "type": "animate_rotation",
@@ -5426,9 +5552,34 @@ if (${name}) {
                 return `sceneManager.animateProperty(${object}, '${property}', ${from}, ${to}, ${duration}, ${loopBool}, '${loopMode}');\n`;
             };
 
+            javascript.javascriptGenerator.forBlock['import_animation'] = function(block, generator) {
+                const url = generator.valueToCode(block, 'URL', generator.ORDER_ATOMIC) || "''";
+                const varName = generator.nameDB_.getName(block.getFieldValue('VAR'), Blockly.Variables.NAME_TYPE);
+                return `var ${varName} = await sceneManager.importAnimation(${url});\n`;
+            };
+
+            javascript.javascriptGenerator.forBlock['apply_animation'] = function(block, generator) {
+                const anim = generator.valueToCode(block, 'ANIMATION', generator.ORDER_ATOMIC) || 'null';
+                const model = generator.valueToCode(block, 'MODEL', generator.ORDER_ATOMIC) || 'null';
+                return `sceneManager.applyAnimation(${anim}, ${model});\n`;
+            };
+
+            javascript.javascriptGenerator.forBlock['play_animation'] = function(block, generator) {
+                const model = generator.valueToCode(block, 'MODEL', generator.ORDER_ATOMIC) || 'null';
+                const from = generator.valueToCode(block, 'FROM', generator.ORDER_ATOMIC) || 0;
+                const to = generator.valueToCode(block, 'TO', generator.ORDER_ATOMIC) || 100;
+                const loop = block.getFieldValue('LOOP') === 'TRUE';
+                return `sceneManager.playAnimation(${model}, ${from}, ${to}, ${loop});\n`;
+            };
+
+            javascript.javascriptGenerator.forBlock['stop_skeletal_animation'] = function(block, generator) {
+                const object = generator.valueToCode(block, 'OBJECT', generator.ORDER_ATOMIC) || 'null';
+                return `sceneManager.stopSkeletalAnimation(${object});\n`;
+            };
+
             javascript.javascriptGenerator.forBlock['stop_animation'] = function (block, generator) {
                 const object = generator.valueToCode(block, 'OBJECT', generator.ORDER_ATOMIC) || 'null';
-                return `sceneManager.stopAnimation(${object});\n`;
+                return `sceneManager.stopPropertyAnimation(${object});\n`;
             };
 
             javascript.javascriptGenerator.forBlock['animate_rotation'] = function (block, generator) {
