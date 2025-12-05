@@ -2568,20 +2568,20 @@ workspace_data: "${base64WorkspaceData}"
 
                 if (!originalMesh) {
                     console.warn("enablePhysics: Target object not found.", target);
-                    return;
+                    return null;
                 }
                 const name = originalMesh.name;
 
                 // Prevent applying physics twice to the same logical object
                 if (originalMesh.physicsImpostor || (originalMesh.parent && originalMesh.parent.physicsImpostor)) {
-                    return;
+                    return originalMesh.parent || originalMesh;
                 }
 
                 const meshesWithGeometry = [originalMesh, ...originalMesh.getDescendants(false)].filter(m => m.geometry);
 
                 if (meshesWithGeometry.length === 0) {
                     console.warn(`enablePhysics: Object '${name}' has no geometry.`);
-                    return;
+                    return null;
                 }
 
                 // A mesh is considered "complex" if it has descendants with geometry.
@@ -2625,11 +2625,13 @@ workspace_data: "${base64WorkspaceData}"
                     // Rename the physics root to the original name for consistency in subsequent block calls.
                     impostorBox.name = name;
                     this.objects[name] = impostorBox;
+                    return impostorBox;
 
                 } else {
                     // It's a simple mesh (like a primitive), apply physics directly to it.
                     const impostor = BABYLON.PhysicsImpostor[impostorType];
                     originalMesh.physicsImpostor = new BABYLON.PhysicsImpostor(originalMesh, impostor, { mass: mass, restitution: 0.9 }, this.scene);
+                    return originalMesh;
                 }
             }
 
@@ -4270,10 +4272,9 @@ workspace_data: "${base64WorkspaceData}"
                     { type: 'input_value', name: 'MASS', check: 'Number' },
                 ],
                 "inputsInline": true,
-                previousStatement: null,
-                nextStatement: null,
+                output: "Mesh",
                 colour: 120,
-                tooltip: 'Enables physics on the specified object with the given mass',
+                tooltip: 'Enables physics and returns the correct physics object. Use a "set" block to update your variable to this new object.',
             },
             {
                 type: 'apply_force',
@@ -5497,7 +5498,8 @@ if (${name}) {
             javascript.javascriptGenerator.forBlock['enable_physics'] = function (block, generator) {
                 const name = generator.valueToCode(block, 'NAME', generator.ORDER_ATOMIC) || 'null';
                 const mass = generator.valueToCode(block, 'MASS', generator.ORDER_ATOMIC) || 1;
-                return `sceneManager.enablePhysics(${name}, ${mass});\n`;
+                const code = `sceneManager.enablePhysics(${name}, ${mass})`;
+                return [code, generator.ORDER_FUNCTION_CALL];
             };
 
             javascript.javascriptGenerator.forBlock['apply_force'] = function (block, generator) {
