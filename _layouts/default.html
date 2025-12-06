@@ -4244,7 +4244,11 @@ workspace_data: "${base64WorkspaceData}"
                 "type": "import_animation",
                 "message0": "import animation from url %1 as %2",
                 "args0": [
-                    { "type": "input_value", "name": "URL", "check": "String" },
+                    {
+                        type: 'field_input',
+                        name: 'URL',
+                        text: 'https://cdn.digitaleducationsafety.org/assets/models/animations/run_forward.fbx',
+                    },                    
                     { "type": "field_variable", "name": "VAR", "variable": "animation" }
                 ],
                 "previousStatement": null,
