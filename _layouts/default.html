@@ -3824,7 +3824,7 @@ workspace_data: "${base64WorkspaceData}"
                         text: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/main/2.0/Duck/glTF-Binary/Duck.glb',
                     },
                     {
-                        type: 'field_variable',
+                        type: 'field_input',
                         name: 'MODEL_VAR',
                         variable: 'model',
                     },
@@ -5251,7 +5251,7 @@ if (${name}) {
                 const posX = generator.valueToCode(block, 'POS_X', generator.ORDER_ATOMIC) || '0';
                 const posY = generator.valueToCode(block, 'POS_Y', generator.ORDER_ATOMIC) || '0';
                 const posZ = generator.valueToCode(block, 'POS_Z', generator.ORDER_ATOMIC) || '0';
-                let code = `await sceneManager.importModel('${modelVarName}', '${modelUrl}', ${posX}, ${posY}, ${posZ});\n`;
+                let code = `await sceneManager.importModel(${modelVarName}, '${modelUrl}', ${posX}, ${posY}, ${posZ});\n`;
                 return [code, generator.ORDER_ATOMIC];
             };
 
@@ -5261,14 +5261,14 @@ if (${name}) {
                 const posY = block.getFieldValue('POS_Y');
                 const posZ = block.getFieldValue('POS_Z');
                 const baseName = (fileUrl.substring(fileUrl.lastIndexOf('/') + 1) || 'importedModel').replace(/[^a-zA-Z0-9]/g, '_');
-                let code = `await sceneManager.importModel('${baseName}', '${fileUrl}', ${posX}, ${posY}, ${posZ});\n`;
+                let code = `await sceneManager.importModel(${baseName}, '${fileUrl}', ${posX}, ${posY}, ${posZ});\n`;
                 return [code, generator.ORDER_ATOMIC];
             };
 
             javascript.javascriptGenerator.forBlock['import_3d_file_url'] = function (block, generator) {
                 const modelUrl = block.getFieldValue('MODEL_URL');
                 const modelVarName = generator.valueToCode(block, 'MODEL_VAR', generator.ORDER_ATOMIC);
-                let code = `await sceneManager.importModel('${modelVarName}', '${modelUrl}');\n`;
+                let code = `await sceneManager.importModel(${modelVarName}, '${modelUrl}');\n`;
                 return [code, generator.ORDER_ATOMIC];
             };
 
