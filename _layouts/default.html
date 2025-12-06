@@ -2659,6 +2659,22 @@ workspace_data: "${base64WorkspaceData}"
                 }
             }
 
+            _getPhysicsImpostor(target) {
+                let mesh = this._getMesh(target);
+                if (!mesh) {
+                    return null;
+                }
+                // If the mesh itself has an impostor, it's a simple object.
+                if (mesh.physicsImpostor) {
+                    return mesh.physicsImpostor;
+                }
+                // If the mesh's parent has an impostor, it's part of a complex object.
+                if (mesh.parent && mesh.parent.physicsImpostor) {
+                    return mesh.parent.physicsImpostor;
+                }
+                return null;
+            }
+
             onCollision(target1, target2, callback) {
                 const impostor1 = this._getPhysicsImpostor(target1);
 
