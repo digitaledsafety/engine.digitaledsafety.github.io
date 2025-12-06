@@ -3845,9 +3845,7 @@ workspace_data: "${base64WorkspaceData}"
                     },
                 ],
                 inputsInline: true,
-                previousStatement: null,
-                nextStatement: null,
-                colour: 230,
+                colour: 160,
                 tooltip: 'Imports a 3D model and saves it as a variable for later use, with dynamic position.',
                 helpUrl: '',
                 extensions: [
@@ -3882,9 +3880,8 @@ workspace_data: "${base64WorkspaceData}"
                         value: 0,
                     },
                 ],
-                previousStatement: null,
-                nextStatement: null,
-                colour: 200,
+                output: "Mesh",
+                colour: 160,
                 tooltip: 'Imports a 3D file from a URL, places it in the scene, and executes actions on success.',
                 helpUrl: '',
             },
@@ -3898,28 +3895,19 @@ workspace_data: "${base64WorkspaceData}"
                         text: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/main/2.0/Duck/glTF-Binary/Duck.glb',
                     },
                     {
-                        type: 'field_variable',
+                        type: 'input_value',
                         name: 'MODEL_VAR',
                         variable: 'model',
                     },
                 ],
-                message1: 'Do on success %1',
-                args1: [
-                    {
-                        type: 'input_statement',
-                        name: 'ON_SUCCESS',
-                    },
-                ],
-                previousStatement: null,
-                nextStatement: null,
-                colour: 200,
+                colour: 160,
                 tooltip: 'Imports a 3D file from a URL and executes actions on success.',
+                output: "Mesh",
                 helpUrl: '',
                 extensions: [
                     'set_max_display_length',
                 ],
             },
-
             {
                 type: 'import_3d_file',
                 message0: 'Import 3D file %1 from path %2',
@@ -5258,12 +5246,11 @@ if (${name}) {
 
             javascript.javascriptGenerator.forBlock['save_3d_model_with_position'] = function (block, generator) {
                 const modelUrl = block.getFieldValue('MODEL_URL');
-                const modelVar = workspace.getVariableById(block.getFieldValue('MODEL_VAR').id);
-                const modelVarName = generator.nameDB_.getName(modelVar.name, Blockly.Variables.NAME_TYPE);
+                const modelVarName = generator.valueToCode(block, 'MODEL_VAR', generator.ORDER_ATOMIC);
                 const posX = generator.valueToCode(block, 'POS_X', generator.ORDER_ATOMIC) || '0';
                 const posY = generator.valueToCode(block, 'POS_Y', generator.ORDER_ATOMIC) || '0';
                 const posZ = generator.valueToCode(block, 'POS_Z', generator.ORDER_ATOMIC) || '0';
-                return `var ${modelVarName} = await sceneManager.importModel('${modelVar.name}', '${modelUrl}', ${posX}, ${posY}, ${posZ});\n`;
+                return `await sceneManager.importModel('${modelVarName}', '${modelUrl}', ${posX}, ${posY}, ${posZ});\n`;
             };
 
             javascript.javascriptGenerator.forBlock['import_3d_file_url_with_position'] = function (block, generator) {
@@ -5277,12 +5264,8 @@ if (${name}) {
 
             javascript.javascriptGenerator.forBlock['import_3d_file_url'] = function (block, generator) {
                 const modelUrl = block.getFieldValue('MODEL_URL');
-                const modelVarName = generator.nameDB_.getName(block.getFieldValue('MODEL_VAR'), Blockly.Variables.NAME_TYPE);
-                const onSuccessCode = generator.statementToCode(block, 'ON_SUCCESS') || '';
-                let code = `var ${modelVarName} = await sceneManager.importModel('${modelVarName}', '${modelUrl}');\n`;
-                if (onSuccessCode) {
-                    code += `if (${modelVarName}) {\n${onSuccessCode}}\n`;
-                }
+                const modelVarName = generator.valueToCode(block, 'MODEL_VAR', generator.ORDER_ATOMIC);
+                let code = `await sceneManager.importModel('${modelVarName}', '${modelUrl}');\n`;
                 return code;
             };
 
