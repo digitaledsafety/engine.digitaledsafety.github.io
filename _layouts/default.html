@@ -2660,63 +2660,46 @@ workspace_data: "${base64WorkspaceData}"
             }
 
             onCollision(target1, target2, callback) {
-                let obj1Mesh;
-                if (typeof target1 === 'string') {
-                    obj1Mesh = this.objects[target1];
-                } else if (target1 && typeof target1 === 'object') {
-                    obj1Mesh = target1;
-                }
+                const impostor1 = this._getPhysicsImpostor(target1);
 
-                if (!obj1Mesh || !obj1Mesh.physicsImpostor) {
+                if (!impostor1) {
                     console.warn("onCollision: target1 is not a valid physics object.", target1);
                     return;
-                };
+                }
 
                 const collisionCallback = (main, collided) => {
-                    // Create a unique key for the collision pair to prevent multiple triggers per frame.
-                    // Sort unique IDs to ensure the key is the same regardless of collision order (A-B vs B-A).
                     const ids = [main.object.uniqueId, collided.object.uniqueId].sort();
                     const collisionKey = `${ids[0]}-${ids[1]}`;
 
-                    // If we've already processed this collision in this frame, ignore it.
                     if (this.processedCollisions.has(collisionKey)) {
                         return;
                     }
-                    // Otherwise, record it and fire the user's callback.
                     this.processedCollisions.add(collisionKey);
-                    callback(collided.object);
+
+                    // Find the original visible mesh that corresponds to the collided impostor.
+                    // If the impostor is the object itself, it will be returned.
+                    // If the impostor is a parent, we find the child that is registered in `this.objects`.
+                    const collidedMesh = Object.values(this.objects).find(
+                        o => o === collided.object || (o.parent && o.parent === collided.object)
+                    );
+
+                    callback(collidedMesh || collided.object);
                 };
 
-                // Handle single target object
                 if (!Array.isArray(target2)) {
-                    let obj2Mesh;
-                    if (typeof target2 === 'string') {
-                        obj2Mesh = this.objects[target2];
-                    } else if (target2 && typeof target2 === 'object') {
-                        obj2Mesh = target2;
-                    }
-
-                    if (obj2Mesh && obj2Mesh.physicsImpostor) {
-                        obj1Mesh.physicsImpostor.registerOnPhysicsCollide(obj2Mesh.physicsImpostor, collisionCallback);
+                    const impostor2 = this._getPhysicsImpostor(target2);
+                    if (impostor2) {
+                        impostor1.registerOnPhysicsCollide(impostor2, collisionCallback);
                     } else {
                         console.warn("onCollision: target2 is not a valid physics object.", target2);
                     }
-                }
-                // Handle target list
-                else {
-                    // Convert list of names/objects to a list of impostors
-                    const targetImpostors = target2.map(item => {
-                        let mesh;
-                        if (typeof item === 'string') {
-                            mesh = this.objects[item];
-                        } else if (item && typeof item === 'object') {
-                            mesh = item;
-                        }
-                        return mesh ? mesh.physicsImpostor : null;
-                    }).filter(impostor => impostor != null); // Filter out nulls
+                } else {
+                    const targetImpostors = target2
+                        .map(item => this._getPhysicsImpostor(item))
+                        .filter(impostor => impostor != null);
 
                     if (targetImpostors.length > 0) {
-                        obj1Mesh.physicsImpostor.registerOnPhysicsCollide(targetImpostors, collisionCallback);
+                        impostor1.registerOnPhysicsCollide(targetImpostors, collisionCallback);
                     } else {
                         console.warn("onCollision: target2 list contains no valid physics objects.", target2);
                     }
