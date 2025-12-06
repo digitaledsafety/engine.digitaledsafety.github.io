@@ -5556,7 +5556,7 @@ if (${name}) {
             };
 
             javascript.javascriptGenerator.forBlock['import_animation'] = function(block, generator) {
-                const url = generator.valueToCode(block, 'URL', generator.ORDER_ATOMIC) || "''";
+                const url = block.getFieldValue('URL');
                 const varName = generator.nameDB_.getName(block.getFieldValue('VAR'), Blockly.Variables.NAME_TYPE);
                 return `var ${varName} = await sceneManager.importAnimation(${url});\n`;
             };
