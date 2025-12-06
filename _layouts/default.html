@@ -2607,7 +2607,8 @@ workspace_data: "${base64WorkspaceData}"
                     }, this.scene);
 
                     // 3. Position the new box at the center of the model's bounding box.
-                    impostorBox.position.copyFrom(boundingInfo.center);
+                    // TODO: fix
+                    //impostorBox.position.copyFrom(boundingInfo.center);
                     impostorBox.visibility = 0; // Make it invisible for rendering.
 
                     // 4. Apply the physics impostor to this new box.
@@ -2619,7 +2620,8 @@ workspace_data: "${base64WorkspaceData}"
                     originalMesh.parent = impostorBox;
 
                     // 6. Adjust the original mesh's local position to be relative to the new parent's center.
-                    originalMesh.position.subtractInPlace(boundingInfo.center);
+                    // TODO: fix
+                    //originalMesh.position.subtractInPlace(boundingInfo.center);
 
                     // 7. Update the scene's object map to point to the new physics root.
                     // Rename the physics root to the original name for consistency in subsequent block calls.
@@ -4263,6 +4265,7 @@ workspace_data: "${base64WorkspaceData}"
                         options: [
                             ['Box', 'BABYLON.PhysicsImpostor.BoxImpostor'],
                             ['Sphere', 'BABYLON.PhysicsImpostor.SphereImpostor'],
+                            ['Cylinder', 'BABYLON.PhysicsImpostor.CylinderImpostor'],
                             ['Plane', 'BABYLON.PhysicsImpostor.PlaneImpostor'],
                             ['Mesh', 'BABYLON.PhysicsImpostor.MeshImpostor']
                         ],
