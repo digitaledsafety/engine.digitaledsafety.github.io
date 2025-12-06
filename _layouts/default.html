@@ -4257,6 +4257,16 @@ workspace_data: "${base64WorkspaceData}"
                 args0: [
                     { type: 'input_value', name: 'NAME' },
                     { type: 'input_value', name: 'MASS', check: 'Number' },
+                    {
+                        type: 'field_dropdown',
+                        name: 'IMPOSTOR',
+                        options: [
+                            ['Box', 'BABYLON.PhysicsImpostor.BoxImpostor'],
+                            ['Sphere', 'BABYLON.PhysicsImpostor.SphereImpostor'],
+                            ['Plane', 'BABYLON.PhysicsImpostor.PlaneImpostor'],
+                            ['Mesh', 'BABYLON.PhysicsImpostor.MeshImpostor']
+                        ],
+                    },                    
                 ],
                 "inputsInline": true,
                 previousStatement: null,
@@ -5483,7 +5493,10 @@ if (${name}) {
             javascript.javascriptGenerator.forBlock['enable_physics'] = function (block, generator) {
                 const name = generator.valueToCode(block, 'NAME', generator.ORDER_ATOMIC) || 'null';
                 const mass = generator.valueToCode(block, 'MASS', generator.ORDER_ATOMIC) || 1;
-                return `sceneManager.enablePhysics(${name}, ${mass});\n`;
+                const impostorField = block.getFieldValue('IMPOSTOR');
+                // Extract the type from the full BABYLON path
+                const impostorType = impostorField.split('.').pop();                
+                return `sceneManager.enablePhysics(${name}, ${mass}, '${impostorType}');\n`;
             };
 
             javascript.javascriptGenerator.forBlock['apply_force'] = function (block, generator) {
