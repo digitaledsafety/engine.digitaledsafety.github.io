@@ -5579,7 +5579,7 @@ if (${name}) {
             };
 
             javascript.javascriptGenerator.forBlock['create_sphere'] = function (block, generator) {
-                const name = javascript.javascriptGenerator.variableDB.getDistinctName('sphere', Blockly.Variables.NAME_TYPE);
+                const name = javascript.javascriptGenerator.nameDB_.getDistinctName('sphere', Blockly.Variables.NameType.VARIABLE);
                 const x = generator.valueToCode(block, 'X', generator.ORDER_ATOMIC) || 0;
                 const y = generator.valueToCode(block, 'Y', generator.ORDER_ATOMIC) || 0;
                 const z = generator.valueToCode(block, 'Z', generator.ORDER_ATOMIC) || 0;
@@ -7054,7 +7054,7 @@ function ${generator.FUNCTION_NAME_PLACEHOLDER_}() {
   var num = Math.floor(Math.random() * 0x1000000);
   return '#' + ('00000' + num.toString(16)).substr(-6);
 }
-`) + '()', generator.ORDER_FUNCTION_CALL];
+`) + '()', generator.ORDER_FUNCTION_CALL];distin
         };
 
         javascript.javascriptGenerator.forBlock['colour_picker'] = function (block, generator) {
