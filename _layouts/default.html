@@ -4013,12 +4013,7 @@ workspace_data: "${base64WorkspaceData}"
                         type: 'field_input',
                         name: 'MODEL_URL',
                         text: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/main/2.0/Duck/glTF-Binary/Duck.glb',
-                    },
-                    {
-                        type: 'input_value',
-                        name: 'MODEL_VAR',
-                        variable: 'model',
-                    },
+                    }
                 ],
                 colour: 160,
                 tooltip: 'Imports a 3D file from a URL and executes actions on success.',
@@ -5530,8 +5525,8 @@ if (${name}) {
 
             javascript.javascriptGenerator.forBlock['import_3d_file_url'] = function (block, generator) {
                 const modelUrl = block.getFieldValue('MODEL_URL');
-                const modelVarName = generator.valueToCode(block, 'MODEL_VAR', generator.ORDER_ATOMIC);
-                let code = `await sceneManager.importModel(${modelVarName}, '${modelUrl}');\n`;
+                const modelVarName = javascript.javascriptGenerator.nameDB_.getDistinctName(Blockly.utils.idGenerator.genUid(), Blockly.Variables.NameType);
+                let code = `await sceneManager.importModel('${modelVarName}', '${modelUrl}');\n`;
                 return [code, generator.ORDER_ATOMIC];
             };
 
