@@ -5583,7 +5583,7 @@ if (${name}) {
                 const x = generator.valueToCode(block, 'X', generator.ORDER_ATOMIC) || 0;
                 const y = generator.valueToCode(block, 'Y', generator.ORDER_ATOMIC) || 0;
                 const z = generator.valueToCode(block, 'Z', generator.ORDER_ATOMIC) || 0;
-                const code = `sceneManager.createSphere(${name}, ${x}, ${y}, ${z})`;
+                const code = `sceneManager.createSphere('${name}', ${x}, ${y}, ${z})`;
                 return [code, generator.ORDER_ATOMIC];
             };
 
