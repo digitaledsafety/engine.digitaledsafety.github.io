@@ -7023,11 +7023,6 @@ if (${name}) {
 
         const canvas = document.getElementById('gameCanvas');
         const blocklyDiv = document.getElementById('blocklyDiv');
-        const workspace = Blockly.inject(blocklyDiv, {
-            toolbox: toolbox,
-            media: 'https://cdn.digitaleducationsafety.org/packages/blockly@12.3.1/media/',
-            renderer: 'zelos',
-        });
         const assetManager = new AssetManager();
         let sceneManager = new BabylonSceneManager(canvas);
         const projectManager = new ProjectManager(assetManager, workspace, sceneManager);
