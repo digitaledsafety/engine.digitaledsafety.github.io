@@ -1136,6 +1136,22 @@ workspace_data: "${base64WorkspaceData}"
                         {
                             kind: 'block',
                             type: 'hide_popup',
+                        },
+                        {
+                            kind: 'block',
+                            type: 'gui_set_popup_title',
+                        },
+                        {
+                            kind: 'block',
+                            type: 'gui_set_popup_image',
+                        },
+                        {
+                            kind: 'block',
+                            type: 'gui_set_popup_button_text',
+                        },
+                        {
+                            kind: 'block',
+                            type: 'gui_set_popup_text',
                         }
                     ]
                 },
@@ -2309,6 +2325,18 @@ workspace_data: "${base64WorkspaceData}"
             hidePopup(name) {
                 this.uiManager.hidePopup(name);
                 this.resumeEngine();
+            }
+
+            setPopupTitle(name, title) {
+                this.uiManager.setPopupTitle(name, title);
+            }
+
+            setPopupImage(name, imageUrl) {
+                this.uiManager.setPopupImage(name, imageUrl);
+            }
+
+            setPopupButtonText(name, buttonName, text) {
+                this.uiManager.setPopupButtonText(name, buttonName, text);
             }
 
             async initAudioEngine() {
@@ -5208,6 +5236,59 @@ workspace_data: "${base64WorkspaceData}"
                 "colour": "#5B80A5",
                 "tooltip": "Hides the specified popup and resumes the game.",
                 "helpUrl": ""
+            },
+            {
+                "type": "gui_set_popup_title",
+                "message0": "in popup %1 set title to %2",
+                "args0": [
+                    { "type": "input_value", "name": "POPUP_NAME", "check": "String" },
+                    { "type": "input_value", "name": "TITLE", "check": "String" }
+                ],
+                "previousStatement": null,
+                "nextStatement": null,
+                "colour": "#5B80A5",
+                "tooltip": "Sets the title of an existing popup.",
+                "helpUrl": ""
+            },
+            {
+                "type": "gui_set_popup_image",
+                "message0": "in popup %1 set image to URL %2",
+                "args0": [
+                    { "type": "input_value", "name": "POPUP_NAME", "check": "String" },
+                    { "type": "input_value", "name": "IMAGE_URL", "check": "String" }
+                ],
+                "previousStatement": null,
+                "nextStatement": null,
+                "colour": "#5B80A5",
+                "tooltip": "Sets the image of an existing popup from a URL.",
+                "helpUrl": ""
+            },
+            {
+                "type": "gui_set_popup_button_text",
+                "message0": "in popup %1 set button %2 text to %3",
+                "args0": [
+                    { "type": "input_value", "name": "POPUP_NAME", "check": "String" },
+                    { "type": "input_value", "name": "BUTTON_NAME", "check": "String" },
+                    { "type": "input_value", "name": "TEXT", "check": "String" }
+                ],
+                "previousStatement": null,
+                "nextStatement": null,
+                "colour": "#5B80A5",
+                "tooltip": "Sets the text of a button in an existing popup.",
+                "helpUrl": ""
+            },
+            {
+                "type": "gui_set_popup_text",
+                "message0": "in popup %1 set text to %2",
+                "args0": [
+                    { "type": "input_value", "name": "POPUP_NAME", "check": "String" },
+                    { "type": "input_value", "name": "TEXT", "check": "String" }
+                ],
+                "previousStatement": null,
+                "nextStatement": null,
+                "colour": "#5B80A5",
+                "tooltip": "Sets the main text of an existing popup.",
+                "helpUrl": ""
             }
         ]);
 
@@ -5239,6 +5320,31 @@ workspace_data: "${base64WorkspaceData}"
             javascript.javascriptGenerator.forBlock['hide_popup'] = function (block, generator) {
                 const name = generator.valueToCode(block, 'NAME', generator.ORDER_ATOMIC) || "''";
                 return `sceneManager.hidePopup(${name});\n`;
+            };
+
+            javascript.javascriptGenerator.forBlock['gui_set_popup_title'] = function(block, generator) {
+                const popupName = generator.valueToCode(block, 'POPUP_NAME', generator.ORDER_ATOMIC) || "''";
+                const title = generator.valueToCode(block, 'TITLE', generator.ORDER_ATOMIC) || "''";
+                return `sceneManager.setPopupTitle(${popupName}, ${title});\n`;
+            };
+
+            javascript.javascriptGenerator.forBlock['gui_set_popup_image'] = function(block, generator) {
+                const popupName = generator.valueToCode(block, 'POPUP_NAME', generator.ORDER_ATOMIC) || "''";
+                const imageUrl = generator.valueToCode(block, 'IMAGE_URL', generator.ORDER_ATOMIC) || "''";
+                return `sceneManager.setPopupImage(${popupName}, ${imageUrl});\n`;
+            };
+
+            javascript.javascriptGenerator.forBlock['gui_set_popup_button_text'] = function(block, generator) {
+                const popupName = generator.valueToCode(block, 'POPUP_NAME', generator.ORDER_ATOMIC) || "''";
+                const buttonName = generator.valueToCode(block, 'BUTTON_NAME', generator.ORDER_ATOMIC) || "''";
+                const text = generator.valueToCode(block, 'TEXT', generator.ORDER_ATOMIC) || "''";
+                return `sceneManager.setPopupButtonText(${popupName}, ${buttonName}, ${text});\n`;
+            };
+
+            javascript.javascriptGenerator.forBlock['gui_set_popup_text'] = function(block, generator) {
+                const popupName = generator.valueToCode(block, 'POPUP_NAME', generator.ORDER_ATOMIC) || "''";
+                const text = generator.valueToCode(block, 'TEXT', generator.ORDER_ATOMIC) || "''";
+                return `sceneManager.setPopupText(${popupName}, ${text});\n`;
             };
 
             javascript.javascriptGenerator.forBlock['show_loading_screen'] = function (block, generator) {
@@ -6916,6 +7022,12 @@ if (${name}) {
         Blockly.Extensions.register('set_max_display_length', helper);
 
         const canvas = document.getElementById('gameCanvas');
+        const blocklyDiv = document.getElementById('blocklyDiv');
+        const workspace = Blockly.inject(blocklyDiv, {
+            toolbox: toolbox,
+            media: 'https://cdn.digitaleducationsafety.org/packages/blockly@12.3.1/media/',
+            renderer: 'zelos',
+        });
         const assetManager = new AssetManager();
         let sceneManager = new BabylonSceneManager(canvas);
         const projectManager = new ProjectManager(assetManager, workspace, sceneManager);
@@ -7049,6 +7161,22 @@ function ${generator.FUNCTION_NAME_PLACEHOLDER_}(c1, c2, ratio) {
                     var openDropdown = dropdowns[i];
                     if (openDropdown.classList.contains('show')) {
                         openDropdown.classList.remove('show');
+                    }
+                }
+            }
+
+            setPopupText(name, text) {
+                if (this.popups[name]) {
+                    let textControl = this.popups[name].elements['text'];
+                    if (textControl) {
+                        textControl.text = text;
+                    } else {
+                        // If no text block exists, create one
+                        const textBlock = new BABYLON.GUI.TextBlock(`${name}_text`, text);
+                        textBlock.color = "white";
+                        textBlock.fontSize = 24;
+                        this.popups[name].container.addControl(textBlock);
+                        this.popups[name].elements['text'] = textBlock;
                     }
                 }
             }
