@@ -3521,6 +3521,22 @@ workspace_data: "${base64WorkspaceData}"
                 return "";
             }
 
+            setPopupText(name, text) {
+                if (this.popups[name]) {
+                    let textControl = this.popups[name].elements['text'];
+                    if (textControl) {
+                        textControl.text = text;
+                    } else {
+                        // If no text block exists, create one
+                        const textBlock = new BABYLON.GUI.TextBlock(`${name}_text`, text);
+                        textBlock.color = "white";
+                        textBlock.fontSize = 24;
+                        this.popups[name].container.addControl(textBlock);
+                        this.popups[name].elements['text'] = textBlock;
+                    }
+                }
+            }            
+
             createButton(name, text, options = {}) {
                 const button = BABYLON.GUI.Button.CreateSimpleButton(name, text);
                 button.width = options.width || "150px";
@@ -7155,22 +7171,6 @@ function ${generator.FUNCTION_NAME_PLACEHOLDER_}(c1, c2, ratio) {
                     var openDropdown = dropdowns[i];
                     if (openDropdown.classList.contains('show')) {
                         openDropdown.classList.remove('show');
-                    }
-                }
-            }
-
-            setPopupText(name, text) {
-                if (this.popups[name]) {
-                    let textControl = this.popups[name].elements['text'];
-                    if (textControl) {
-                        textControl.text = text;
-                    } else {
-                        // If no text block exists, create one
-                        const textBlock = new BABYLON.GUI.TextBlock(`${name}_text`, text);
-                        textBlock.color = "white";
-                        textBlock.fontSize = 24;
-                        this.popups[name].container.addControl(textBlock);
-                        this.popups[name].elements['text'] = textBlock;
                     }
                 }
             }
