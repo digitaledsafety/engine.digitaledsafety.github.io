@@ -1207,25 +1207,6 @@ workspace_data: "${base64WorkspaceData}"
                 },
                 {
                     kind: 'category',
-                    name: 'Controller',
-                    categorystyle: 'logic_category',
-                    contents: [
-                        {
-                            kind: 'block',
-                            type: 'on_button_press',
-                        },
-                        {
-                            kind: 'block',
-                            type: 'get_joystick_direction',
-                        },
-                        {
-                            kind: 'block',
-                            type: 'get_joystick_force',
-                        }
-                    ]
-                },
-                {
-                    kind: 'category',
                     name: 'Game',
                     categorystyle: 'logic_category',
                     contents: [
@@ -1252,6 +1233,18 @@ workspace_data: "${base64WorkspaceData}"
                         {
                             kind: 'block',
                             type: 'set_physics_impostor',
+                        },
+                        {
+                            kind: 'block',
+                            type: 'on_button_press',
+                        },
+                        {
+                            kind: 'block',
+                            type: 'get_joystick_direction',
+                        },
+                        {
+                            kind: 'block',
+                            type: 'get_joystick_force',
                         }                        
                     ]
                 },
