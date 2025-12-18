@@ -3904,6 +3904,24 @@ workspace_data: "${base64WorkspaceData}"
                         text: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/main/2.0/Duck/glTF-Binary/Duck.glb',
                     }
                 ],
+                message1: 'Place at X %1 Y %2 Z %3',
+                args1: [
+                    {
+                        type: 'field_number',
+                        name: 'POS_X',
+                        value: 0,
+                    },
+                    {
+                        type: 'field_number',
+                        name: 'POS_Y',
+                        value: 0,
+                    },
+                    {
+                        type: 'field_number',
+                        name: 'POS_Z',
+                        value: 0,
+                    },
+                ],                
                 colour: 160,
                 tooltip: 'Imports a 3D file from a URL and executes actions on success.',
                 output: "Mesh",
@@ -5366,8 +5384,11 @@ if (${name}) {
 
             javascript.javascriptGenerator.forBlock['import_3d_file_url'] = function (block, generator) {
                 const modelUrl = block.getFieldValue('MODEL_URL');
+                const posX = block.getFieldValue('POS_X');
+                const posY = block.getFieldValue('POS_Y');
+                const posZ = block.getFieldValue('POS_Z');                
                 const modelVarName = javascript.javascriptGenerator.nameDB_.getDistinctName(Blockly.utils.idGenerator.genUid(), Blockly.Variables.NameType);
-                let code = `await sceneManager.importModel('${modelVarName}', '${modelUrl}');\n`;
+                let code = `await sceneManager.importModel('${modelVarName}', '${modelUrl}', ${posX}, ${posY}, ${posZ});\n`;
                 return [code, generator.ORDER_ATOMIC];
             };
 
