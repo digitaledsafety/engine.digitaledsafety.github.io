@@ -112,6 +112,10 @@
             /* Ensure it's above the Blockly workspace */
         }
 
+        #toggleToolboxButton {
+            background-color: #6c757d;
+        }        
+
         .main-nav .btn-nav {
             background-color: #6c757d;
             margin-right: 5px;
@@ -419,7 +423,7 @@
         </div>
         <div class="controls">
             <div id="code-view">
-                <div id="blocklyDiv" class="blockly-workspace digital-education-safety-theme toolbox-collapsed"></div>
+                <div id="blocklyDiv" class="blockly-workspace digital-education-safety-theme"></div>
             </div>
             <div id="assets-view" style="display: none;">
                 <h2>Asset Manager</h2>
@@ -436,19 +440,20 @@
     </div>
     <div id="bottom-nav">
         <div class="nav-section-left">
-            <button id="workspace-tab" class="nav-tab active">Workspace</button>
-            <button id="preview-tab" class="nav-tab">Preview</button>
+            <button id="workspace-tab" class="nav-tab active" title="Workspace">👩‍💻</button>
+            <button id="preview-tab" class="nav-tab" title="Preview">✨</button>            
         </div>
         <div class="nav-section-right">
             <button id="runButton" class="btn btn-run btn-icon" title="Run">▶</button>
+            <button id="toggleToolboxButton" class="btn btn-icon" title="Toggle Toolbox">🧰</button>
             <div class="dropdown-menu-container">
                 <button id="menuButton" class="btn btn-icon btn-menu-toggle" title="More actions">⋮</button>
                 <div id="dropdownMenu" class="dropdown-content">
-                    <button id="toggleToolboxButton" class="btn btn-toggle-toolbox" title="Toggle Toolbox">☰ Toggle Toolbox</button>
+                    <button id="toggleToolboxButton" class="btn btn-toggle-toolbox" title="Toggle Toolbox">🧰 Toggle Toolbox</button>
                     <button id="undoButton" class="btn" title="Undo" disabled>↶ Undo</button>
                     <button id="redoButton" class="btn" title="Redo" disabled>↷ Redo</button>
                     <button id="codeViewButton" class="btn btn-icon active" title="Code">👩‍💻 Code</button>
-                    <button id="assetsViewButton" class="btn btn-icon" title="Assets">📦Assets </button>
+                    <button id="assetsViewButton" class="btn btn-icon" title="Assets">📦 Assets </button>
                     <button id="saveButton" class="btn btn-icon" title="Save">💾 Save</button>
                     <button id="publishButton" class="btn btn-icon" title="Publish">🚀 Publish</button>
                     <button id="loadButton" class="btn btn-icon" title="Load">📂 Load</button>
