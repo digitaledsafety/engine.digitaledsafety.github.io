@@ -5294,7 +5294,8 @@ if (${name}) {
                 const name = javascript.javascriptGenerator.nameDB_.getDistinctName(Blockly.utils.idGenerator.genUid(), Blockly.Variables.NameType);
                 const width = generator.valueToCode(block, 'WIDTH', generator.ORDER_ATOMIC) || 10;
                 const height = generator.valueToCode(block, 'HEIGHT', generator.ORDER_ATOMIC) || 10;
-                return `sceneManager.createGround('${name}', ${width}, ${height});\n`;
+                const code = `sceneManager.createGround('${name}', ${width}, ${height});\n`;
+                return [code, generator.ORDER_ATOMIC];
             };
 
             javascript.javascriptGenerator.forBlock['set_ground_material'] = function (block, generator) {
