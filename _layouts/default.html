@@ -1055,31 +1055,6 @@ workspace_data: "${base64WorkspaceData}"
                         },
                     ],
                 },
-
-                {
-                    kind: 'category',
-                    name: 'Animation',
-                    categorystyle: 'motion_category',
-                    contents: [
-                        {
-                            "kind": "block",
-                            "type": "import_animation"
-                        },
-                        {
-                            "kind": "block",
-                            "type": "apply_animation"
-                        },
-                        {
-                            "kind": "block",
-                            "type": "play_animation"
-                        },
-                        {
-                            "kind": "block",
-                            "type": "stop_skeletal_animation"
-                        }
-                    ]
-                },
-
                 {
                     kind: 'category',
                     name: 'GUI',
@@ -1251,21 +1226,17 @@ workspace_data: "${base64WorkspaceData}"
                     categorystyle: 'motion_category',
                     contents: [
                         {
-                            "kind": "block",
-                            "type": "get_property"
-                        },
-                        {
-                            "kind": "block",
-                            "type": "set_metadata"
-                        },
-                        {
-                            "kind": "block",
-                            "type": "get_metadata"
-                        },
-                        {
                             kind: 'block',
                             type: 'import_3d_file_url',
                         },
+                        {
+                            kind: 'block',
+                            type: 'on_collision',
+                        },
+                        {
+                            kind: 'block',
+                            type: 'destroy_object',
+                        },                        
                         {
                             kind: 'block',
                             type: 'create_box',
@@ -1287,6 +1258,26 @@ workspace_data: "${base64WorkspaceData}"
                             type: 'rotate_object',
                         },
                         {
+                            "kind": "block",
+                            "type": "position_model"
+                        },
+                        {
+                            "kind": "block",
+                            "type": "scale_object"
+                        },
+                        {
+                            "kind": "block",
+                            "type": "get_property"
+                        },
+                        {
+                            "kind": "block",
+                            "type": "set_metadata"
+                        },
+                        {
+                            "kind": "block",
+                            "type": "get_metadata"
+                        },                        
+                        {
                             kind: 'block',
                             type: 'animate_object',
                         },
@@ -1303,15 +1294,21 @@ workspace_data: "${base64WorkspaceData}"
                             type: 'animate_scale',
                         },
                         {
-                            kind: 'block',
-                            type: 'on_collision',
+                            "kind": "block",
+                            "type": "import_animation"
                         },
                         {
-                            kind: 'block',
-                            type: 'destroy_object',
+                            "kind": "block",
+                            "type": "apply_animation"
                         },
-                        { "kind": "block", "type": "position_model" },
-                        { "kind": "block", "type": "scale_object" }                        
+                        {
+                            "kind": "block",
+                            "type": "play_animation"
+                        },
+                        {
+                            "kind": "block",
+                            "type": "stop_skeletal_animation"
+                        },                         
                     ]
                 },
 
