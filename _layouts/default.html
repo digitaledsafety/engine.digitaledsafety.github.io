@@ -1327,7 +1327,31 @@ workspace_data: "${base64WorkspaceData}"
                         {
                             "kind": "block",
                             "type": "stop_skeletal_animation"
-                        },                         
+                        },
+                        {
+                            kind: 'block',
+                            type: 'asset_model',
+                        },
+                        {
+                            kind: 'block',
+                            type: 'asset_audio',
+                        },
+                        {
+                            kind: 'block',
+                            type: 'asset_image',
+                        },
+                        {
+                            kind: 'block',
+                            type: 'import_model_from_asset',
+                        },
+                        {
+                            kind: 'block',
+                            type: 'play_sound_from_asset',
+                        },
+                        {
+                            kind: 'block',
+                            type: 'set_texture_from_asset',
+                        }                        
                     ]
                 },
 
@@ -1410,37 +1434,6 @@ workspace_data: "${base64WorkspaceData}"
                         {
                             kind: 'block',
                             type: 'colour_picker'
-                        }
-                    ]
-                },
-                {
-                    kind: 'category',
-                    name: 'Assets',
-                    categorystyle: 'assets_category',
-                    contents: [
-                        {
-                            kind: 'block',
-                            type: 'asset_model',
-                        },
-                        {
-                            kind: 'block',
-                            type: 'asset_audio',
-                        },
-                        {
-                            kind: 'block',
-                            type: 'asset_image',
-                        },
-                        {
-                            kind: 'block',
-                            type: 'import_model_from_asset',
-                        },
-                        {
-                            kind: 'block',
-                            type: 'play_sound_from_asset',
-                        },
-                        {
-                            kind: 'block',
-                            type: 'set_texture_from_asset',
                         }
                     ]
                 },
