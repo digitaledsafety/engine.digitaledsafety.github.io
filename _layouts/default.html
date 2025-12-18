@@ -1288,46 +1288,8 @@ workspace_data: "${base64WorkspaceData}"
                             "type": "get_metadata"
                         },
                         {
-                            "kind": "block",
-                            "type": "save_3d_model_with_position",
-                            "inputs": {
-                                "POS_X": {
-                                    "block": {
-                                        "type": "math_number",
-                                        "fields": {
-                                            "NUM": 0
-                                        }
-                                    }
-                                },
-                                "POS_Y": {
-                                    "block": {
-                                        "type": "math_number",
-                                        "fields": {
-                                            "NUM": 0
-                                        }
-                                    }
-                                },
-                                "POS_Z": {
-                                    "block": {
-                                        "type": "math_number",
-                                        "fields": {
-                                            "NUM": 0
-                                        }
-                                    }
-                                }
-                            }
-                        },
-                        {
-                            kind: 'block',
-                            type: 'import_3d_file_url_with_position',
-                        },
-                        {
                             kind: 'block',
                             type: 'import_3d_file_url',
-                        },
-                        {
-                            kind: 'block',
-                            type: 'import_3d_file',
                         },
                         {
                             kind: 'block',
@@ -3932,79 +3894,6 @@ workspace_data: "${base64WorkspaceData}"
                 "tooltip": "Points the camera at the specified mesh",
                 "helpUrl": ""
             },
-
-            {
-                type: 'save_3d_model_with_position',
-                message0: 'Import model URL %1 as %2\r\n',
-                args0: [
-                    {
-                        type: 'field_input',
-                        name: 'MODEL_URL',
-                        text: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/main/2.0/Duck/glTF-Binary/Duck.glb',
-                    },
-                    {
-                        type: 'field_input',
-                        name: 'MODEL_VAR',
-                        variable: 'model',
-                    },
-                ],
-                message1: 'Place at X %1 Y %2 Z %3',
-                args1: [
-                    {
-                        type: 'input_value',
-                        name: 'POS_X',
-                    },
-                    {
-                        type: 'input_value',
-                        name: 'POS_Y',
-                    },
-                    {
-                        type: 'input_value',
-                        name: 'POS_Z',
-                    },
-                ],
-                inputsInline: true,
-                colour: 160,
-                output: "Mesh",
-                tooltip: 'Imports a 3D model and saves it as a variable for later use, with dynamic position.',
-                helpUrl: '',
-                extensions: [
-                    'set_max_display_length',
-                ],
-            },
-            {
-                type: 'import_3d_file_url_with_position',
-                message0: 'Import 3D file from URL %1',
-                args0: [
-                    {
-                        type: 'field_input',
-                        name: 'FILE_URL',
-                        text: 'https://example.com/model.gltf',
-                    },
-                ],
-                message1: 'Place at X %1 Y %2 Z %3',
-                args1: [
-                    {
-                        type: 'field_number',
-                        name: 'POS_X',
-                        value: 0,
-                    },
-                    {
-                        type: 'field_number',
-                        name: 'POS_Y',
-                        value: 0,
-                    },
-                    {
-                        type: 'field_number',
-                        name: 'POS_Z',
-                        value: 0,
-                    },
-                ],
-                output: "Mesh",
-                colour: 160,
-                tooltip: 'Imports a 3D file from a URL, places it in the scene, and executes actions on success.',
-                helpUrl: '',
-            },
             {
                 type: 'import_3d_file_url',
                 message0: 'Import model URL %1\r\n',
@@ -4022,34 +3911,6 @@ workspace_data: "${base64WorkspaceData}"
                 extensions: [
                     'set_max_display_length',
                 ],
-            },
-            {
-                type: 'import_3d_file',
-                message0: 'Import 3D file %1 from path %2',
-                args0: [
-                    {
-                        type: 'field_input',
-                        name: 'FILE_NAME',
-                        text: 'filename.gltf',
-                    },
-                    {
-                        type: 'field_input',
-                        name: 'ROOT_PATH',
-                        text: './models/',
-                    },
-                ],
-                message1: 'Do on success %1',
-                args1: [
-                    {
-                        type: 'input_statement',
-                        name: 'ON_SUCCESS',
-                    },
-                ],
-                previousStatement: null,
-                nextStatement: null,
-                colour: 200,
-                tooltip: 'Imports a 3D file and executes actions on success.',
-                helpUrl: '',
             },
             {
                 type: 'set_isometric_camera',
@@ -5503,26 +5364,6 @@ if (${name}) {
                 return `sceneManager.cameraFollow(${meshVar}.name);\n`;
             };
 
-            javascript.javascriptGenerator.forBlock['save_3d_model_with_position'] = function (block, generator) {
-                const modelUrl = block.getFieldValue('MODEL_URL');
-                const modelVarName = generator.valueToCode(block, 'MODEL_VAR', generator.ORDER_ATOMIC);
-                const posX = generator.valueToCode(block, 'POS_X', generator.ORDER_ATOMIC) || '0';
-                const posY = generator.valueToCode(block, 'POS_Y', generator.ORDER_ATOMIC) || '0';
-                const posZ = generator.valueToCode(block, 'POS_Z', generator.ORDER_ATOMIC) || '0';
-                let code = `await sceneManager.importModel(${modelVarName}, '${modelUrl}', ${posX}, ${posY}, ${posZ});\n`;
-                return [code, generator.ORDER_ATOMIC];
-            };
-
-            javascript.javascriptGenerator.forBlock['import_3d_file_url_with_position'] = function (block, generator) {
-                const fileUrl = block.getFieldValue('FILE_URL');
-                const posX = block.getFieldValue('POS_X');
-                const posY = block.getFieldValue('POS_Y');
-                const posZ = block.getFieldValue('POS_Z');
-                const baseName = (fileUrl.substring(fileUrl.lastIndexOf('/') + 1) || 'importedModel').replace(/[^a-zA-Z0-9]/g, '_');
-                let code = `await sceneManager.importModel(${baseName}, '${fileUrl}', ${posX}, ${posY}, ${posZ});\n`;
-                return [code, generator.ORDER_ATOMIC];
-            };
-
             javascript.javascriptGenerator.forBlock['import_3d_file_url'] = function (block, generator) {
                 const modelUrl = block.getFieldValue('MODEL_URL');
                 const modelVarName = javascript.javascriptGenerator.nameDB_.getDistinctName(Blockly.utils.idGenerator.genUid(), Blockly.Variables.NameType);
@@ -5537,14 +5378,6 @@ if (${name}) {
             javascript.javascriptGenerator.forBlock['set_fps_camera'] = function (block, generator) {
                 const object = generator.valueToCode(block, 'OBJECT', generator.ORDER_ATOMIC) || 'null';
                 return `sceneManager.setFpsCamera(${object});\n`;
-            };
-
-            javascript.javascriptGenerator.forBlock['import_3d_file'] = function (block, generator) {
-                const fileName = block.getFieldValue('FILE_NAME');
-                const rootPath = block.getFieldValue('ROOT_PATH');
-                const onSuccessCode = generator.statementToCode(block, 'ON_SUCCESS') || '';
-                const baseName = (fileName.replace(/[^a-zA-Z0-9]/g, '_') || 'importedFileModel');
-                return `// Local file import is not supported in this environment.\n// Please use URL-based import blocks.\n`;
             };
 
             javascript.javascriptGenerator.forBlock['create_ground'] = function (block, generator) {
