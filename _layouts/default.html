@@ -1245,34 +1245,6 @@ workspace_data: "${base64WorkspaceData}"
                         },
                     ]
                 },
-
-                {
-                    kind: 'category',
-                    name: 'Camera',
-                    categorystyle: 'scene_category',
-                    contents: [
-                        {
-                            kind: 'block',
-                            type: 'create_camera',
-                        },
-                        {
-                            kind: 'block',
-                            type: 'set_isometric_camera',
-                        },
-                        {
-                            kind: 'block',
-                            type: 'point_camera_at_mesh'
-                        },
-                        {
-                            kind: 'block',
-                            type: 'camera_follow',
-                        },
-                        {
-                            kind: 'block',
-                            type: 'camera_zoom',
-                        },
-                    ]
-                },
                 {
                     kind: 'category',
                     name: 'Objects',
@@ -1360,6 +1332,22 @@ workspace_data: "${base64WorkspaceData}"
                             kind: 'block',
                             type: 'point_camera_at_mesh'
                         },
+                        {
+                            kind: 'block',
+                            type: 'create_camera',
+                        },
+                        {
+                            kind: 'block',
+                            type: 'set_isometric_camera',
+                        },
+                        {
+                            kind: 'block',
+                            type: 'camera_follow',
+                        },
+                        {
+                            kind: 'block',
+                            type: 'camera_zoom',
+                        },                        
                         {
                             kind: 'block',
                             type: 'create_ground',
