@@ -420,10 +420,6 @@
         <div class="controls">
             <div id="code-view">
                 <div id="blocklyDiv" class="blockly-workspace digital-education-safety-theme toolbox-collapsed"></div>
-                <div id="monacoEditorContainer" class="editor-container"
-                    style="height: 80%; min-height: 300px; border: 1px solid #ddd; margin-bottom: 10px; display: none;">
-                    <!-- Monaco Editor will be initialized here by script.js -->
-                </div>
             </div>
             <div id="assets-view" style="display: none;">
                 <h2>Asset Manager</h2>
@@ -439,8 +435,6 @@
         </div>
     </div>
 
-    <!-- Monaco Editor CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.49.0/min/vs/loader.js"></script>
     <div id="bottom-nav">
         <div class="nav-section-left">
             <button id="workspace-tab" class="nav-tab active">Workspace</button>
@@ -454,10 +448,7 @@
                     <button id="toggleToolboxButton" class="btn btn-toggle-toolbox" title="Toggle Toolbox">☰ Toggle Toolbox</button>
                     <button id="undoButton" class="btn" title="Undo" disabled>↶ Undo</button>
                     <button id="redoButton" class="btn" title="Redo" disabled>↷ Redo</button>
-                    <button id="codeViewButton" class="btn btn-icon active" title="Code">👩‍💻 Code</button>
                     <button id="assetsViewButton" class="btn btn-icon" title="Assets">📦Assets </button>
-                    <button id="showBlocksButton" class="btn" title="Show Blocks">Blocks</button>
-                    <button id="showJsButton" class="btn" title="Show JavaScript">JavaScript</button>
                     <button id="saveButton" class="btn btn-icon" title="Save">💾 Save</button>
                     <button id="publishButton" class="btn btn-icon" title="Publish">🚀 Publish</button>
                     <button id="loadButton" class="btn btn-icon" title="Load">📂 Load</button>
@@ -6753,15 +6744,7 @@ if (${name}) {
         }
 
         async function doRun() {
-            let codeToRun = '';
-            if (currentView === 'blockly') {
-                codeToRun = generateCode();
-            } else if (currentView === 'javascript' && monacoEditorInstance) {
-                codeToRun = monacoEditorInstance.getValue();
-            } else {
-                console.error("No valid code source found.");
-                return;
-            }
+            let codeToRun = generateCode();
 
             if (sceneManager) {
                 sceneManager.dispose();
@@ -7017,69 +7000,7 @@ function ${generator.FUNCTION_NAME_PLACEHOLDER_}(c1, c2, ratio) {
         window.addEventListener('resize', resizeCanvas);
         resizeCanvas();
 
-        // --- Monaco Editor & View Switching Logic ---
-        const blocklyDiv = document.getElementById('blocklyDiv');
-        const monacoEditorContainer = document.getElementById('monacoEditorContainer');
-        const showBlocksButton = document.getElementById('showBlocksButton');
-        const showJsButton = document.getElementById('showJsButton');
-        let monacoEditorInstance = null;
-        let currentView = 'blockly'; // 'blockly' or 'javascript'
-
-        // Initialize Monaco Editor
-        require.config({ paths: { 'vs': 'https://cdn.jsdelivr.net/npm/monaco-editor@0.49.0/min/vs' } });
-        require(['vs/editor/editor.main'], function () {
-            monacoEditorInstance = monaco.editor.create(monacoEditorContainer, {
-                language: 'javascript',
-                theme: 'vs-light', // Or 'vs-dark'
-                readOnly: false, // Allow editing
-                automaticLayout: true // Adjusts editor layout on container resize
-            });
-            // Initial population when editor is ready
-            if (currentView === 'javascript') {
-                populateMonacoWithBlocklyCode();
-            }
-        });
-
-        function populateMonacoWithBlocklyCode() {
-            if (monacoEditorInstance) {
-                const blocklyJsCode = generateCode(); // generateCode() is already defined
-                monacoEditorInstance.setValue(blocklyJsCode);
-            }
-        }
-
-        showBlocksButton.addEventListener('click', () => {
-            if (currentView === 'javascript') {
-                blocklyDiv.style.display = 'block';
-                monacoEditorContainer.style.display = 'none';
-                currentView = 'blockly';
-                // Potentially trigger a resize/refresh for Blockly if needed
-                Blockly.svgResize(workspace);
-                console.log("Switched to Blockly view");
-            }
-        });
-
-        showJsButton.addEventListener('click', () => {
-            if (currentView === 'blockly') {
-                populateMonacoWithBlocklyCode(); // Update Monaco content before showing
-                blocklyDiv.style.display = 'none';
-                monacoEditorContainer.style.display = 'block';
-                currentView = 'javascript';
-                if (monacoEditorInstance) {
-                    // It's good practice to explicitly tell Monaco to layout itself
-                    // when its container becomes visible or changes size,
-                    // especially if automaticLayout isn't perfectly handling all cases.
-                    monacoEditorInstance.layout();
-                }
-                console.log("Switched to JavaScript view");
-            }
-        });
-
-        // Adjust save/load/run if they need to be aware of the current view
-        // For now, run will always use Blockly code, save/load workspace.
-        // This will be updated in later steps.
-
         // --- Main View Switching Logic ---
-        const codeViewButton = document.getElementById('codeViewButton');
         const assetsViewButton = document.getElementById('assetsViewButton');
         const codeView = document.getElementById('code-view');
         const assetsView = document.getElementById('assets-view');
@@ -7090,21 +7011,25 @@ function ${generator.FUNCTION_NAME_PLACEHOLDER_}(c1, c2, ratio) {
             assetsView.style.display = 'none';
 
             // Deactivate all buttons
-            codeViewButton.classList.remove('active');
             assetsViewButton.classList.remove('active');
 
             // Show the selected view and activate its button
             if (viewToShow === 'code') {
                 codeView.style.display = 'block';
-                codeViewButton.classList.add('active');
             } else if (viewToShow === 'assets') {
                 assetsView.style.display = 'block';
                 assetsViewButton.classList.add('active');
             }
         }
 
-        codeViewButton.addEventListener('click', () => showView('code'));
-        assetsViewButton.addEventListener('click', () => showView('assets'));
+        assetsViewButton.addEventListener('click', () => {
+            // Simple toggle logic
+            if (assetsView.style.display === 'none') {
+                showView('assets');
+            } else {
+                showView('code');
+            }
+        });
 
         // Set the initial view
         showView('code');
