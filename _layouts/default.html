@@ -6559,25 +6559,38 @@ if (${name}) {
                             "y": 0,
                             "next": {
                                 "block": {
-                                    "type": "create_ground",
-                                    "id": "UNzY^.8(7|ytC9meFp!v",
+                                    "type": "variables_set",
+                                    "id": "8Z]xplqM2`iy.*vs#?H(",
+                                    "fields": {
+                                        "VAR": {
+                                            "id": "ground_mesh_var"
+                                        }
+                                    },
                                     "inputs": {
-                                        "WIDTH": {
+                                        "VALUE": {
                                             "block": {
-                                                "type": "math_number",
-                                                "id": "X=lsiw2bX_?I1004[s++",
-                                                "fields": {
-                                                    "NUM": 20
-                                                }
-                                            }
-                                        },
-                                        "HEIGHT": {
-                                            "block": {
-                                                "type": "math_number",
-                                                "id": "`2vm*D^4+-Z_V2?J-NOt",
-                                                "fields": {
-                                                    "NUM": 20
-                                                }
+                                                "type": "create_ground",
+                                                "id": "UNzY^.8(7|ytC9meFp!v",
+                                                "inputs": {
+                                                    "WIDTH": {
+                                                        "block": {
+                                                            "type": "math_number",
+                                                            "id": "X=lsiw2bX_?I1004[s++",
+                                                            "fields": {
+                                                                "NUM": 20
+                                                            }
+                                                        }
+                                                    },
+                                                    "HEIGHT": {
+                                                        "block": {
+                                                            "type": "math_number",
+                                                            "id": "`2vm*D^4+-Z_V2?J-NOt",
+                                                            "fields": {
+                                                                "NUM": 20
+                                                            }
+                                                        }
+                                                    }
+                                                },
                                             }
                                         }
                                     },
@@ -6711,6 +6724,10 @@ if (${name}) {
                         "name": "player_mesh",
                         "id": "player_mesh_var"
                     },
+                    {
+                        "name": "ground_mesh",
+                        "id": "ground_mesh_var"
+                    },                    
                     {
                         "name": "coin_list",
                         "id": "coin_list_var"
