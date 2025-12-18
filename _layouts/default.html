@@ -1087,6 +1087,18 @@ workspace_data: "${base64WorkspaceData}"
                     contents: [
                         {
                             kind: 'block',
+                            type: 'create_loading_screen',
+                        },
+                        {
+                            kind: 'block',
+                            type: 'show_loading_screen',
+                        },
+                        {
+                            kind: 'block',
+                            type: 'hide_loading_screen',
+                        },                        
+                        {
+                            kind: 'block',
                             type: 'gui_create_text_block',
                         },
                         {
@@ -1261,20 +1273,11 @@ workspace_data: "${base64WorkspaceData}"
                         },
                     ]
                 },
-
                 {
                     kind: 'category',
                     name: 'Objects',
                     categorystyle: 'motion_category',
                     contents: [
-                        {
-                            "kind": "category",
-                            "name": "Transform",
-                            "contents": [
-                                { "kind": "block", "type": "position_model" },
-                                { "kind": "block", "type": "scale_object" }
-                            ]
-                        },
                         {
                             "kind": "block",
                             "type": "get_property"
@@ -1303,7 +1306,6 @@ workspace_data: "${base64WorkspaceData}"
                             kind: 'block',
                             type: 'move_object',
                         },
-
                         {
                             kind: 'block',
                             type: 'change_object_color',
@@ -1330,16 +1332,14 @@ workspace_data: "${base64WorkspaceData}"
                         },
                         {
                             kind: 'block',
-                            type: 'create_loading_screen',
+                            type: 'on_collision',
                         },
                         {
                             kind: 'block',
-                            type: 'show_loading_screen',
+                            type: 'destroy_object',
                         },
-                        {
-                            kind: 'block',
-                            type: 'hide_loading_screen',
-                        }
+                        { "kind": "block", "type": "position_model" },
+                        { "kind": "block", "type": "scale_object" }                        
                     ]
                 },
 
@@ -1455,21 +1455,6 @@ workspace_data: "${base64WorkspaceData}"
                             kind: 'block',
                             type: 'set_texture_from_asset',
                         }
-                    ]
-                },
-                {
-                    kind: 'category',
-                    name: 'Gameplay',
-                    categorystyle: 'gameplay_category',
-                    contents: [
-                        {
-                            kind: 'block',
-                            type: 'on_collision',
-                        },
-                        {
-                            kind: 'block',
-                            type: 'destroy_object',
-                        },
                     ]
                 },
                 {
