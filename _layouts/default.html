@@ -4287,15 +4287,13 @@ workspace_data: "${base64WorkspaceData}"
             },
             {
                 type: 'create_ground',
-                message0: 'Create ground named %1 with width %2 and height %3',
+                message0: 'Create ground with width %1 height %2 and depth %3',
                 args0: [
-                    { type: 'field_input', name: 'NAME', text: 'ground' },
                     { type: 'input_value', name: 'WIDTH', check: 'Number' },
-                    { type: 'input_value', name: 'HEIGHT', check: 'Number' },
+                    { type: 'input_value', name: 'HEIGHT', check: 'Number' }
                 ],
                 "inputsInline": true,
-                previousStatement: null,
-                nextStatement: null,
+                output: "Mesh",
                 colour: 180,
                 tooltip: 'Creates a ground mesh with specified width and height',
             },
@@ -5293,7 +5291,7 @@ if (${name}) {
             };
 
             javascript.javascriptGenerator.forBlock['create_ground'] = function (block, generator) {
-                const name = block.getFieldValue('NAME');
+                const name = javascript.javascriptGenerator.nameDB_.getDistinctName(Blockly.utils.idGenerator.genUid(), Blockly.Variables.NameType);
                 const width = generator.valueToCode(block, 'WIDTH', generator.ORDER_ATOMIC) || 10;
                 const height = generator.valueToCode(block, 'HEIGHT', generator.ORDER_ATOMIC) || 10;
                 return `sceneManager.createGround('${name}', ${width}, ${height});\n`;
@@ -6563,9 +6561,6 @@ if (${name}) {
                                 "block": {
                                     "type": "create_ground",
                                     "id": "UNzY^.8(7|ytC9meFp!v",
-                                    "fields": {
-                                        "NAME": "ground"
-                                    },
                                     "inputs": {
                                         "WIDTH": {
                                             "block": {
