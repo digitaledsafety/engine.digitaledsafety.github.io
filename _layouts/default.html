@@ -105,11 +105,8 @@
             background-color: #0056b3;
         }
 
-        .btn-toggle-toolbox {
-            padding: 6px 10px;
-            font-size: 18px;
-            z-index: 1001;
-            /* Ensure it's above the Blockly workspace */
+        #toggleToolboxButton {
+            background-color: #6c757d;
         }
 
         .main-nav .btn-nav {
@@ -441,10 +438,10 @@
         </div>
         <div class="nav-section-right">
             <button id="runButton" class="btn btn-run btn-icon" title="Run">▶</button>
+            <button id="toggleToolboxButton" class="btn btn-icon" title="Toggle Toolbox">☰</button>
             <div class="dropdown-menu-container">
                 <button id="menuButton" class="btn btn-icon btn-menu-toggle" title="More actions">⋮</button>
                 <div id="dropdownMenu" class="dropdown-content">
-                    <button id="toggleToolboxButton" class="btn btn-toggle-toolbox" title="Toggle Toolbox">☰ Toggle Toolbox</button>
                     <button id="undoButton" class="btn" title="Undo" disabled>↶ Undo</button>
                     <button id="redoButton" class="btn" title="Redo" disabled>↷ Redo</button>
                     <button id="codeViewButton" class="btn btn-icon active" title="Code">👩‍💻 Code</button>
