@@ -971,87 +971,131 @@ workspace_data: "${base64WorkspaceData}"
                     categorystyle: 'logic_category',
                     contents: [
                         {
-                            kind: 'category',
-                            name: 'If',
-                            categorystyle: 'logic_category',
-                            contents: [
-                                {
-                                    kind: 'block',
-                                    type: 'controls_if',
-                                },
-                                {
-                                    kind: 'block',
-                                    type: 'controls_if',
-                                    extraState: {
-                                        hasElse: 'true',
-                                    },
-                                },
-                                {
-                                    kind: 'block',
-                                    type: 'controls_if',
-                                    extraState: {
-                                        hasElse: 'true',
-                                        elseIfCount: 1,
-                                    },
-                                },
-                            ],
+                            kind: 'block',
+                            type: 'controls_if',
                         },
                         {
-                            kind: 'category',
-                            name: 'Boolean',
-                            categorystyle: 'logic_category',
-                            contents: [
-                                {
-                                    kind: 'block',
-                                    type: 'logic_compare',
-                                },
-                                {
-                                    kind: 'block',
-                                    type: 'logic_operation',
-                                },
-                                {
-                                    kind: 'block',
-                                    type: 'logic_negate',
-                                },
-                                {
-                                    kind: 'block',
-                                    type: 'logic_boolean',
-                                },
-                                {
-                                    kind: 'block',
-                                    type: 'logic_null',
-                                },
-                                {
-                                    kind: 'block',
-                                    type: 'logic_ternary',
-                                },
-                            ],
+                            kind: 'block',
+                            type: 'controls_if',
+                            extraState: {
+                                hasElse: 'true',
+                            },
+                        },
+                        {
+                            kind: 'block',
+                            type: 'controls_if',
+                            extraState: {
+                                hasElse: 'true',
+                                elseIfCount: 1,
+                            },
+                        },
+                        {
+                            kind: 'sep',
+                        },                        
+                        {
+                            kind: 'block',
+                            type: 'logic_compare',
+                        },
+                        {
+                            kind: 'block',
+                            type: 'logic_operation',
+                        },
+                        {
+                            kind: 'block',
+                            type: 'logic_negate',
+                        },
+                        {
+                            kind: 'block',
+                            type: 'logic_boolean',
+                        },
+                        {
+                            kind: 'block',
+                            type: 'logic_null',
+                        },
+                        {
+                            kind: 'block',
+                            type: 'logic_ternary',
                         },
                         {
                             kind: 'sep',
                         },
                         {
-                            kind: 'category',
-                            name: 'Scripting',
-                            categorystyle: 'logic_category', // Or a new custom style
-                            contents: [
-                                {
-                                    kind: 'block',
-                                    type: 'select_object',
+                            kind: 'block',
+                            type: 'controls_repeat_ext',
+                            inputs: {
+                                TIMES: {
+                                    block: {
+                                        type: 'math_number',
+                                        fields: {
+                                            NUM: 10,
+                                        },
+                                    },
                                 },
-                                {
-                                    kind: 'block',
-                                    type: 'event_on_click',
+                            },
+                        },
+                        {
+                            kind: 'block',
+                            type: 'controls_whileUntil',
+                        },
+                        {
+                            kind: 'block',
+                            type: 'controls_for',
+                            fields: {
+                                VAR: 'i',
+                            },
+                            inputs: {
+                                FROM: {
+                                    block: {
+                                        type: 'math_number',
+                                        fields: {
+                                            NUM: 1,
+                                        },
+                                    },
                                 },
-                                {
-                                    kind: 'block',
-                                    type: 'event_every_frame',
+                                TO: {
+                                    block: {
+                                        type: 'math_number',
+                                        fields: {
+                                            NUM: 10,
+                                        },
+                                    },
                                 },
-                                {
-                                    kind: 'block',
-                                    type: 'action_rotate_continuously',
+                                BY: {
+                                    block: {
+                                        type: 'math_number',
+                                        fields: {
+                                            NUM: 1,
+                                        },
+                                    },
                                 },
-                            ],
+                            },
+                        },
+                        {
+                            kind: 'block',
+                            type: 'controls_forEach',
+                        },
+                        {
+                            kind: 'block',
+                            type: 'controls_flow_statements',
+                        },
+                        {
+                            kind: 'sep',
+                        },                        
+                        {
+                            kind: 'block',
+                            type: 'select_object',
+                        },
+                        {
+                            kind: 'block',
+                            type: 'event_on_click',
+                        },
+                        {
+                            kind: 'block',
+                            type: 'event_every_frame',
+                        },
+                        {
+                            kind: 'block',
+                            type: 'action_rotate_continuously',
                         },
                     ],
                 },
@@ -1135,7 +1179,26 @@ workspace_data: "${base64WorkspaceData}"
                         {
                             kind: 'block',
                             type: 'gui_set_popup_text',
-                        }
+                        },
+                        {
+                            kind: 'block',
+                            type: 'console_log',
+                        },
+                        {
+                            kind: 'sep',
+                        },                        
+                        {
+                            kind: 'block',
+                            type: 'console_warn',
+                        },
+                        {
+                            kind: 'block',
+                            type: 'console_error',
+                        },
+                        {
+                            kind: 'block',
+                            type: 'console_clear',
+                        },                        
                     ]
                 },
 
@@ -1154,7 +1217,6 @@ workspace_data: "${base64WorkspaceData}"
                         },
                     ]
                 },
-
                 {
                     kind: 'category',
                     name: 'Controller',
@@ -1176,30 +1238,7 @@ workspace_data: "${base64WorkspaceData}"
                 },
                 {
                     kind: 'category',
-                    name: 'Console',
-                    categorystyle: 'text_category',
-                    contents: [
-                        {
-                            kind: 'block',
-                            type: 'console_log',
-                        },
-                        {
-                            kind: 'block',
-                            type: 'console_warn',
-                        },
-                        {
-                            kind: 'block',
-                            type: 'console_error',
-                        },
-                        {
-                            kind: 'block',
-                            type: 'console_clear',
-                        },
-                    ],
-                },
-                {
-                    kind: 'category',
-                    name: 'Player',
+                    name: 'Game',
                     categorystyle: 'logic_category',
                     contents: [
                         {
@@ -1214,6 +1253,21 @@ workspace_data: "${base64WorkspaceData}"
                             kind: 'block',
                             type: 'player_move',
                         },
+                        {
+                            kind: 'sep',
+                        },
+                        {
+                            kind: 'block',
+                            type: 'enable_physics',
+                        },
+                        {
+                            kind: 'block',
+                            type: 'apply_force',
+                        },
+                        {
+                            kind: 'block',
+                            type: 'set_physics_impostor',
+                        }                        
                     ]
                 },
                 {
@@ -1272,6 +1326,9 @@ workspace_data: "${base64WorkspaceData}"
                         {
                             "kind": "block",
                             "type": "get_metadata"
+                        },                        
+                        {
+                            kind: 'sep',
                         },                        
                         {
                             kind: 'block',
@@ -1390,27 +1447,6 @@ workspace_data: "${base64WorkspaceData}"
                         }
                     ]
                 },
-
-                {
-                    kind: 'category',
-                    name: 'Physics',
-                    categorystyle: 'physics_category',
-                    contents: [
-                        {
-                            kind: 'block',
-                            type: 'enable_physics',
-                        },
-                        {
-                            kind: 'block',
-                            type: 'apply_force',
-                        },
-                        {
-                            kind: 'block',
-                            type: 'set_physics_impostor',
-                        }
-                    ]
-                },
-
                 {
                     kind: 'category',
                     name: 'Assets',
@@ -1462,72 +1498,6 @@ workspace_data: "${base64WorkspaceData}"
                         {
                             kind: 'block',
                             type: 'colour_blend',
-                        },
-                    ],
-                },
-                {
-                    kind: 'category',
-                    name: 'Loops',
-                    categorystyle: 'loop_category',
-                    contents: [
-                        {
-                            kind: 'block',
-                            type: 'controls_repeat_ext',
-                            inputs: {
-                                TIMES: {
-                                    block: {
-                                        type: 'math_number',
-                                        fields: {
-                                            NUM: 10,
-                                        },
-                                    },
-                                },
-                            },
-                        },
-                        {
-                            kind: 'block',
-                            type: 'controls_whileUntil',
-                        },
-                        {
-                            kind: 'block',
-                            type: 'controls_for',
-                            fields: {
-                                VAR: 'i',
-                            },
-                            inputs: {
-                                FROM: {
-                                    block: {
-                                        type: 'math_number',
-                                        fields: {
-                                            NUM: 1,
-                                        },
-                                    },
-                                },
-                                TO: {
-                                    block: {
-                                        type: 'math_number',
-                                        fields: {
-                                            NUM: 10,
-                                        },
-                                    },
-                                },
-                                BY: {
-                                    block: {
-                                        type: 'math_number',
-                                        fields: {
-                                            NUM: 1,
-                                        },
-                                    },
-                                },
-                            },
-                        },
-                        {
-                            kind: 'block',
-                            type: 'controls_forEach',
-                        },
-                        {
-                            kind: 'block',
-                            type: 'controls_flow_statements',
                         },
                     ],
                 },
