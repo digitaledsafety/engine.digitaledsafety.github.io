@@ -4956,9 +4956,8 @@ workspace_data: "${base64WorkspaceData}"
             },
             {
                 "type": "create_popup",
-                "message0": "create popup named %1 with title %2",
+                "message0": "create popup with title %1",
                 "args0": [
-                    { "type": "input_value", "name": "NAME", "check": "String" },
                     { "type": "input_value", "name": "TITLE", "check": "String" }
                 ],
                 "message1": "image URL %1",
@@ -5061,7 +5060,7 @@ workspace_data: "${base64WorkspaceData}"
 
         {
             javascript.javascriptGenerator.forBlock['create_popup'] = function (block, generator) {
-                const name = generator.valueToCode(block, 'NAME', generator.ORDER_ATOMIC) || "''";
+                const name = javascript.javascriptGenerator.nameDB_.getDistinctName(Blockly.utils.idGenerator.genUid(), Blockly.Variables.NameType);
                 const title = generator.valueToCode(block, 'TITLE', generator.ORDER_ATOMIC) || "''";
                 const image = generator.valueToCode(block, 'IMAGE', generator.ORDER_ATOMIC) || "null";
                 const button1Name = generator.valueToCode(block, 'BUTTON1_NAME', generator.ORDER_ATOMIC) || "null";
@@ -5076,7 +5075,7 @@ workspace_data: "${base64WorkspaceData}"
                     button2_name: ${button2Name},
                     button2_text: ${button2Text}
                 }`;
-                return `sceneManager.createPopup(${name}, ${title}, ${options});\n`;
+                return `sceneManager.createPopup('${name}', ${title}, ${options});\n`;
             };
 
             javascript.javascriptGenerator.forBlock['show_popup'] = function (block, generator) {
