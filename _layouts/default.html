@@ -5075,7 +5075,8 @@ workspace_data: "${base64WorkspaceData}"
                     button2_name: ${button2Name},
                     button2_text: ${button2Text}
                 }`;
-                return `sceneManager.createPopup('${name}', ${title}, ${options});\n`;
+                const code = `sceneManager.createPopup('${name}', ${title}, ${options});\n`;
+                return [code, generator.ORDER_ATOMIC];                
             };
 
             javascript.javascriptGenerator.forBlock['show_popup'] = function (block, generator) {
