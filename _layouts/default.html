@@ -3668,8 +3668,6 @@ workspace_data: "${base64WorkspaceData}"
             trashcan: true
         });
 
-        window.workspace = workspace;
-
         function getModelAssets() {
             const modelOptions = assetManager.assets
                 .filter(asset => asset.type.startsWith('model/') || asset.name.endsWith('.glb') || asset.name.endsWith('.gltf'))
