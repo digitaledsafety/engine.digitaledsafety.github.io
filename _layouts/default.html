@@ -2158,26 +2158,65 @@ workspace_data: "${base64WorkspaceData}"
                 return this.uiManager.createPopup(name, title, options);
             }
 
-            showPopup(name) {
-                this.uiManager.showPopup(name);
+            showPopup(target) {
+                this.uiManager.showPopup(target);
                 this.pauseEngine();
             }
 
-            hidePopup(name) {
-                this.uiManager.hidePopup(name);
+            hidePopup(target) {
+                this.uiManager.hidePopup(target);
                 this.resumeEngine();
             }
 
-            setPopupTitle(name, title) {
-                this.uiManager.setPopupTitle(name, title);
+            setPopupTitle(target, title) {
+                let popup = null;
+                if (typeof target === 'string') {
+                    popup = this.uiManager.getControlByName(target);
+                } else if (target && target.name) { // It's an object, presumably the popup container
+                    popup = target;
+                }
+
+                if (popup && popup.children && popup.children.length > 0) {
+                    const panel = popup.children[0]; // Assumes the panel is the first child
+                    const titleControl = panel.getChildByName(`${popup.name}_title`);
+                    if (titleControl) {
+                        titleControl.text = title;
+                    }
+                }
             }
 
-            setPopupImage(name, imageUrl) {
-                this.uiManager.setPopupImage(name, imageUrl);
+            setPopupImage(target, imageUrl) {
+                let popup = null;
+                if (typeof target === 'string') {
+                    popup = this.uiManager.getControlByName(target);
+                } else if (target && target.name) {
+                    popup = target;
+                }
+
+                if (popup && popup.children && popup.children.length > 0) {
+                    const panel = popup.children[0];
+                    const imageControl = panel.getChildByName(`${popup.name}_image`);
+                    if (imageControl) {
+                        imageControl.source = imageUrl;
+                    }
+                }
             }
 
-            setPopupButtonText(name, buttonName, text) {
-                this.uiManager.setPopupButtonText(name, buttonName, text);
+            setPopupButtonText(target, buttonName, text) {
+                let popup = null;
+                if (typeof target === 'string') {
+                    popup = this.uiManager.getControlByName(target);
+                } else if (target && target.name) {
+                    popup = target;
+                }
+
+                if (popup && popup.children && popup.children.length > 0) {
+                    const panel = popup.children[0];
+                    const buttonControl = panel.getChildByName(buttonName);
+                    if (buttonControl && buttonControl.textBlock) {
+                        buttonControl.textBlock.text = text;
+                    }
+                }
             }
 
             async initAudioEngine() {
@@ -3512,19 +3551,33 @@ workspace_data: "${base64WorkspaceData}"
                 return container;
             }
 
-            showPopup(name) {
-                if (this.controls[name]) {
-                    this.controls[name].isVisible = true;
+            showPopup(target) {
+                let control = null;
+                if (typeof target === 'string') {
+                    control = this.controls[target];
+                } else if (target && typeof target.isVisible !== 'undefined') {
+                    control = target;
+                }
+
+                if (control) {
+                    control.isVisible = true;
                 } else {
-                    console.warn(`Popup with name "${name}" not found.`);
+                    console.warn(`Popup not found.`);
                 }
             }
 
-            hidePopup(name) {
-                if (this.controls[name]) {
-                    this.controls[name].isVisible = false;
+            hidePopup(target) {
+                let control = null;
+                if (typeof target === 'string') {
+                    control = this.controls[target];
+                } else if (target && typeof target.isVisible !== 'undefined') {
+                    control = target;
+                }
+
+                if (control) {
+                    control.isVisible = false;
                 } else {
-                    console.warn(`Popup with name "${name}" not found.`);
+                    console.warn(`Popup not found.`);
                 }
             }
 
@@ -3614,6 +3667,8 @@ workspace_data: "${base64WorkspaceData}"
             },
             trashcan: true
         });
+
+        window.workspace = workspace;
 
         function getModelAssets() {
             const modelOptions = assetManager.assets
@@ -4983,7 +5038,7 @@ workspace_data: "${base64WorkspaceData}"
                 "type": "show_popup",
                 "message0": "show popup %1",
                 "args0": [
-                    { "type": "input_value", "name": "NAME", "check": "String" }
+                    { "type": "input_value", "name": "NAME", "check": ["String", "Rectangle"] }
                 ],
                 "previousStatement": null,
                 "nextStatement": null,
@@ -4995,7 +5050,7 @@ workspace_data: "${base64WorkspaceData}"
                 "type": "hide_popup",
                 "message0": "hide popup %1",
                 "args0": [
-                    { "type": "input_value", "name": "NAME", "check": "String" }
+                    { "type": "input_value", "name": "NAME", "check": ["String", "Rectangle"] }
                 ],
                 "previousStatement": null,
                 "nextStatement": null,
@@ -5007,7 +5062,7 @@ workspace_data: "${base64WorkspaceData}"
                 "type": "gui_set_popup_title",
                 "message0": "in popup %1 set title to %2",
                 "args0": [
-                    { "type": "input_value", "name": "POPUP_NAME", "check": "String" },
+                    { "type": "input_value", "name": "POPUP_NAME", "check": ["String", "Rectangle"] },
                     { "type": "input_value", "name": "TITLE", "check": "String" }
                 ],
                 "previousStatement": null,
@@ -5020,7 +5075,7 @@ workspace_data: "${base64WorkspaceData}"
                 "type": "gui_set_popup_image",
                 "message0": "in popup %1 set image to URL %2",
                 "args0": [
-                    { "type": "input_value", "name": "POPUP_NAME", "check": "String" },
+                    { "type": "input_value", "name": "POPUP_NAME", "check": ["String", "Rectangle"] },
                     { "type": "input_value", "name": "IMAGE_URL", "check": "String" }
                 ],
                 "previousStatement": null,
@@ -5033,7 +5088,7 @@ workspace_data: "${base64WorkspaceData}"
                 "type": "gui_set_popup_button_text",
                 "message0": "in popup %1 set button %2 text to %3",
                 "args0": [
-                    { "type": "input_value", "name": "POPUP_NAME", "check": "String" },
+                    { "type": "input_value", "name": "POPUP_NAME", "check": ["String", "Rectangle"] },
                     { "type": "input_value", "name": "BUTTON_NAME", "check": "String" },
                     { "type": "input_value", "name": "TEXT", "check": "String" }
                 ],
@@ -5060,23 +5115,29 @@ workspace_data: "${base64WorkspaceData}"
 
         {
             javascript.javascriptGenerator.forBlock['create_popup'] = function (block, generator) {
-                const name = javascript.javascriptGenerator.nameDB_.getDistinctName(Blockly.utils.idGenerator.genUid(), Blockly.Variables.NameType);
                 const title = generator.valueToCode(block, 'TITLE', generator.ORDER_ATOMIC) || "''";
                 const image = generator.valueToCode(block, 'IMAGE', generator.ORDER_ATOMIC) || "null";
-                const button1Name = generator.valueToCode(block, 'BUTTON1_NAME', generator.ORDER_ATOMIC) || "null";
-                const button1Text = generator.valueToCode(block, 'BUTTON1_TEXT', generator.ORDER_ATOMIC) || "null";
-                const button2Name = generator.valueToCode(block, 'BUTTON2_NAME', generator.ORDER_ATOMIC) || "null";
-                const button2Text = generator.valueToCode(block, 'BUTTON2_TEXT', generator.ORDER_ATOMIC) || "null";
+                const button1Name = generator.valueToCode(block, 'BUTTON1_NAME', generator.ORDER_ATOMIC) || "''";
+                const button1Text = generator.valueToCode(block, 'BUTTON1_TEXT', generator.ORDER_ATOMIC) || "''";
+                const button2Name = generator.valueToCode(block, 'BUTTON2_NAME', generator.ORDER_ATOMIC) || "''";
+                const button2Text = generator.valueToCode(block, 'BUTTON2_TEXT', generator.ORDER_ATOMIC) || "''";
+
+                // Get the parent block, which should be a variables_set block
+                const parentBlock = block.getParent();
+                let variableName = 'myPopup'; // Default name
+                if (parentBlock && parentBlock.type === 'variables_set') {
+                    variableName = parentBlock.getVarModels()[0].name;
+                }
 
                 const options = `{
                     image: ${image},
-                    button1_name: ${button1Name},
+                    button1_name: ${button1Name} || \`\${'${variableName}'}_button1\`,
                     button1_text: ${button1Text},
-                    button2_name: ${button2Name},
+                    button2_name: ${button2Name} || \`\${'${variableName}'}_button2\`,
                     button2_text: ${button2Text}
                 }`;
-                const code = `sceneManager.createPopup('${name}', ${title}, ${options});\n`;
-                return [code, generator.ORDER_ATOMIC];                
+                const code = `sceneManager.createPopup('${variableName}', ${title}, ${options})`;
+                return [code, generator.ORDER_ATOMIC];
             };
 
             javascript.javascriptGenerator.forBlock['show_popup'] = function (block, generator) {
@@ -5859,8 +5920,8 @@ if (${name}) {
             doRun();
         }
 
-        async function doRun() {
-            let codeToRun = generateCode();
+        async function doRun(code, verificationCallback) {
+            let codeToRun = code || generateCode();
 
             if (sceneManager) {
                 sceneManager.dispose();
@@ -5872,6 +5933,12 @@ if (${name}) {
                 const AsyncFunction = Object.getPrototypeOf(async function () { }).constructor;
                 const userGeneratedCode = new AsyncFunction('sceneManager', 'assetManager', codeToRun);
                 await userGeneratedCode(sceneManager, assetManager);
+
+                // If a verification callback is provided, run it now
+                if (verificationCallback) {
+                    await verificationCallback(sceneManager);
+                }
+
             } catch (error) {
                 console.error('Error executing code:', error);
             } finally {
