@@ -15,32 +15,41 @@ async def test_popup_with_variables():
 
         await page.get_by_role("button", name="Start Coding").click()
 
-        # Part 1: Verify creation, update, and visibility
+        # Part 1: Create, show, and update the popup
         async with page.expect_console_message(lambda msg: "JULES_VERIFICATION: SCENE_READY" in msg.text):
             await page.evaluate("""
                 (async () => {
                     const workspace = window.workspace;
                     workspace.clear();
+                    // This ensures the undo/redo stack is also cleared
                     workspace.clearUndo();
+
                     const newPopupVar = workspace.createVariable('myPopup');
 
-                    // --- Create Block Structure ---
+                    // --- Create the block structure ---
+
+                    // Block: create_popup
                     const createPopupBlock = workspace.newBlock('create_popup');
-                    // ... (blocks for create, set, show, update title, button, image)
                     const titleTextBlock = workspace.newBlock('text');
                     titleTextBlock.setFieldValue('My Popup Title', 'TEXT');
                     createPopupBlock.getInput('TITLE').connection.connect(titleTextBlock.outputConnection);
                     const button1TextBlock = workspace.newBlock('text');
                     button1TextBlock.setFieldValue('My Button 1', 'TEXT');
                     createPopupBlock.getInput('BUTTON1_TEXT').connection.connect(button1TextBlock.outputConnection);
+
+                    // Block: variables_set
                     const setVarBlock = workspace.newBlock('variables_set');
                     setVarBlock.setFieldValue(newPopupVar.getId(), 'VAR');
                     setVarBlock.getInput('VALUE').connection.connect(createPopupBlock.outputConnection);
+
+                    // Block: show_popup
                     const showPopupBlock = workspace.newBlock('show_popup');
                     const getVarBlockShow = workspace.newBlock('variables_get');
                     getVarBlockShow.setFieldValue(newPopupVar.getId(), 'VAR');
                     showPopupBlock.getInput('NAME').connection.connect(getVarBlockShow.outputConnection);
                     setVarBlock.nextConnection.connect(showPopupBlock.previousConnection);
+
+                    // Block: gui_set_popup_title
                     const setTitleBlock = workspace.newBlock('gui_set_popup_title');
                     const getVarForTitle = workspace.newBlock('variables_get');
                     getVarForTitle.setFieldValue(newPopupVar.getId(), 'VAR');
@@ -49,6 +58,8 @@ async def test_popup_with_variables():
                     setTitleBlock.getInput('POPUP_NAME').connection.connect(getVarForTitle.outputConnection);
                     setTitleBlock.getInput('TITLE').connection.connect(newTitleTextBlock.outputConnection);
                     showPopupBlock.nextConnection.connect(setTitleBlock.previousConnection);
+
+                    // Block: gui_set_popup_button_text
                     const setButtonTextBlock = workspace.newBlock('gui_set_popup_button_text');
                     const getVarForButton = workspace.newBlock('variables_get');
                     getVarForButton.setFieldValue(newPopupVar.getId(), 'VAR');
@@ -60,6 +71,8 @@ async def test_popup_with_variables():
                     setButtonTextBlock.getInput('BUTTON_NAME').connection.connect(buttonNameBlock.outputConnection);
                     setButtonTextBlock.getInput('TEXT').connection.connect(newButtonTextBlock.outputConnection);
                     setTitleBlock.nextConnection.connect(setButtonTextBlock.previousConnection);
+
+                    // Block: gui_set_popup_image
                     const setImageBlock = workspace.newBlock('gui_set_popup_image');
                     const getVarForImage = workspace.newBlock('variables_get');
                     getVarForImage.setFieldValue(newPopupVar.getId(), 'VAR');
@@ -69,69 +82,63 @@ async def test_popup_with_variables():
                     setImageBlock.getInput('IMAGE_URL').connection.connect(imageUrlBlock.outputConnection);
                     setButtonTextBlock.nextConnection.connect(setImageBlock.previousConnection);
 
+                    // --- Render all blocks ---
                     for (const block of workspace.getAllBlocks(false)) {
                         block.initSvg();
                         block.render();
                     }
 
+                    // --- Execute the code ---
                     const code = Blockly.JavaScript.workspaceToCode(workspace);
-
-                    // --- Verification Callback ---
-                    const verificationCallback = (sceneManager) => {
-                        const popup = sceneManager.uiManager.getControlByName('myPopup');
-                        if (!popup || !popup.isVisible) throw new Error('Popup not visible');
-
-                        const title = sceneManager.uiManager.getControlByName('myPopup_title');
-                        if (!title || title.text !== 'New Title') throw new Error('Title not set correctly');
-
-                        const button = sceneManager.uiManager.getControlByName('myPopup_button1');
-                        if (!button || button.textBlock.text !== 'New Button Text') throw new Error('Button text not set correctly');
-
-                        const image = sceneManager.uiManager.getControlByName('myPopup_image');
-                        if (!image || image.source !== 'https://www.babylonjs-playground.com/textures/babylon5.png') throw new Error('Image not set correctly');
-                    };
-
-                    await window.doRun(code, verificationCallback);
+                    await window.doRun(code);
                 })()
             """)
 
-        # Part 2: Verify hiding the popup
+        # Give the UI a moment to update
+        await page.wait_for_timeout(500)
+
+        # Verify the popup is visible and updated
+        is_visible = await page.evaluate("window.sceneManager.uiManager.getControlByName('myPopup').isVisible")
+        assert is_visible
+
+        title = await page.evaluate("window.sceneManager.uiManager.getControlByName('myPopup_title').text")
+        assert title == "New Title"
+
+        button_text = await page.evaluate("window.sceneManager.uiManager.getControlByName('myPopup_button1').textBlock.text")
+        assert button_text == "New Button Text"
+
+        image_source = await page.evaluate("window.sceneManager.uiManager.getControlByName('myPopup_image').source")
+        assert image_source == "https://www.babylonjs-playground.com/textures/babylon5.png"
+
+        # Part 2: Hide the popup
         async with page.expect_console_message(lambda msg: "JULES_VERIFICATION: SCENE_READY" in msg.text):
             await page.evaluate("""
                 (async () => {
                     const workspace = window.workspace;
                     workspace.clear();
                     workspace.clearUndo();
+
                     const newPopupVar = workspace.createVariable('myPopup');
 
-                    // --- Create Block Structure ---
-                    // We need to re-create the popup to ensure it exists before hiding it
-                    const createPopupBlock = workspace.newBlock('create_popup');
-                    const setVarBlock = workspace.newBlock('variables_set');
-                    setVarBlock.setFieldValue(newPopupVar.getId(), 'VAR');
-                    setVarBlock.getInput('VALUE').connection.connect(createPopupBlock.outputConnection);
-
+                    // Block: hide_popup
                     const hidePopupBlock = workspace.newBlock('hide_popup');
                     const getVarBlockHide = workspace.newBlock('variables_get');
                     getVarBlockHide.setFieldValue(newPopupVar.getId(), 'VAR');
                     hidePopupBlock.getInput('NAME').connection.connect(getVarBlockHide.outputConnection);
-                    setVarBlock.nextConnection.connect(hidePopupBlock.previousConnection);
 
-                    for (const block of workspace.getAllBlocks(false)) {
-                        block.initSvg();
-                        block.render();
-                    }
+                    hidePopupBlock.initSvg();
+                    getVarBlockHide.initSvg();
+                    hidePopupBlock.render();
+                    getVarBlockHide.render();
 
                     const code = Blockly.JavaScript.workspaceToCode(workspace);
-
-                    // --- Verification Callback ---
-                    const verificationCallback = (sceneManager) => {
-                        const popup = sceneManager.uiManager.getControlByName('myPopup');
-                        if (!popup || popup.isVisible) throw new Error('Popup was not hidden');
-                    };
-
-                    await window.doRun(code, verificationCallback);
+                    await window.doRun(code);
                 })()
             """)
+
+        # Verify the popup is hidden
+        await page.wait_for_timeout(100)
+        is_visible_after_hide = await page.evaluate("window.sceneManager.uiManager.getControlByName('myPopup').isVisible")
+        assert not is_visible_after_hide
 
         await browser.close()
