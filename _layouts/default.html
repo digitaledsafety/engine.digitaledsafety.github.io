@@ -1359,10 +1359,6 @@ workspace_data: "${base64WorkspaceData}"
                     contents: [
                         {
                             kind: 'block',
-                            type: 'enable_xr',
-                        },
-                        {
-                            kind: 'block',
                             type: 'create_camera',
                         },
                         {
@@ -2141,7 +2137,6 @@ workspace_data: "${base64WorkspaceData}"
                 this.uiManager = new UIManager(this.scene);
                 this.processedCollisions = new Set();
                 this.background = null;
-                this.xr = null;
 
                 this.initScene();
                 this.initInputListeners();
@@ -2222,15 +2217,6 @@ workspace_data: "${base64WorkspaceData}"
                         buttonControl.textBlock.text = text;
                     }
                 }
-            }
-
-            async enableXR() {
-                if (this.xr) {
-                    return this.xr;
-                }
-                const xr = await this.scene.createDefaultXRExperienceAsync({});
-                this.xr = xr;
-                return xr;
             }
 
             async initAudioEngine() {
@@ -5122,23 +5108,10 @@ workspace_data: "${base64WorkspaceData}"
                 "colour": "#5B80A5",
                 "tooltip": "Sets the main text of an existing popup.",
                 "helpUrl": ""
-            },
-            {
-                "type": "enable_xr",
-                "message0": "Enable VR Mode",
-                "previousStatement": null,
-                "nextStatement": null,
-                "colour": 180,
-                "tooltip": "Enables WebXR support for VR headsets.",
-                "helpUrl": ""
             }
         ]);
 
         {
-            javascript.javascriptGenerator.forBlock['enable_xr'] = function(block, generator) {
-                return 'await sceneManager.enableXR();\\n';
-            };
-
             javascript.javascriptGenerator.forBlock['create_popup'] = function (block, generator) {
                 const title = generator.valueToCode(block, 'TITLE', generator.ORDER_ATOMIC) || "''";
                 const image = generator.valueToCode(block, 'IMAGE', generator.ORDER_ATOMIC) || "null";
