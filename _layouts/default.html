@@ -2747,9 +2747,7 @@ workspace_data: "${base64WorkspaceData}"
             }
 
             takeScreenshot() {
-                BABYLON.Tools.CreateScreenshot(this.engine, this.scene.activeCamera, { precision: 2 }, (data) => {
-                    console.log("Screenshot generated");
-                });
+                BABYLON.Tools.CreateScreenshotUsingObjectURL(this.engine, this.scene.activeCamera, { precision: 2 });
             }
 
             setSamplingMode(target, mode) {
