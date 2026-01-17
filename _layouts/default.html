@@ -2745,9 +2745,23 @@ workspace_data: "${base64WorkspaceData}"
                     this.scene.activeCamera.radius = Math.max(1, this.scene.activeCamera.radius - value);
                 }
             }
-
+            
             takeScreenshot() {
-                BABYLON.Tools.CreateScreenshotUsingObjectURL(this.engine, this.scene.activeCamera, { precision: 2 });
+                BABYLON.Tools.CreateScreenshot(this.engine, this.scene.activeCamera, { precision: 2 }, (data) => {
+                    // Create a formatted timestamp (e.g., 2026-01-17_12-00-00)
+                    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+                    const fileName = `engine_${timestamp}.png`;
+            
+                    const link = document.createElement('a');
+                    link.setAttribute('download', fileName);
+                    link.setAttribute('href', data);
+                    
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    
+                    console.log(`Downloaded: ${fileName}`);
+                });
             }
 
             setSamplingMode(target, mode) {
