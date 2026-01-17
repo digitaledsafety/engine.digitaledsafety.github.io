@@ -450,6 +450,7 @@
                     <button id="publishButton" class="btn btn-icon" title="Publish">🚀 Publish</button>
                     <button id="loadButton" class="btn btn-icon" title="Load">📂 Load</button>
                     <button id="shareButton" class="btn btn-icon" title="Share">🔗 Share</button>
+                    <button id="exportHTMLButton" class="btn btn-icon" title="Export to HTML">📄 Export HTML</button>
                     <button id="fullscreenBtn" class="btn btn-icon" title="Fullscreen">⛶ Fullscreen</button>
                     <button id="docsButton" class="btn btn-icon" title="Documentation">❓ Docs</button>
                 </div>
@@ -945,6 +946,150 @@ workspace_data: "${base64WorkspaceData}"
                         alert('Error sharing project. See console for details.');
                     }
                 }
+            }
+
+            async exportToHTML() {
+                try {
+                    // 1. Generate code
+                    const codeToRun = generateCode();
+
+                    // 2. Get assets as Base64
+                    const assets = await this.assetManager.getAllAssets();
+                    const serializableAssets = [];
+                    for (const asset of assets) {
+                        let dataB64;
+                        if (asset.data instanceof Blob) {
+                            dataB64 = await this._blobToBase64(asset.data);
+                        } else if (asset.data instanceof ArrayBuffer) {
+                            dataB64 = this._arrayBufferToBase64(asset.data);
+                        } else {
+                            continue;
+                        }
+                        serializableAssets.push({
+                            name: asset.name,
+                            type: asset.type,
+                            data: dataB64
+                        });
+                    }
+
+                    // 3. Create HTML content
+                    const htmlContent = this._getExportTemplate(codeToRun, serializableAssets);
+
+                    // 4. Trigger download
+                    const blob = new Blob([htmlContent], { type: 'text/html' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `project-export-${Date.now()}.html`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+
+                    console.log('Project exported to HTML successfully!');
+                } catch (error) {
+                    console.error('Failed to export project to HTML:', error);
+                    alert('Error exporting project. See console for details.');
+                }
+            }
+
+            _getExportTemplate(userCode, assets) {
+                // Filter and convert script tags to absolute URLs if necessary
+                const libs = Array.from(document.querySelectorAll('head script[src]'))
+                    .filter(s => {
+                        const src = s.getAttribute('src');
+                        // Exclude Blockly scripts as they are not needed for the runtime (only for generation/editing)
+                        // Actually, we might need some Blockly parts if the user code uses them,
+                        // but usually generated JS is standalone except for our engine classes.
+                        // However, to be safe and simple, we include what's currently there but ensure absolute URLs.
+                        return true;
+                    })
+                    .map(s => {
+                        const script = s.cloneNode(true);
+                        const src = script.getAttribute('src');
+                        if (src && !src.startsWith('http') && !src.startsWith('//')) {
+                            // Convert relative to absolute
+                            const absoluteUrl = new URL(src, window.location.href).href;
+                            script.setAttribute('src', absoluteUrl);
+                        }
+                        return script.outerHTML;
+                    })
+                    .join('\n    ');
+
+                return `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exported Project</title>
+    ${libs}
+    <style>
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; }
+        canvas { width: 100%; height: 100%; display: block; }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    <script>
+        // --- Classes ---
+        ${CustomLoadingScreen.toString()}
+
+        class AssetManager {
+            constructor(assets = []) {
+                this.assets = assets;
+            }
+            async init() {}
+            async getAsset(name) {
+                const asset = this.assets.find(a => a.name === name);
+                if (!asset) return null;
+                const blob = this._base64ToBlob(asset.data, asset.type);
+                if (asset.type.startsWith('audio/')) {
+                    return { ...asset, data: await blob.arrayBuffer() };
+                }
+                return { ...asset, data: blob };
+            }
+            async getAllAssets() { return this.assets; }
+            _base64ToBlob(b64Data, contentType = '', sliceSize = 512) {
+                const byteCharacters = atob(b64Data);
+                const byteArrays = [];
+                for (let offset = 0; offset < byteCharacters.length; offset += sliceSize) {
+                    const slice = byteCharacters.slice(offset, offset + sliceSize);
+                    const byteNumbers = new Array(slice.length);
+                    for (let i = 0; i < slice.length; i++) {
+                        byteNumbers[i] = slice.charCodeAt(i);
+                    }
+                    const byteArray = new Uint8Array(byteNumbers);
+                    byteArrays.push(byteArray);
+                }
+                return new Blob(byteArrays, { type: contentType });
+            }
+        }
+
+        ${isValidAssetURL.toString()}
+        ${BabylonSceneManager.toString()}
+        ${UIManager.toString()}
+
+        // --- Data ---
+        const exportedAssets = ${JSON.stringify(assets)};
+        const userCode = async (sceneManager, assetManager) => {
+            ${userCode}
+        };
+
+        // --- Initialization ---
+        window.addEventListener('DOMContentLoaded', async () => {
+            const canvas = document.getElementById('gameCanvas');
+            const assetManager = new AssetManager(exportedAssets);
+            const sceneManager = new BabylonSceneManager(canvas);
+
+            try {
+                await userCode(sceneManager, assetManager);
+            } catch (e) {
+                console.error("Error running user code:", e);
+            }
+        });
+    </script>
+</body>
+</html>`;
             }
         }
 
@@ -6290,6 +6435,10 @@ function ${generator.FUNCTION_NAME_PLACEHOLDER_}(c1, c2, ratio) {
 
         document.getElementById('shareButton').addEventListener('click', () => {
             projectManager.shareProject();
+        });
+
+        document.getElementById('exportHTMLButton').addEventListener('click', () => {
+            projectManager.exportToHTML();
         });
 
         document.getElementById('fullscreenBtn').addEventListener('click', () => {
