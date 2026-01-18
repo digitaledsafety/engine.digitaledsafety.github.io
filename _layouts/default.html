@@ -451,6 +451,7 @@
                     <button id="loadButton" class="btn btn-icon" title="Load">📂 Load</button>
                     <button id="shareButton" class="btn btn-icon" title="Share">🔗 Share</button>
                     <button id="fullscreenBtn" class="btn btn-icon" title="Fullscreen">⛶ Fullscreen</button>
+                    <button id="screenshotButton" class="btn btn-icon" title="Take Screenshot">📸 Screenshot</button>
                     <button id="docsButton" class="btn btn-icon" title="Documentation">❓ Docs</button>
                 </div>
             </div>
@@ -2747,7 +2748,38 @@ workspace_data: "${base64WorkspaceData}"
             }
             
             takeScreenshot() {
-                BABYLON.Tools.CreateScreenshot(this.engine, this.scene.activeCamera, { precision: 2 }, (data) => {
+                const camera = this.scene.activeCamera;
+                if (!camera) return;
+
+                const width = window.innerWidth;
+                const height = window.innerHeight;
+
+                // Temporarily adjust orthographic camera aspect ratio if needed
+                let oldOrtho = null;
+                if (camera.mode === BABYLON.Camera.ORTHOGRAPHIC_CAMERA) {
+                    oldOrtho = {
+                        left: camera.orthoLeft,
+                        right: camera.orthoRight,
+                        top: camera.orthoTop,
+                        bottom: camera.orthoBottom
+                    };
+                    const aspectRatio = width / height;
+                    const orthoSize = 10;
+                    camera.orthoLeft = -orthoSize * aspectRatio;
+                    camera.orthoRight = orthoSize * aspectRatio;
+                    camera.orthoBottom = -orthoSize;
+                    camera.orthoTop = orthoSize;
+                }
+
+                BABYLON.Tools.CreateScreenshot(this.engine, camera, { width: width * 2, height: height * 2 }, (data) => {
+                    // Restore orthographic camera parameters
+                    if (oldOrtho) {
+                        camera.orthoLeft = oldOrtho.left;
+                        camera.orthoRight = oldOrtho.right;
+                        camera.orthoTop = oldOrtho.top;
+                        camera.orthoBottom = oldOrtho.bottom;
+                    }
+
                     // Create a formatted timestamp (e.g., 2026-01-17_12-00-00)
                     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
                     const fileName = `engine_${timestamp}.png`;
@@ -6266,6 +6298,9 @@ function ${generator.FUNCTION_NAME_PLACEHOLDER_}(c1, c2, ratio) {
         });
         document.getElementById('docsButton').addEventListener('click', () => {
             window.open('docs/Home.html', '_blank');
+        });
+        document.getElementById('screenshotButton').addEventListener('click', () => {
+            sceneManager.takeScreenshot();
         });
         document.getElementById('toggleToolboxButton').addEventListener('click', () => {
             const blocklyDiv = document.getElementById('blocklyDiv');
