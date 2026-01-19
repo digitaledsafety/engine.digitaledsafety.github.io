@@ -1238,7 +1238,23 @@ workspace_data: "${base64WorkspaceData}"
                         {
                             kind: 'block',
                             type: 'get_joystick_force',
-                        }                        
+                        },
+                        {
+                            kind: 'block',
+                            type: 'create_health_bar',
+                        },
+                        {
+                            kind: 'block',
+                            type: 'set_health_bar_value',
+                        },
+                        {
+                            kind: 'block',
+                            type: 'get_bone_position',
+                        },
+                        {
+                            kind: 'block',
+                            type: 'get_camera_forward',
+                        }
                     ]
                 },
                 {
@@ -2746,6 +2762,83 @@ workspace_data: "${base64WorkspaceData}"
                     this.scene.activeCamera.radius = Math.max(1, this.scene.activeCamera.radius - value);
                 }
             }
+
+            applyForce(target, x, y, z) {
+                const impostor = this._getPhysicsImpostor(target);
+                if (impostor) {
+                    impostor.applyImpulse(new BABYLON.Vector3(x, y, z), impostor.object.getAbsolutePosition());
+                }
+            }
+
+            createHealthBar(target) {
+                const mesh = this._getMesh(target);
+                if (!mesh) return null;
+
+                const name = `${mesh.name}_hp`;
+                const container = new BABYLON.GUI.Rectangle(`${name}_container`);
+                container.width = "100px";
+                container.height = "12px";
+                container.background = "rgba(0,0,0,0.5)";
+                container.thickness = 1;
+                container.cornerRadius = 5;
+                this.uiManager.advancedTexture.addControl(container);
+                container.linkWithMesh(mesh);
+                container.linkOffsetY = -100;
+
+                const inner = new BABYLON.GUI.Rectangle(`${name}_inner`);
+                inner.width = "100%";
+                inner.height = "100%";
+                inner.background = "#00ff00";
+                inner.thickness = 0;
+                inner.cornerRadius = 5;
+                inner.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
+                container.addControl(inner);
+
+                this.objects[name] = inner;
+                return inner;
+            }
+
+            setHealthBarValue(target, value) {
+                // target can be the inner rectangle or the mesh
+                let bar = null;
+                if (typeof target === 'string') {
+                    bar = this.objects[target] || this.objects[`${target}_hp`];
+                } else {
+                    bar = target;
+                }
+
+                if (bar && bar.width) {
+                    const clampedValue = Math.max(0, Math.min(100, value));
+                    bar.width = `${clampedValue}%`;
+                    // Change color based on health
+                    if (clampedValue < 25) {
+                        bar.background = "#ff0000";
+                    } else if (clampedValue < 50) {
+                        bar.background = "#ffff00";
+                    } else {
+                        bar.background = "#00ff00";
+                    }
+                }
+            }
+
+            getBonePosition(target, boneName) {
+                const mesh = this._getMesh(target);
+                if (!mesh) return BABYLON.Vector3.Zero();
+
+                const node = mesh.getDescendants(false).find(d => d.name && d.name.toLowerCase().includes(boneName.toLowerCase()));
+
+                if (node && node.getAbsolutePosition) {
+                    return node.getAbsolutePosition();
+                }
+                return mesh.getAbsolutePosition();
+            }
+
+            getCameraForwardDirection() {
+                if (this.scene.activeCamera) {
+                    return this.scene.activeCamera.getForwardRay().direction;
+                }
+                return new BABYLON.Vector3(0, 0, 1);
+            }
             
             takeScreenshot() {
                 const camera = this.scene.activeCamera;
@@ -3221,15 +3314,57 @@ workspace_data: "${base64WorkspaceData}"
             applyAnimation(animationGroup, target) {
                 const mesh = this._getMesh(target);
                 if (mesh && animationGroup) {
-                    // Target the animation to the mesh's skeleton
-                    animationGroup.targetedAnimations.forEach(anim => {
-                        const targetNode = this.scene.getBoneByName(anim.target.name) || this.scene.getTransformNodeByName(anim.target.name);
-                        if(targetNode) {
+                    // Create a clone of the animation group to avoid targeting conflicts between characters
+                    const clone = animationGroup.clone(`${animationGroup.name}_${mesh.name}`);
+
+                    clone.targetedAnimations.forEach(anim => {
+                        const targetNode = mesh.getDescendants(false).find(d => d.name === anim.target.name) ||
+                                           this.scene.getTransformNodeByName(anim.target.name) ||
+                                           this.scene.getMeshByName(anim.target.name);
+                        if (targetNode) {
                             anim.target = targetNode;
                         }
                     });
                     mesh.animationGroups = mesh.animationGroups || [];
-                    mesh.animationGroups.push(animationGroup);
+                    mesh.animationGroups.push(clone);
+                }
+            }
+
+            applyMixamoAnimation(animationGroup, target) {
+                const mesh = this._getMesh(target);
+                if (mesh && animationGroup) {
+                    const clone = animationGroup.clone(`${animationGroup.name}_${mesh.name}`);
+
+                    const mixamoMap = {
+                        mixamorigHips: 'hips', mixamorigSpine: 'spine', mixamorigSpine1: 'chest',
+                        mixamorigSpine2: 'upperChest', mixamorigNeck: 'neck', mixamorigHead: 'head',
+                        mixamorigLeftShoulder: 'leftShoulder', mixamorigLeftArm: 'leftUpperArm',
+                        mixamorigLeftForeArm: 'leftLowerArm', mixamorigLeftHand: 'leftHand',
+                        mixamorigRightShoulder: 'rightShoulder', mixamorigRightArm: 'rightUpperArm',
+                        mixamorigRightForeArm: 'rightLowerArm', mixamorigRightHand: 'rightHand',
+                        mixamorigLeftUpLeg: 'leftUpperLeg', mixamorigLeftLeg: 'leftLowerLeg',
+                        mixamorigLeftFoot: 'leftFoot', mixamorigRightUpLeg: 'rightUpperLeg',
+                        mixamorigRightLeg: 'rightLowerLeg', mixamorigRightFoot: 'rightFoot'
+                    };
+
+                    clone.targetedAnimations.forEach(anim => {
+                        let targetName = anim.target.name;
+                        for (const [mixamo, common] of Object.entries(mixamoMap)) {
+                            if (targetName.includes(mixamo)) {
+                                targetName = common;
+                                break;
+                            }
+                        }
+
+                        const targetNode = mesh.getDescendants(false).find(d => d.name && d.name.toLowerCase().endsWith(targetName.toLowerCase())) ||
+                                           this.scene.getTransformNodeByName(anim.target.name);
+
+                        if (targetNode) {
+                            anim.target = targetNode;
+                        }
+                    });
+                    mesh.animationGroups = mesh.animationGroups || [];
+                    mesh.animationGroups.push(clone);
                 }
             }
 
@@ -4294,6 +4429,19 @@ workspace_data: "${base64WorkspaceData}"
                 "tooltip": "Applies an imported animation to a model."
             },
             {
+                "type": "apply_mixamo_animation",
+                "message0": "apply Mixamo animation %1 to VRM %2",
+                "args0": [
+                    { "type": "input_value", "name": "ANIMATION" },
+                    { "type": "input_value", "name": "MODEL" }
+                ],
+                "inputsInline": true,
+                "previousStatement": null,
+                "nextStatement": null,
+                "colour": "%{BKY_MOTION_HUE}",
+                "tooltip": "Applies an imported Mixamo animation to a VRM model."
+            },
+            {
                 "type": "play_animation",
                 "message0": "play animation on %1 from frame %2 to %3 loop %4",
                 "args0": [
@@ -5282,6 +5430,87 @@ workspace_data: "${base64WorkspaceData}"
                 "colour": "#5B80A5",
                 "tooltip": "Sets the main text of an existing popup.",
                 "helpUrl": ""
+            },
+            {
+                "type": "create_health_bar",
+                "message0": "create health bar for %1",
+                "args0": [
+                    {
+                        "type": "input_value",
+                        "name": "OBJECT"
+                    }
+                ],
+                "output": null,
+                "colour": "#5BA55B",
+                "tooltip": "Creates a health bar floating above the specified object.",
+                "helpUrl": ""
+            },
+            {
+                "type": "set_health_bar_value",
+                "message0": "set health bar %1 to value %2",
+                "args0": [
+                    {
+                        "type": "input_value",
+                        "name": "BAR"
+                    },
+                    {
+                        "type": "input_value",
+                        "name": "VALUE",
+                        "check": "Number"
+                    }
+                ],
+                "previousStatement": null,
+                "nextStatement": null,
+                "colour": "#5BA55B",
+                "tooltip": "Sets the percentage value (0-100) of a health bar.",
+                "helpUrl": ""
+            },
+            {
+                "type": "get_bone_position",
+                "message0": "get position of bone %1 from object %2",
+                "args0": [
+                    {
+                        "type": "input_value",
+                        "name": "BONE",
+                        "check": "String"
+                    },
+                    {
+                        "type": "input_value",
+                        "name": "OBJECT"
+                    }
+                ],
+                "output": "Vector3",
+                "colour": "#4C97FF",
+                "tooltip": "Gets the world position of a specific bone or child node of an object.",
+                "helpUrl": ""
+            },
+            {
+                "type": "get_camera_forward",
+                "message0": "get camera forward direction",
+                "output": "Vector3",
+                "colour": "#A55B80",
+                "tooltip": "Gets the forward direction vector of the active camera.",
+                "helpUrl": ""
+            },
+            {
+                "type": "vector_get_coord",
+                "message0": "get %1 from vector %2",
+                "args0": [
+                    {
+                        "type": "field_dropdown",
+                        "name": "COORD",
+                        "options": [["x", "x"], ["y", "y"], ["z", "z"]]
+                    },
+                    {
+                        "type": "input_value",
+                        "name": "VECTOR",
+                        "check": "Vector3"
+                    }
+                ],
+                "output": "Number",
+                "colour": "#59C059",
+                "tooltip": "Gets a coordinate (x, y, or z) from a 3D vector.",
+                "helpUrl": ""
             }
         ]);
 
@@ -5648,6 +5877,12 @@ if (${name}) {
                 return `sceneManager.applyAnimation(${anim}, ${model});\n`;
             };
 
+            javascript.javascriptGenerator.forBlock['apply_mixamo_animation'] = function(block, generator) {
+                const anim = generator.valueToCode(block, 'ANIMATION', generator.ORDER_ATOMIC) || 'null';
+                const model = generator.valueToCode(block, 'MODEL', generator.ORDER_ATOMIC) || 'null';
+                return `sceneManager.applyMixamoAnimation(${anim}, ${model});\n`;
+            };
+
             javascript.javascriptGenerator.forBlock['play_animation'] = function(block, generator) {
                 const model = generator.valueToCode(block, 'MODEL', generator.ORDER_ATOMIC) || 'null';
                 const from = generator.valueToCode(block, 'FROM', generator.ORDER_ATOMIC) || 0;
@@ -5739,12 +5974,38 @@ if (${name}) {
             };
 
             javascript.javascriptGenerator.forBlock['apply_force'] = function (block, generator) {
-                // This is a more advanced physics function. A helper could be added if needed frequently.
-                const name = block.getFieldValue('NAME');
+                const name = generator.valueToCode(block, 'NAME', generator.ORDER_ATOMIC) || "'object'";
                 const fx = generator.valueToCode(block, 'FX', generator.ORDER_ATOMIC) || 0;
                 const fy = generator.valueToCode(block, 'FY', generator.ORDER_ATOMIC) || 0;
                 const fz = generator.valueToCode(block, 'FZ', generator.ORDER_ATOMIC) || 0;
-                return `// Apply force requires direct physics access, consider a high-level alternative.\n`;
+                return `sceneManager.applyForce(${name}, ${fx}, ${fy}, ${fz});\n`;
+            };
+
+            javascript.javascriptGenerator.forBlock['create_health_bar'] = function (block, generator) {
+                const object = generator.valueToCode(block, 'OBJECT', generator.ORDER_ATOMIC) || 'null';
+                return [`sceneManager.createHealthBar(${object})`, generator.ORDER_ATOMIC];
+            };
+
+            javascript.javascriptGenerator.forBlock['set_health_bar_value'] = function (block, generator) {
+                const bar = generator.valueToCode(block, 'BAR', generator.ORDER_ATOMIC) || 'null';
+                const value = generator.valueToCode(block, 'VALUE', generator.ORDER_ATOMIC) || 100;
+                return `sceneManager.setHealthBarValue(${bar}, ${value});\n`;
+            };
+
+            javascript.javascriptGenerator.forBlock['get_bone_position'] = function (block, generator) {
+                const bone = generator.valueToCode(block, 'BONE', generator.ORDER_ATOMIC) || "''";
+                const object = generator.valueToCode(block, 'OBJECT', generator.ORDER_ATOMIC) || 'null';
+                return [`sceneManager.getBonePosition(${object}, ${bone})`, generator.ORDER_ATOMIC];
+            };
+
+            javascript.javascriptGenerator.forBlock['get_camera_forward'] = function (block, generator) {
+                return [`sceneManager.getCameraForwardDirection()`, generator.ORDER_ATOMIC];
+            };
+
+            javascript.javascriptGenerator.forBlock['vector_get_coord'] = function (block, generator) {
+                const coord = block.getFieldValue('COORD');
+                const vector = generator.valueToCode(block, 'VECTOR', generator.ORDER_ATOMIC) || '{x:0,y:0,z:0}';
+                return [`${vector}.${coord}`, generator.ORDER_ATOMIC];
             };
 
             javascript.javascriptGenerator.forBlock['set_gravity'] = function (block, generator) {
