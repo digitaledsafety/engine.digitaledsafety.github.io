@@ -14,7 +14,8 @@
     <script src="https://cdn.digitaleducationsafety.org/packages/blockly@12.3.1/blocks_compressed.js"></script>
     <script src="https://cdn.digitaleducationsafety.org/packages/blockly@12.3.1/javascript_compressed.js"></script>
     <script src="https://cdn.digitaleducationsafety.org/packages/blockly@12.3.1/en.js"></script>
-    <script src="https://unpkg.com/@blockly/toolbox-search"></script>
+    <script src="https://unpkg.com/@blockly/toolbox-search@3.1.8/dist/index.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://unpkg.com/@blockly/toolbox-search@3.1.8/dist/index.css">
     <script src="https://cdn.digitaleducationsafety.org/packages/@blockly/field-colour@6.0.6/index.js"></script>
     <script src="https://cdn.digitaleducationsafety.org/packages/cannon@0.6.2/cannon.min.js"></script>
     <script src="https://cdn.digitaleducationsafety.org/packages/nipplejs@0.10.2/nipplejs.js"></script>
@@ -3860,7 +3861,7 @@ workspace_data: "${base64WorkspaceData}"
                 ],
                 "previousStatement": null,
                 "nextStatement": null,
-                "colour": "#4C97FF",
+                "colour": "%{BKY_LOGIC_HUE}",
                 "tooltip": "Sets the sampling mode of all textures on the object to Nearest to achieve a pixelated look.",
                 "helpUrl": ""
             },
@@ -4565,7 +4566,7 @@ workspace_data: "${base64WorkspaceData}"
                     }
                 ],
                 "output": "String", // Outputs the object name/ID as a string
-                "colour": "%{BKY_LOGIC_HUE}", // Using logic hue for now
+                "colour": "%{BKY_LOGIC_HUE}",
                 "tooltip": "Selects an object from the scene by its name.",
                 "helpUrl": ""
             },
@@ -4703,7 +4704,7 @@ workspace_data: "${base64WorkspaceData}"
                 ],
                 "previousStatement": null,
                 "nextStatement": null,
-                "colour": "#4C97FF",
+                "colour": "%{BKY_LOGIC_HUE}",
                 "tooltip": "Makes the player character jump.",
                 "helpUrl": ""
             },
@@ -4729,7 +4730,7 @@ workspace_data: "${base64WorkspaceData}"
                 ],
                 "previousStatement": null,
                 "nextStatement": null,
-                "colour": "#4C97FF",
+                "colour": "%{BKY_LOGIC_HUE}",
                 "tooltip": "Moves the player character in a direction.",
                 "helpUrl": ""
             },
@@ -4791,7 +4792,7 @@ workspace_data: "${base64WorkspaceData}"
                 ],
                 "previousStatement": null,
                 "nextStatement": null,
-                "colour": "#4C97FF",
+                "colour": "%{BKY_LOGIC_HUE}",
                 "tooltip": "Designates the specified object as the player character.",
                 "helpUrl": ""
             },
@@ -5062,7 +5063,7 @@ workspace_data: "${base64WorkspaceData}"
                 "message0": "console clear",
                 "previousStatement": null,
                 "nextStatement": null,
-                "colour": "#4C97FF",
+                "colour": "%{BKY_LOGIC_HUE}",
                 "tooltip": "Clears the browser console.",
                 "helpUrl": ""
             },
@@ -6162,7 +6163,7 @@ function ${generator.FUNCTION_NAME_PLACEHOLDER_}() {
   var num = Math.floor(Math.random() * 0x1000000);
   return '#' + ('00000' + num.toString(16)).substr(-6);
 }
-`) + '()', generator.ORDER_FUNCTION_CALL];distin
+`) + '()', generator.ORDER_FUNCTION_CALL];
         };
 
         javascript.javascriptGenerator.forBlock['colour_picker'] = function (block, generator) {
