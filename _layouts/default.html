@@ -3314,22 +3314,27 @@ workspace_data: "${base64WorkspaceData}"
             applyAnimation(animationGroup, target) {
                 const mesh = this._getMesh(target);
                 if (mesh && animationGroup) {
-                    // Target the animation to the mesh's skeleton/nodes
-                    animationGroup.targetedAnimations.forEach(anim => {
-                        const targetNode = this.scene.getTransformNodeByName(anim.target.name) ||
+                    // Create a clone of the animation group to avoid targeting conflicts between characters
+                    const clone = animationGroup.clone(`${animationGroup.name}_${mesh.name}`);
+
+                    clone.targetedAnimations.forEach(anim => {
+                        const targetNode = mesh.getDescendants(false).find(d => d.name === anim.target.name) ||
+                                           this.scene.getTransformNodeByName(anim.target.name) ||
                                            this.scene.getMeshByName(anim.target.name);
                         if (targetNode) {
                             anim.target = targetNode;
                         }
                     });
                     mesh.animationGroups = mesh.animationGroups || [];
-                    mesh.animationGroups.push(animationGroup);
+                    mesh.animationGroups.push(clone);
                 }
             }
 
             applyMixamoAnimation(animationGroup, target) {
                 const mesh = this._getMesh(target);
                 if (mesh && animationGroup) {
+                    const clone = animationGroup.clone(`${animationGroup.name}_${mesh.name}`);
+
                     const mixamoMap = {
                         mixamorigHips: 'hips', mixamorigSpine: 'spine', mixamorigSpine1: 'chest',
                         mixamorigSpine2: 'upperChest', mixamorigNeck: 'neck', mixamorigHead: 'head',
@@ -3342,7 +3347,7 @@ workspace_data: "${base64WorkspaceData}"
                         mixamorigRightLeg: 'rightLowerLeg', mixamorigRightFoot: 'rightFoot'
                     };
 
-                    animationGroup.targetedAnimations.forEach(anim => {
+                    clone.targetedAnimations.forEach(anim => {
                         let targetName = anim.target.name;
                         for (const [mixamo, common] of Object.entries(mixamoMap)) {
                             if (targetName.includes(mixamo)) {
@@ -3351,7 +3356,6 @@ workspace_data: "${base64WorkspaceData}"
                             }
                         }
 
-                        // For VRM, we look for nodes in the hierarchy that match common names
                         const targetNode = mesh.getDescendants(false).find(d => d.name && d.name.toLowerCase().endsWith(targetName.toLowerCase())) ||
                                            this.scene.getTransformNodeByName(anim.target.name);
 
@@ -3360,7 +3364,7 @@ workspace_data: "${base64WorkspaceData}"
                         }
                     });
                     mesh.animationGroups = mesh.animationGroups || [];
-                    mesh.animationGroups.push(animationGroup);
+                    mesh.animationGroups.push(clone);
                 }
             }
 
@@ -5475,7 +5479,7 @@ workspace_data: "${base64WorkspaceData}"
                         "name": "OBJECT"
                     }
                 ],
-                "output": null,
+                "output": "Vector3",
                 "colour": "#4C97FF",
                 "tooltip": "Gets the world position of a specific bone or child node of an object.",
                 "helpUrl": ""
@@ -5483,9 +5487,29 @@ workspace_data: "${base64WorkspaceData}"
             {
                 "type": "get_camera_forward",
                 "message0": "get camera forward direction",
-                "output": null,
+                "output": "Vector3",
                 "colour": "#A55B80",
                 "tooltip": "Gets the forward direction vector of the active camera.",
+                "helpUrl": ""
+            },
+            {
+                "type": "vector_get_coord",
+                "message0": "get %1 from vector %2",
+                "args0": [
+                    {
+                        "type": "field_dropdown",
+                        "name": "COORD",
+                        "options": [["x", "x"], ["y", "y"], ["z", "z"]]
+                    },
+                    {
+                        "type": "input_value",
+                        "name": "VECTOR",
+                        "check": "Vector3"
+                    }
+                ],
+                "output": "Number",
+                "colour": "#59C059",
+                "tooltip": "Gets a coordinate (x, y, or z) from a 3D vector.",
                 "helpUrl": ""
             }
         ]);
@@ -5976,6 +6000,12 @@ if (${name}) {
 
             javascript.javascriptGenerator.forBlock['get_camera_forward'] = function (block, generator) {
                 return [`sceneManager.getCameraForwardDirection()`, generator.ORDER_ATOMIC];
+            };
+
+            javascript.javascriptGenerator.forBlock['vector_get_coord'] = function (block, generator) {
+                const coord = block.getFieldValue('COORD');
+                const vector = generator.valueToCode(block, 'VECTOR', generator.ORDER_ATOMIC) || '{x:0,y:0,z:0}';
+                return [`${vector}.${coord}`, generator.ORDER_ATOMIC];
             };
 
             javascript.javascriptGenerator.forBlock['set_gravity'] = function (block, generator) {
