@@ -2962,6 +2962,12 @@ workspace_data: "${base64WorkspaceData}"
             initScene() {
                 const camera = new BABYLON.ArcRotateCamera('Camera', Math.PI / 2, Math.PI / 4, 10, BABYLON.Vector3.Zero(), this.scene);
                 camera.attachControl(this.canvas, true);
+
+                // Smooth navigation
+                // TODO: Via blocks
+                camera.inertia = 0.2;
+                camera.wheelPrecision = 10;
+                
                 const light = new BABYLON.HemisphericLight('light', new BABYLON.Vector3(1, 1, 0), this.scene);
                 const physicsPlugin = new BABYLON.CannonJSPlugin();
                 this.scene.enablePhysics(new BABYLON.Vector3(0, -9.8, 0), physicsPlugin);
