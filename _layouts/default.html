@@ -382,11 +382,13 @@
 
         body.presentation-mode .canvas-container,
         body.fullscreen-active .canvas-container {
+            display: flex;
             width: 100vw;
             height: 100vh;
         }
 
-        body.fullscreen-active #bottom-nav {
+        body.fullscreen-active #bottom-nav,
+        body.presentation-mode #bottom-nav {
             display: none;
         }
 
@@ -516,6 +518,11 @@
                     // so we reference it via window scope inside the click handler.
                     if (window.sceneManager && window.sceneManager.audioContext && window.sceneManager.audioContext.state === 'suspended') {
                         window.sceneManager.audioContext.resume();
+                    }
+
+                    // Trigger fullscreen if in presentation mode
+                    if (document.body.classList.contains('presentation-mode')) {
+                        enterPresentationMode();
                     }
 
                     // Hide the overlay
