@@ -824,6 +824,39 @@ workspace_data: "${base64WorkspaceData}"
                 });
             }
 
+            migrateWorkspaceData(workspace) {
+                if (!workspace || !workspace.blocks || !workspace.blocks.blocks) return;
+
+                const migrateBlock = (block) => {
+                    // Migrate 'apply_force' from field NAME to input OBJECT
+                    if (block.type === 'apply_force' && block.fields && block.fields.NAME) {
+                        const nameValue = block.fields.NAME;
+                        delete block.fields.NAME;
+                        block.inputs = block.inputs || {};
+                        if (!block.inputs.OBJECT) {
+                            block.inputs.OBJECT = {
+                                block: {
+                                    type: 'text',
+                                    fields: { TEXT: nameValue }
+                                }
+                            };
+                        }
+                    }
+
+                    // Recursively migrate children
+                    if (block.next && block.next.block) migrateBlock(block.next.block);
+                    if (block.inputs) {
+                        for (const input in block.inputs) {
+                            if (block.inputs[input] && block.inputs[input].block) {
+                                migrateBlock(block.inputs[input].block);
+                            }
+                        }
+                    }
+                };
+
+                workspace.blocks.blocks.forEach(migrateBlock);
+            }
+
             async loadProjectData(projectData) {
                 if (!projectData.workspace || !projectData.assets) {
                     throw new Error('Invalid project data format.');
@@ -843,6 +876,7 @@ workspace_data: "${base64WorkspaceData}"
                 loadAssetsIntoView();
 
                 // 3. Load Workspace
+                this.migrateWorkspaceData(projectData.workspace);
                 Blockly.serialization.workspaces.load(projectData.workspace, this.workspace);
 
                 // 4. Run the loaded project
