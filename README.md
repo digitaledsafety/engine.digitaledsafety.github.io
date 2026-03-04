@@ -15,7 +15,7 @@
 
 ### Wiki / Documentation
 
-For detailed guides on how to use the tool, create custom workspaces, or contribute to the engine, please visit our **[Wiki](_docs/Home.md)**.
+For detailed guides on how to use the tool, create custom workspaces, or contribute to the engine, please visit our **[Wiki](_docs/home.md)**.
 
 ### Getting Started
 
