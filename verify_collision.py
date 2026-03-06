@@ -91,11 +91,10 @@ async def test_vrm_collision(jekyll_server):
                         "inputs": {
                             "VALUE": {
                                 "block": {
-                                    "type": "save_3d_model_with_position",
+                                    "type": "import_3d_file_url",
                                     "id": "import_vrm",
                                     "fields": {
-                                        "MODEL_URL": "https://raw.githubusercontent.com/digital-go-jp/VRMAvatarSample/main/VRM1.0/VRoid/AvatarSample_A.vrm",
-                                        "MODEL_VAR": {"id": "vrm_var"}
+                                        "MODEL_URL": "https://raw.githubusercontent.com/digital-go-jp/VRMAvatarSample/main/VRM1.0/VRoid/AvatarSample_A.vrm"
                                     },
                                     "inputs": {
                                        "POS_X": {"block": {"type": "math_number", "fields": {"NUM": 0}}},
