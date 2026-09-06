@@ -30,5 +30,6 @@ include:
 exclude:
   - tests
   - vendor/
+  - node_modules/
   - verify_loading_screen.py
   - verify_background.py

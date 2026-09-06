@@ -96,4 +96,25 @@ test.describe('Engine Features V2', () => {
         });
         expect(hasNotes).toBe(true);
     });
+
+    test('should clean up duplicate loading screens and remove from DOM when hidden', async ({ page }) => {
+        const result = await page.evaluate(() => {
+            const loader1 = new window.CustomLoadingScreen("Loading 1");
+            loader1.displayLoadingUI();
+            const countAfterFirst = document.querySelectorAll('#customLoadingScreen').length;
+
+            const loader2 = new window.CustomLoadingScreen("Loading 2");
+            loader2.displayLoadingUI();
+            const countAfterSecond = document.querySelectorAll('#customLoadingScreen').length;
+
+            loader2.hideLoadingUI();
+            const countAfterHide = document.querySelectorAll('#customLoadingScreen').length;
+
+            return { countAfterFirst, countAfterSecond, countAfterHide };
+        });
+
+        expect(result.countAfterFirst).toBe(1);
+        expect(result.countAfterSecond).toBe(1);
+        expect(result.countAfterHide).toBe(0);
+    });
 });

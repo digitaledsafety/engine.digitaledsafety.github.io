@@ -670,6 +670,7 @@
             this.loadingUITextColor = loadingUITextColor || "white";
         }
         CustomLoadingScreen.prototype.displayLoadingUI = function () {
+            this.hideLoadingUI();
             var loadingDiv = document.createElement("div");
             loadingDiv.id = "customLoadingScreen";
             const canvasContainer = document.querySelector('.canvas-container');
@@ -694,9 +695,13 @@
             }                
         };
         CustomLoadingScreen.prototype.hideLoadingUI = function () {
-            if (this._loadingDiv) {
+            if (this._loadingDiv && this._loadingDiv.parentNode) {
                 this._loadingDiv.parentNode.removeChild(this._loadingDiv);
                 this._loadingDiv = null;
+            }
+            const existing = document.getElementById("customLoadingScreen");
+            if (existing && existing.parentNode) {
+                existing.parentNode.removeChild(existing);
             }
         };
 
